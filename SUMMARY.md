@@ -1,17 +1,14 @@
 # Table of contents
 
-* [Welcome](README.md)
+* [欢迎](README.md)
+* [业务流程](workflow/workflow.md)
 
-## Getting Started
+## 接口调用
 
-* [Quickstart](getting-started/quickstart.md)
-* [Publish your docs](getting-started/publish-your-docs.md)
+* [接口认证](rest-api/authentication.md)
+* [文件上传](rest-api/file-upload.md)
+* [获取文件处理结果](rest-api/file-fetch.md)
+* [接口状态码](rest-api/status-code.md)
+* [文件结果](rest-api/file-result.md)
+* [OpenAPI](rest-api/openapi.md)
 
-## Basics
-
-* [Editor](basics/editor.md)
-* [Markdown](basics/markdown.md)
-* [Images & media](basics/images-and-media.md)
-* [Interactive blocks](basics/interactive-blocks.md)
-* [OpenAPI](basics/openapi.md)
-* [Integrations](basics/integrations.md)

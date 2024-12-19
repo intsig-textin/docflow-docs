@@ -5,7 +5,7 @@ info:
   version: 2.0.0
 
 paths:
-  /api/app-api/sip/platform/v2/files/upload:
+  /api/app-api/sip/platform/v2/file/upload:
     post:
       summary: 上传文件
       description: 使用 multipart/form-data 上传单个文件
@@ -17,28 +17,22 @@ paths:
             schema:
               type: object
               properties:
-                metadata:
-                  type: object
-                  description: 文件元数据
-                  properties:
-                    workspace_id:
-                      type: string
-                      description: 空间ID
-                    category:
-                      type: string
-                      description: 文件分类
-                    batch_number:
-                      type: string
-                      description: |
-                        批次编号。可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。<br\>
-                        如果值为空，则系统自动生成最长20位字符串
-                      example: 202412190001
-                  required:
-                    - workspace_id
+                workspace_id:
+                  type: string
+                  description: 空间ID
+                category:
+                  type: string
+                  description: 文件分类
+                batch_number:
+                  type: string
+                  description: |
+                    批次编号。可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。  
+                    如果值为空，则系统自动生成最长20位字符串
+                  example: 202412190001
                 file:
                   type: string
                   format: binary
-                  description: 要上传的文件
+                  description: 要上传的文件(可多个)
       responses:
         '200':
           description: 文件上传成功
@@ -89,7 +83,7 @@ paths:
                   - msg
                   - result
 
-  /api/app-api/sip/platform/v2/files/fetch:
+  /api/app-api/sip/platform/v2/file/fetch:
     post:
       summary: 获取文件处理结果列表
       description: 获取文件处理结果列表
@@ -290,28 +284,5 @@ components:
         - 5
     Code:
       type: integer
-      description: |
-        | 状态码 | 描述 |
-        | --- | --- |
-        | 200 | 成功 |
-        | 400 | 请求参数不正确：xxx |
-        | 500 | 系统异常 |
-        | 1005006000 | 工作空间基础信息不存在 |
-        | 1005006014 | 请完善工作空间配置 |
-        | 1005006016 | 该表单文件正在处理中，请勿重复上传 |
-        | 1005006006 | 文件上传失败 |
-        | 1005016000 | 文件不存在 |
-        | 1005016010 | 上传文件大小不符，文件大小不超过10M |
-        | 1005016018 | 该表单文件已完成上传，请确认 |
-      enum:
-        - 200
-        - 400
-        - 500
-        - 1005006000
-        - 1005006014
-        - 1005006016
-        - 1005006006
-        - 1005016000
-        - 1005016010
-        - 1005016018
+      description: 状态码
       example: 200
