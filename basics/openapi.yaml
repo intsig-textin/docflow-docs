@@ -1,0 +1,317 @@
+openapi: 3.0.0
+info:
+  title: DocFlow API
+  description: DocFlow REST API，提供文件上传和获取文件处理结果能力
+  version: 2.0.0
+
+paths:
+  /api/app-api/sip/platform/v2/files/upload:
+    post:
+      summary: 上传文件
+      description: 使用 multipart/form-data 上传单个文件
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+                  description: 文件元数据
+                  properties:
+                    workspace_id:
+                      type: string
+                      description: 空间ID
+                    category:
+                      type: string
+                      description: 文件分类
+                    batch_number:
+                      type: string
+                      description: |
+                        批次编号。可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。<br\>
+                        如果值为空，则系统自动生成最长20位字符串
+                      example: 202412190001
+                  required:
+                    - workspace_id
+                file:
+                  type: string
+                  format: binary
+                  description: 要上传的文件
+      responses:
+        '200':
+          description: 文件上传成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    $ref: '#/components/schemas/Code'
+                  msg:
+                    type: string
+                    description: 请求状态描述
+                    example: 成功
+                  result:
+                    type: object
+                    properties:
+                      batch_number:
+                        type: string
+                        description: 批次编号
+                        example: 202412190001
+                      files:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: 文件ID
+                              example: 202412190001
+                            name:
+                              type: string
+                              description: 文件名
+                              example: invoice.pdf
+                            format:
+                              type: string
+                              description: 文件格式
+                              example: pdf
+                          required:
+                            - id
+                            - name
+                            - format
+                    required:
+                      - batch_number
+                      - files
+                required:
+                  - code
+                  - msg
+                  - result
+
+  /api/app-api/sip/platform/v2/files/fetch:
+    post:
+      summary: 获取文件处理结果列表
+      description: 获取文件处理结果列表
+      operationId: getFiles
+      parameters:
+        - name: page
+          in: query
+          description: 页码
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: workspace_id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            type: string
+        - name: batch_number
+          in: query
+          description: 批次编号
+          required: false
+          schema:
+            type: string
+        - name: file_id
+          in: query
+          description: 文件ID
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: 文件分类
+          required: false
+          schema:
+            type: string
+        - name: recognition_status
+          in: query
+          description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败"
+          required: false
+          schema:
+            $ref: '#/components/schemas/RecognitionStatus'
+        - name: verification_status
+          in: query
+          description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
+          required: false
+          schema:
+            $ref: '#/components/schemas/VerificationStatus'
+        - name: start_time
+          in: query
+          description: 以创建时间搜索的开始时间, RFC3339格式(YYYY-MM-DDTHH:MM:SSZ)
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: 2024-01-01T00:00:00Z
+        - name: end_time
+          in: query
+          description: 以创建时间搜索的结束时间, RFC3339格式(YYYY-MM-DDTHH:MM:SSZ)
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: 2024-01-01T10:00:00Z
+      responses:
+        '200':
+          description: 成功获取文件列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: 
+                    $ref: '#/components/schemas/Code'
+                  msg:
+                    type: string
+                    description: 请求状态描述
+                    example: 成功
+                  result:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: 文件总数
+                        example: 100
+                      page:
+                        type: integer
+                        description: 当前页码
+                        example: 1
+                      page_size:
+                        type: integer
+                        description: 每页数量 
+                        example: 20
+                      files:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: 文件ID
+                              example: 202412190001
+                            batch_number:
+                              type: string
+                              description: 批次编号
+                              example: 202412190001
+                            name:
+                              type: string
+                              description: 文件名
+                              example: invoice.pdf
+                            format:
+                              type: string
+                              description: 文件格式
+                            recognition_status: 
+                              $ref: '#/components/schemas/RecognitionStatus'
+                            verification_status:
+                              $ref: '#/components/schemas/VerificationStatus'
+                            category:
+                              type: string
+                              description: 文件分类
+                              example: invoice
+                            data:
+                              type: object
+                              description: 处理结果
+                              properties:
+                                fields:
+                                  description: 字段列表
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                        description: 字段名
+                                      value:
+                                        type: string
+                                        description: 字段值
+                                  example:
+                                  - key: 发票代码
+                                    value: 3100231130
+                                  - key: 发票号码
+                                    value: 28737000
+                                items:
+                                  description: 表格数据列表
+                                  type: array
+                                  items:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        key:
+                                          type: string
+                                          description: 字段名
+                                        value:
+                                          type: string
+                                          description: 字段值 
+                                  example:
+                                  - - key: 货物劳务名称
+                                      value: ＊电子计算机＊微型计算机主机
+                                    - key: 规格型号
+                                      value: DMS-SC68
+                                  - - key: 货物劳务名称
+                                      value: ＊机械计算机＊巨型计算机主机
+                                    - key: 规格型号
+                                      value: AN/FSQ-7
+                          required:
+                            - id
+                            - name
+                            - format
+                            - recognition_status
+                            - verification_status
+                            - category
+
+components:
+  schemas: 
+    RecognitionStatus:
+      type: integer
+      description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败"
+      enum:
+      - 0
+      - 1
+      - 2
+    VerificationStatus:
+      type: integer
+      description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
+      enum:
+        - 0
+        - 2
+        - 3
+        - 4
+        - 5
+    Code:
+      type: integer
+      description: |
+        | 状态码 | 描述 |
+        | --- | --- |
+        | 200 | 成功 |
+        | 400 | 请求参数不正确：xxx |
+        | 500 | 系统异常 |
+        | 1005006000 | 工作空间基础信息不存在 |
+        | 1005006014 | 请完善工作空间配置 |
+        | 1005006016 | 该表单文件正在处理中，请勿重复上传 |
+        | 1005006006 | 文件上传失败 |
+        | 1005016000 | 文件不存在 |
+        | 1005016010 | 上传文件大小不符，文件大小不超过10M |
+        | 1005016018 | 该表单文件已完成上传，请确认 |
+      enum:
+        - 200
+        - 400
+        - 500
+        - 1005006000
+        - 1005006014
+        - 1005006016
+        - 1005006006
+        - 1005016000
+        - 1005016010
+        - 1005016018
+      example: 200
