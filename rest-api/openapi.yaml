@@ -38,6 +38,9 @@ paths:
                   type: string
                   format: binary
                   description: 要上传的文件(可多个)
+              required:
+              - workspace_id
+              - file
       responses:
         '200':
           description: 文件上传成功
@@ -247,9 +250,9 @@ paths:
                                         description: 字段值
                                   example:
                                   - key: 发票代码
-                                    value: 3100231130
+                                    value: "3100231130"
                                   - key: 发票号码
-                                    value: 28737000
+                                    value: "28737000"
                                 items:
                                   description: 表格数据列表
                                   type: array
