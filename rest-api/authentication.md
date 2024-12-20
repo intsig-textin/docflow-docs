@@ -25,7 +25,10 @@ DocFlow接口支持两种请求认证方法：
 以curl为例：
 
 ```bash
-curl -H "x-ti-app-id: your_app-id" -H "x-ti-secret-code: your_secret_code" "https://docflow.textin.com/api/app-api/sip/platform/v2/file/upload"
+curl \
+  -H "x-ti-app-id: your_app-id" \
+  -H "x-ti-secret-code: your_secret_code" \
+  "https://docflow.textin.com/api/app-api/sip/platform/v2/file/upload"
 ```
 
 ### 签名认证
