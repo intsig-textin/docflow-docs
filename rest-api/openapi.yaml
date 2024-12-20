@@ -82,6 +82,17 @@ paths:
                   - code
                   - msg
                   - result
+      x-codeSamples:
+        - lang: 'cURL'
+          source: | 
+            curl -X POST \
+            -H 'x-ti-app-id: 1234567890' \
+            -H 'x-ti-secret-code: 1234567890' \
+            -F 'workspace_id=1234567890' \
+            -F 'category=invoice' \
+            -F 'batch_number=202412190001' \
+            -F 'file=@invoice.pdf' \
+            'https://api.docflow.com/api/app-api/sip/platform/v2/file/upload'
 
   /api/app-api/sip/platform/v2/file/fetch:
     post:
@@ -263,6 +274,13 @@ paths:
                             - recognition_status
                             - verification_status
                             - category
+      x-codeSamples:
+        - lang: 'cURL'
+          source: | 
+            curl -X POST \
+            -H 'x-ti-app-id: 1234567890' \
+            -H 'x-ti-secret-code: 1234567890' \
+            'https://api.docflow.com/api/app-api/sip/platform/v2/file/fetch?workspace_id=1234567890&batch_number=202412190001'
 
 components:
   schemas: 

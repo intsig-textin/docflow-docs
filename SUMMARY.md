@@ -9,6 +9,4 @@
 * [文件上传](rest-api/file-upload.md)
 * [获取文件处理结果](rest-api/file-fetch.md)
 * [接口状态码](rest-api/status-code.md)
-* [文件结果](rest-api/file-result.md)
-* [OpenAPI](rest-api/openapi.md)
 
