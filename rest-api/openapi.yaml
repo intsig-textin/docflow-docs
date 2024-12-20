@@ -88,8 +88,8 @@ paths:
                   - msg
                   - result
       x-codeSamples:
-        - lang: 'cURL'
-          label: CLI
+        - lang: 'bash'
+          label: cURL
           source: | 
             curl -X POST \
             -H 'x-ti-app-id: 1234567890' \
@@ -281,8 +281,8 @@ paths:
                             - verification_status
                             - category
       x-codeSamples:
-        - lang: 'cURL'
-          label: CLI
+        - lang: 'bash'
+          label: cURL
           source: | 
             curl -X POST \
             -H 'x-ti-app-id: 1234567890' \
