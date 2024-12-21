@@ -12,12 +12,12 @@ paths:
   /api/app-api/sip/platform/v2/file/upload:
     post:
       summary: 上传文件
-      description: 使用 multipart/form-data 上传单个文件
+      description: 上传文件
       operationId: uploadFile
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
@@ -34,13 +34,18 @@ paths:
                     批次编号。可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。  
                     如果值为空，则系统自动生成最长20位字符串
                   example: 202412190001
-                file:
+                file_name:
                   type: string
-                  format: binary
-                  description: 要上传的文件(可多个)
+                  description: 文件名
+                  example: invoice.pdf
+                file_data:
+                  type: string
+                  format: byte
+                  description: 要上传的文件，base64编码.
               required:
               - workspace_id
-              - file
+              - file_name
+              - file_data
       responses:
         '200':
           description: 文件上传成功
@@ -62,27 +67,25 @@ paths:
                         type: string
                         description: 批次编号
                         example: 202412190001
-                      files:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              description: 文件ID
-                              example: 202412190001
-                            name:
-                              type: string
-                              description: 文件名
-                              example: invoice.pdf
-                            format:
-                              type: string
-                              description: 文件格式
-                              example: pdf
-                          required:
-                            - id
-                            - name
-                            - format
+                      file:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: 文件ID
+                            example: 202412190001
+                          name:
+                            type: string
+                            description: 文件名
+                            example: invoice.pdf
+                          format:
+                            type: string
+                            description: 文件格式
+                            example: pdf
+                        required:
+                          - id
+                          - name
+                          - format
                     required:
                       - batch_number
                       - files
@@ -97,10 +100,8 @@ paths:
             curl -X POST \
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
-            -F 'workspace_id=1234567890' \
-            -F 'category=invoice' \
-            -F 'batch_number=202412190001' \
-            -F 'file=@invoice.pdf' \
+            -H 'Content-Type: application/json' \
+            -d '{"workspace_id": "1234567890", "category": "invoice", "batch_number": "202412190001", "file_name": "invoice.pdf", "file_data": "base64编码后的文件数据"}' \
             'https://api.docflow.com/api/app-api/sip/platform/v2/file/upload'
 
   /api/app-api/sip/platform/v2/file/fetch:
@@ -314,3 +315,17 @@ components:
       type: integer
       description: 状态码
       example: 200
+
+  securitySchemes:
+    ApiId: # arbitrary name for the security scheme
+      type: apiKey
+      in: header # can be "header", "query" or "cookie"
+      name: x-ti-app-id
+    SecretCode: # arbitrary name for the security scheme
+      type: apiKey
+      in: header # can be "header", "query" or "cookie"
+      name: x-ti-secret-code
+
+security:
+  - ApiId: []
+    SecretCode: []
