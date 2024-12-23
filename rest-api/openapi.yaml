@@ -106,6 +106,7 @@ paths:
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
             -F 'file=@invoice.pdf'
+            -F 'file=@another.pdf'
             'https://api.docflow.com/api/app-api/sip/platform/v2/file/upload?workspace_id=1234567890&category=invoice&batch_number=202412190001'
 
   /api/app-api/sip/platform/v2/file/fetch:
