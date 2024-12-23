@@ -14,48 +14,41 @@ paths:
       summary: 上传文件
       description: 上传文件
       operationId: uploadFile
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            type: string
+            example: 1234567890
+        - name: category
+          in: query
+          description: 文件分类
+          required: true
+          schema:
+            type: string
+            example: invoice
+        - name: batch_number
+          in: query
+          description: |
+            批次编号。  
+            可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。  
+            如果值为空，则系统自动生成最长20位字符串
+          required: false
+          schema:
+            type: string
+            example: 202412190001
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
-                workspace_id:
+                file:
                   type: string
-                  description: 空间ID
-                category:
-                  type: string
-                  description: 文件分类
-                  example: invoice
-                batch_number:
-                  type: string
-                  description: |
-                    批次编号。可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。  
-                    如果值为空，则系统自动生成最长20位字符串
-                  example: 202412190001
-                files:
-                  description: 文件列表
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        description: 文件名
-                        example: invoice.pdf
-                      data:
-                        type: string
-                        format: byte
-                        description: 要上传的文件，base64编码.
-                  required:
-                    - name
-                    - data
-              required:
-              - workspace_id
-              - category
-              - batch_number
-              - files
+                  format: binary
       responses:
         '200':
           description: 文件上传成功
@@ -112,9 +105,8 @@ paths:
             curl -X POST \
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
-            -H 'Content-Type: application/json' \
-            -d '{"workspace_id": "1234567890", "category": "invoice", "batch_number": "202412190001", "file_name": "invoice.pdf", "file_data": "base64编码后的文件数据"}' \
-            'https://api.docflow.com/api/app-api/sip/platform/v2/file/upload'
+            -F 'file=@invoice.pdf'
+            'https://api.docflow.com/api/app-api/sip/platform/v2/file/upload?workspace_id=1234567890&category=invoice&batch_number=202412190001'
 
   /api/app-api/sip/platform/v2/file/fetch:
     post:
