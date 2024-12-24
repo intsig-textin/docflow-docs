@@ -3,7 +3,7 @@ info:
   title: DocFlow API
   description: DocFlow REST API，提供文件上传和获取文件处理结果能力
   servers:
-    - url: https://api.docflow.com
+    - url: https://docflow.textin.com
   version: 2.0.0
 
 x-codeSamples: custom

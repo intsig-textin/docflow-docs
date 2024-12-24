@@ -128,7 +128,7 @@ print(f"payload_hash: {payload_hash}")
 print(f"string_to_sign: {string_to_sign}")
 print(f"signature: {signature}")
 
-resp = requests.post(url=f"https://bill-test-zw.textin.com{url}", 
+resp = requests.post(url=f"https://docflow.textin.com{url}", 
                      params=params, 
                      data=payload_raw, 
                      headers={"Content-Type": payload.content_type,
