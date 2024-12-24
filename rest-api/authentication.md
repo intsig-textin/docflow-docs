@@ -98,75 +98,46 @@ import hmac
 import time
 import json
 
-def calculate_signature(app_id, secret_code, method, path, params, body_payload):
-    # 1. 获取当前时间戳
-    timestamp = int(time.time())
-    
-    # 2. 计算signing_key
-    signing_key = hmac.new(
-        secret_code.encode('utf-8'),
-        str(timestamp).encode('utf-8'),
-        hashlib.sha256
-    ).digest()
-    
-    # 3. 准备string_to_sign
-    # 3.1 对参数排序
-    if params:
-        sorted_params = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
-    else:
-        sorted_params = ""
-        
-    # 3.2 计算请求体的sha256
-    # 将JSON对象转换为规范的字符串格式计算sha256
-    body_str = json.dumps(body_payload, separators=(',', ':'))
-    body_hash = hashlib.sha256(body_str.encode('utf-8')).hexdigest()
-    
-    # 3.3 组装string_to_sign
-    string_to_sign = f"{method}\n{path}\n{sorted_params}\n{body_hash}"
-    
-    # 4. 计算最终签名
-    signature = hmac.new(
-        signing_key,
-        string_to_sign.encode('utf-8'),
-        hashlib.sha256
-    ).hexdigest()
-    
-    return {
-        "x-ti-app-id": app_id,
-        "x-ti-timestamp": str(timestamp),
-        "x-ti-signature": signature
+ti_app_id = "4bcea6a1a8a7f8a01575e908dbea7a42"
+ti_secret_code = "21cb0a6e140500fd59128d16a36389be"
+epoch_time = int(time.time())
+http_method = "POST"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = {"workspace_id":"1871454238893576192","category":"采购订单"}
+
+payload = MultipartEncoder(
+    fields={
+        "file": ("sample.pdf", open("sample.pdf", "rb"), "application/pdf"),
     }
-
-# 使用示例
-app_id = "your_app_id"
-secret_code = "your_secret_code"
-
-# 请求参数
-method = "POST"
-path = "/api/app-api/sip/platform/v2/file/upload"
-params = {}
-
-# 请求体payload
-body_payload = {
-    "workspace_id": "workspace123",
-    "category": "invoice",
-    "batch_number": "202412190001",
-    "file_name": "invoice.pdf",
-    "file_data": "base64编码的文件内容"
-}
-
-# 计算签名
-headers = calculate_signature(
-    app_id=app_id,
-    secret_code=secret_code,
-    method=method,
-    path=path,
-    params=params,
-    body_payload=body_payload
 )
 
-print("生成的请求头：")
-print(headers)
+signing_key = hmac.new(ti_secret_code.encode('utf-8'), str(epoch_time).encode('utf-8'), hashlib.sha256).digest()
+
+payload_raw = payload.to_string()
+
+payload_hash = hashlib.sha256(payload_raw).hexdigest()
+
+string_to_sign = f"{http_method}\n{url}\n{'&'.join(f'{k}={v}' for k, v in sorted(params.items()))}\n{payload_hash}"
+
+signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+
+print(f"epoch_time: {epoch_time}")
+print(f"http_method: {http_method}")
+print(f"signing_key: {signing_key}")
+print(f"payload_hash: {payload_hash}")
+print(f"string_to_sign: {string_to_sign}")
+print(f"signature: {signature}")
+
+resp = requests.post(url=f"https://bill-test-zw.textin.com{url}", 
+                     params=params, 
+                     data=payload_raw, 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-timestamp": str(epoch_time),
+                              "x-ti-signature": signature,
+                              })
+
+print(resp.text)
 ```
 
 {% endcode %}
