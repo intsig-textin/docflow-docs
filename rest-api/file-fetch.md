@@ -4,6 +4,6 @@ icon: download
 
 # 获取文件处理结果
 
-{% swagger src="openapi.yaml" path="/api/app-api/sip/platform/v2/file/fetch" method="post" %}
+{% swagger src="openapi.yaml" path="/api/app-api/sip/platform/v2/file/fetch" method="get" %}
 [openapi.yaml](openapi.yaml)
 {% endswagger %}
