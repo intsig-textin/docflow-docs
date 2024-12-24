@@ -110,7 +110,7 @@ paths:
             'https://api.docflow.com/api/app-api/sip/platform/v2/file/upload?workspace_id=1234567890&category=invoice&batch_number=202412190001'
 
   /api/app-api/sip/platform/v2/file/fetch:
-    post:
+    get:
       summary: 获取文件处理结果列表
       description: 获取文件处理结果列表
       operationId: getFiles
@@ -293,7 +293,7 @@ paths:
         - lang: 'bash'
           label: cURL
           source: | 
-            curl -X POST \
+            curl \
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
             'https://api.docflow.com/api/app-api/sip/platform/v2/file/fetch?workspace_id=1234567890&batch_number=202412190001'
