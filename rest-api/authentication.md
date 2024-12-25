@@ -93,10 +93,10 @@ signature = lower(hex(HMAC_SHA256(signing_key, string_to_sign)))
 {% code title="auth.py" overflow="wrap" lineNumbers="true" %}
 
 ```python
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 import hashlib
 import hmac
 import time
-import json
 
 ti_app_id = "4bcea6a1a8a7f8a01575e908dbea7a42"
 ti_secret_code = "21cb0a6e140500fd59128d16a36389be"
