@@ -25,7 +25,7 @@ paths:
         - name: category
           in: query
           description: 文件分类
-          required: true
+          required: false
           schema:
             type: string
             example: invoice
