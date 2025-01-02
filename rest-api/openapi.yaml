@@ -238,6 +238,34 @@ paths:
                               type: string
                               description: 文件分类
                               example: invoice
+                            pages:
+                              type: array
+                              description: |
+                                文件每页用于渲染的数据。  
+                                配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+                              items:
+                                type: object
+                                properties:
+                                  angle:
+                                    type: integer
+                                    description: 旋转角度
+                                    enum:
+                                      - 0
+                                      - 90
+                                      - 180
+                                      - 270
+                                  width:
+                                    type: integer
+                                    description: 转正后的页宽
+                                    example: 1024
+                                  height:
+                                    type: integer
+                                    description: 转正后的页高
+                                    example: 1024
+                                  dpi:
+                                    type: integer
+                                    description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+                                    example: 144
                             data:
                               type: object
                               description: 处理结果
@@ -254,11 +282,25 @@ paths:
                                       value:
                                         type: string
                                         description: 字段值
+                                      page:
+                                        type: integer
+                                        description: 字段所在页。是`pages`数组的索引
+                                      position:
+                                        type: array
+                                        description: 字段值的坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                                        items:
+                                          type: integer
+                                        minItems: 8
+                                        maxItems: 8
                                   example:
                                   - key: 发票代码
                                     value: "3100231130"
+                                    page: 0
+                                    position: [0, 0, 100, 0, 100, 100, 0, 100]
                                   - key: 发票号码
                                     value: "28737000"
+                                    page: 0
+                                    position: [0, 0, 100, 0, 100, 100, 0, 100]
                                 items:
                                   description: 表格数据列表
                                   type: array
@@ -273,15 +315,33 @@ paths:
                                         value:
                                           type: string
                                           description: 字段值 
+                                        page:
+                                          type: integer
+                                          description: 字段所在页。是`pages`数组的索引
+                                        position:
+                                          type: array
+                                          description: 字段值的坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                                          items:
+                                            type: integer
+                                          minItems: 8
+                                          maxItems: 8
                                   example:
                                   - - key: 货物劳务名称
                                       value: ＊电子计算机＊微型计算机主机
+                                      page: 0
+                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
                                     - key: 规格型号
                                       value: DMS-SC68
+                                      page: 0
+                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
                                   - - key: 货物劳务名称
                                       value: ＊机械计算机＊巨型计算机主机
+                                      page: 0
+                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
                                     - key: 规格型号
                                       value: AN/FSQ-7
+                                      page: 0
+                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
                           required:
                             - id
                             - name
