@@ -274,74 +274,46 @@ paths:
                                   description: 字段列表
                                   type: array
                                   items:
-                                    type: object
-                                    properties:
-                                      key:
-                                        type: string
-                                        description: 字段名
-                                      value:
-                                        type: string
-                                        description: 字段值
-                                      page:
-                                        type: integer
-                                        description: 字段所在页。是`pages`数组的索引
-                                      position:
-                                        type: array
-                                        description: 字段值的坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
-                                        items:
-                                          type: integer
-                                        minItems: 8
-                                        maxItems: 8
+                                    $ref: '#/components/schemas/KeyValue'
                                   example:
                                   - key: 发票代码
                                     value: "3100231130"
-                                    page: 0
-                                    position: [0, 0, 100, 0, 100, 100, 0, 100]
+                                    position:
+                                      page: 0
+                                      vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                   - key: 发票号码
                                     value: "28737000"
-                                    page: 0
-                                    position: [0, 0, 100, 0, 100, 100, 0, 100]
+                                    position:
+                                      page: 0
+                                      vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                 items:
                                   description: 表格数据列表
                                   type: array
                                   items:
                                     type: array
                                     items:
-                                      type: object
-                                      properties:
-                                        key:
-                                          type: string
-                                          description: 字段名
-                                        value:
-                                          type: string
-                                          description: 字段值 
-                                        page:
-                                          type: integer
-                                          description: 字段所在页。是`pages`数组的索引
-                                        position:
-                                          type: array
-                                          description: 字段值的坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
-                                          items:
-                                            type: integer
-                                          minItems: 8
-                                          maxItems: 8
+                                      $ref: '#/components/schemas/KeyValue'
                                   example:
                                   - - key: 货物劳务名称
                                       value: ＊电子计算机＊微型计算机主机
-                                      page: 0
-                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      position:
+                                        page: 0
+                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                     - key: 规格型号
                                       value: DMS-SC68
-                                      page: 0
-                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      position:
+                                        page: 0
+                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                   - - key: 货物劳务名称
                                       value: ＊机械计算机＊巨型计算机主机
-                                      page: 0
-                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      position:
+                                        page: 0
+                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                     - key: 规格型号
                                       value: AN/FSQ-7
-                                      page: 0
-                                      position: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      position:
+                                        page: 0
+                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                           required:
                             - id
                             - name
@@ -380,6 +352,31 @@ components:
       type: integer
       description: 状态码
       example: 200
+    KeyValue:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段名
+        value:
+          type: string
+          description: 字段值
+        position:
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+          type: array
+          items:
+            type: object
+            properties:
+              page:
+                type: integer
+                description: 字段所在页。是`pages`数组的索引
+              vertices:
+                type: array
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                items:
+                  type: integer
+                minItems: 8
+                maxItems: 8
 
   securitySchemes:
     ApiId: # arbitrary name for the security scheme
