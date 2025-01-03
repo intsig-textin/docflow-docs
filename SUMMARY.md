@@ -8,5 +8,6 @@
 * [接口认证](rest-api/authentication.md)
 * [文件上传](rest-api/file-upload.md)
 * [获取文件处理结果](rest-api/file-fetch.md)
+* [更新文件处理结果](rest-api/file-update.md)
 * [接口状态码](rest-api/status-code.md)
 
