@@ -359,12 +359,44 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/KeyValue'
+                        example:
+                        - key: 发票代码
+                          value: "3100231130"
+                          position:
+                            page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - key: 发票号码
+                          value: "28737000"
+                          position:
+                            page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                       items:
                         type: array
                         items:
                           type: array
                           items:
                             $ref: '#/components/schemas/KeyValue'
+                        example:
+                        - - key: 货物劳务名称
+                            value: ＊电子计算机＊微型计算机主机
+                            position:
+                              page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                          - key: 规格型号
+                            value: DMS-SC68
+                            position:
+                              page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - - key: 货物劳务名称
+                            value: ＊机械计算机＊巨型计算机主机
+                            position:
+                              page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                          - key: 规格型号
+                            value: AN/FSQ-7
+                            position:
+                              page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                 required:
                 - workspace_id
                 - file_id
