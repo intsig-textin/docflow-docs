@@ -2,9 +2,9 @@ openapi: 3.0.0
 info:
   title: DocFlow API
   description: DocFlow REST API，提供文件上传和获取文件处理结果能力
-  servers:
-    - url: https://docflow.textin.com
   version: 2.0.0
+servers:
+  - url: https://docflow.textin.com
 
 x-codeSamples: custom
 
@@ -77,8 +77,8 @@ paths:
                           properties:
                             id:
                               type: string
-                            description: 文件ID
-                            example: 202412190001
+                              description: 文件ID
+                              example: 202412190001
                             name:
                               type: string
                               description: 文件名
@@ -279,12 +279,12 @@ paths:
                                   - key: 发票代码
                                     value: "3100231130"
                                     position:
-                                      page: 0
+                                    - page: 0
                                       vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                   - key: 发票号码
                                     value: "28737000"
                                     position:
-                                      page: 0
+                                    - page: 0
                                       vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                 items:
                                   description: 表格数据列表
@@ -297,22 +297,22 @@ paths:
                                   - - key: 货物劳务名称
                                       value: ＊电子计算机＊微型计算机主机
                                       position:
-                                        page: 0
+                                      - page: 0
                                         vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                     - key: 规格型号
                                       value: DMS-SC68
                                       position:
-                                        page: 0
+                                      - page: 0
                                         vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                   - - key: 货物劳务名称
                                       value: ＊机械计算机＊巨型计算机主机
                                       position:
-                                        page: 0
+                                      - page: 0
                                         vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                                     - key: 规格型号
                                       value: AN/FSQ-7
                                       position:
-                                        page: 0
+                                      - page: 0
                                         vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                           required:
                             - id
@@ -363,12 +363,12 @@ paths:
                         - key: 发票代码
                           value: "3100231130"
                           position:
-                            page: 0
+                          - page: 0
                             vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                         - key: 发票号码
                           value: "28737000"
                           position:
-                            page: 0
+                          - page: 0
                             vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                       items:
                         type: array
@@ -380,22 +380,22 @@ paths:
                         - - key: 货物劳务名称
                             value: ＊电子计算机＊微型计算机主机
                             position:
-                              page: 0
+                            - page: 0
                               vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                           - key: 规格型号
                             value: DMS-SC68
                             position:
-                              page: 0
+                            - page: 0
                               vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                         - - key: 货物劳务名称
                             value: ＊机械计算机＊巨型计算机主机
                             position:
-                              page: 0
+                            - page: 0
                               vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                           - key: 规格型号
                             value: AN/FSQ-7
                             position:
-                              page: 0
+                            - page: 0
                               vertices: [0, 0, 100, 0, 100, 100, 0, 100]
                 required:
                 - workspace_id
