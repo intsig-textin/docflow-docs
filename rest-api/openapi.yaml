@@ -334,39 +334,81 @@ paths:
       summary: 更新文件处理结果
       description: 更新文件处理结果
       operationId: updateFile
-      parameters:
-      - name: workspace_id
-        in: query
-        description: 空间ID
-        required: true
-        schema:
-          type: string
-          example: 1234567890
-      - name: file_id
-        in: query
-        description: 文件ID
-        required: true
-        schema:
-          type: string
-          example: 202412190001
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              description: 全量更新字段。
-              properties:
-                fields:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/KeyValue'
-                items:
-                  type: array
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/KeyValue'
+              type: array
+              items:
+                type: object
+                properties:
+                  workspace_id:
+                    type: string
+                    description: 空间ID
+                    example: 1234567890
+                  file_id:
+                    type: string
+                    description: 文件ID
+                    example: 202412190001
+                  data:
+                    description: 全量更新字段。
+                    type: object
+                    properties:
+                      fields:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/KeyValue'
+                      items:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/KeyValue'
+                required:
+                - workspace_id
+                - file_id
+                - data
+      responses:
+        '200':
+          description: 成功更新文件处理结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    $ref: '#/components/schemas/Code'
+                  msg:
+                    type: string
+                    description: 请求状态描述
+                    example: 成功
+                  result:
+                    type: object
+                    properties:
+                      files:
+                        description: 更新后的文件列表
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            workspace_id:
+                              type: string
+                              description: 空间ID
+                              example: 1234567890
+                            id:
+                              type: string
+                              description: 文件ID
+                              example: 202412190001
+      x-codeSamples:
+        - lang: 'bash'
+          label: cURL
+          source: | 
+            curl -X POST \
+            -H 'x-ti-app-id: 1234567890' \
+            -H 'x-ti-secret-code: 1234567890' \
+            -d '[{"workspace_id": "1234567890", "file_id": "202412190001", "data": {"fields": [{"key": "发票代码", "value": "3100231130"}]}}]' \
+            'https://docflow.textin.com/api/app-api/sip/platform/v2/file/update'
 
 components:
   schemas: 
