@@ -329,6 +329,44 @@ paths:
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
             'https://docflow.textin.com/api/app-api/sip/platform/v2/file/fetch?workspace_id=1234567890&batch_number=202412190001'
+  /api/app-api/sip/platform/v2/file/update:
+    post:
+      summary: 更新文件处理结果
+      description: 更新文件处理结果
+      operationId: updateFile
+      parameters:
+      - name: workspace_id
+        in: query
+        description: 空间ID
+        required: true
+        schema:
+          type: string
+          example: 1234567890
+      - name: file_id
+        in: query
+        description: 文件ID
+        required: true
+        schema:
+          type: string
+          example: 202412190001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: 全量更新字段。
+              properties:
+                fields:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/KeyValue'
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KeyValue'
 
 components:
   schemas: 
