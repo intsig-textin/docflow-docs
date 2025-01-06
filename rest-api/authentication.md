@@ -93,6 +93,7 @@ signature = lower(hex(HMAC_SHA256(signing_key, string_to_sign)))
 {% code title="auth.py" overflow="wrap" lineNumbers="true" %}
 
 ```python
+import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import hashlib
 import hmac
