@@ -332,7 +332,7 @@ paths:
   /api/app-api/sip/platform/v2/file/update:
     post:
       summary: 更新文件处理结果
-      description: 更新文件处理结果
+      description: 更新文件处理结果。通常用于人工审核校对后，上传修改后的key-value，覆盖自动识别的结果。
       operationId: updateFile
       requestBody:
         required: true
