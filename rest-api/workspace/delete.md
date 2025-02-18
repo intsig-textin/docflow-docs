@@ -1,5 +1,5 @@
 ---
-icon: delete
+icon: trash-can
 ---
 
 # 删除工作空间

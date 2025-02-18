@@ -1,5 +1,5 @@
 ---
-icon: create
+icon: circle-plus
 ---
 
 # 创建工作空间

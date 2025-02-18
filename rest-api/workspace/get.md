@@ -1,5 +1,5 @@
 ---
-icon: get
+icon: crosshairs-simple
 ---
 
 # 获取工作空间
