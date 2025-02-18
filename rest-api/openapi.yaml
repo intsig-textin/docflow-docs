@@ -219,6 +219,10 @@ paths:
                               type: string
                               description: 文件ID
                               example: 202412190001
+                            task_id:
+                              type: string
+                              description: 任务ID
+                              example: 202412190001
                             batch_number:
                               type: string
                               description: 批次编号
