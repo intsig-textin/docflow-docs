@@ -9,5 +9,13 @@
 * [文件上传](rest-api/file-upload.md)
 * [获取文件处理结果](rest-api/file-fetch.md)
 * [更新文件处理结果](rest-api/file-update.md)
+
+* [工作空间](rest-api/workspace/workspace.md)
+  * [创建工作空间](rest-api/workspace/create.md)
+  * [获取工作空间](rest-api/workspace/get.md)
+  * [获取工作空间列表](rest-api/workspace/list.md)
+  * [更新工作空间](rest-api/workspace/update.md)
+  * [删除工作空间](rest-api/workspace/delete.md)
+
 * [接口状态码](rest-api/status-code.md)
 
