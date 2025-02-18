@@ -493,7 +493,7 @@ paths:
                       id:
                         type: string
                         description: 空间ID
-                        example: 1234567890
+                        example: "1234567890"
   /api/app-api/sip/platform/v2/workspace/list:
     get:
       summary: 获取工作空间列表
@@ -553,7 +553,7 @@ paths:
                             id:
                               type: string
                               description: 空间ID
-                              example: 1234567890
+                              example: "1234567890"
                             name:
                               type: string
                               description: 工作空间名称
@@ -606,7 +606,7 @@ paths:
                 id:
                   type: string
                   description: 空间ID
-                  example: 1234567890
+                  example: "1234567890"
                 name:
                   type: string
                   description: 工作空间名称
@@ -663,7 +663,7 @@ paths:
                       id:
                         type: string
                         description: 空间ID
-                        example: 1234567890
+                        example: "1234567890"
                       name:
                         type: string
                         description: 工作空间名称
