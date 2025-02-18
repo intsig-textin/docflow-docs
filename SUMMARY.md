@@ -9,7 +9,7 @@
 * [文件上传](rest-api/file-upload.md)
 * [获取文件处理结果](rest-api/file-fetch.md)
 * [更新文件处理结果](rest-api/file-update.md)
-* [工作空间](jie-kou-diao-yong/gong-zuo-kong-jian/README.md)
+* [工作空间](rest-api/workspace/readme.md)
   * [创建工作空间](rest-api/workspace/create.md)
   * [获取工作空间](rest-api/workspace/get.md)
   * [获取工作空间列表](rest-api/workspace/list.md)
