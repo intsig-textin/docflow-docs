@@ -7,3 +7,4 @@ icon: circle-plus
 {% swagger src="openapi.yaml" path="/api/app-api/sip/platform/v2/workspace/create" method="post" %}
 [openapi.yaml](openapi.yaml)
 {% endswagger %}
+
