@@ -55,49 +55,41 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
-                    example: 成功
-                  result:
-                    type: object
-                    properties:
-                      batch_number:
-                        type: string
-                        description: 批次编号
-                        example: 202412190001
-                      files:
-                        type: array   
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              description: 文件ID
-                              example: 202412190001
-                            name:
-                              type: string
-                              description: 文件名
-                              example: invoice.pdf
-                            format:
-                              type: string
-                              description: 文件格式
-                              example: pdf
-                          required:
-                          - id
-                          - name
-                          - format
-                    required:
-                    - batch_number
-                    - files
-                required:
-                - code
-                - msg
-                - result
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        batch_number:
+                          type: string
+                          description: 批次编号
+                          example: 202412190001
+                        files:
+                          type: array   
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: 文件ID
+                                example: 202412190001
+                              name:
+                                type: string
+                                description: 文件名
+                                example: invoice.pdf
+                              format:
+                                type: string
+                                description: 文件格式
+                                example: pdf
+                            required:
+                            - id
+                            - name
+                            - format
+                      required:
+                      - batch_number
+                      - files
       x-codeSamples:
         - lang: 'bash'
           label: cURL
@@ -187,144 +179,140 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code: 
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
-                    example: 成功
-                  result:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                        description: 文件总数
-                        example: 100
-                      page:
-                        type: integer
-                        description: 当前页码
-                        example: 1
-                      page_size:
-                        type: integer
-                        description: 每页数量 
-                        example: 20
-                      files:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              description: 文件ID
-                              example: 202412190001
-                            task_id:
-                              type: string
-                              description: 任务ID
-                              example: 202412190001
-                            batch_number:
-                              type: string
-                              description: 批次编号
-                              example: 202412190001
-                            name:
-                              type: string
-                              description: 文件名
-                              example: invoice.pdf
-                            format:
-                              type: string
-                              description: 文件格式
-                            recognition_status: 
-                              $ref: '#/components/schemas/RecognitionStatus'
-                            verification_status:
-                              $ref: '#/components/schemas/VerificationStatus'
-                            category:
-                              type: string
-                              description: 文件分类
-                              example: invoice
-                            pages:
-                              type: array
-                              description: |
-                                文件每页用于渲染的数据。  
-                                配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
-                              items:
-                                type: object
-                                properties:
-                                  angle:
-                                    type: integer
-                                    description: 旋转角度
-                                    enum:
-                                      - 0
-                                      - 90
-                                      - 180
-                                      - 270
-                                  width:
-                                    type: integer
-                                    description: 转正后的页宽
-                                    example: 1024
-                                  height:
-                                    type: integer
-                                    description: 转正后的页高
-                                    example: 1024
-                                  dpi:
-                                    type: integer
-                                    description: PDF转图片时的分辨率。非PDF文件该值为`0`.
-                                    example: 144
-                            data:
-                              type: object
-                              description: 处理结果
-                              properties:
-                                fields:
-                                  description: 字段列表
-                                  type: array
-                                  items:
-                                    $ref: '#/components/schemas/KeyValue'
-                                  example:
-                                  - key: 发票代码
-                                    value: "3100231130"
-                                    position:
-                                    - page: 0
-                                      vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                  - key: 发票号码
-                                    value: "28737000"
-                                    position:
-                                    - page: 0
-                                      vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 文件总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量 
+                          example: 20
+                        files:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: 文件ID
+                                example: 202412190001
+                              task_id:
+                                type: string
+                                description: 任务ID
+                                example: 202412190001
+                              batch_number:
+                                type: string
+                                description: 批次编号
+                                example: 202412190001
+                              name:
+                                type: string
+                                description: 文件名
+                                example: invoice.pdf
+                              format:
+                                type: string
+                                description: 文件格式
+                              recognition_status: 
+                                $ref: '#/components/schemas/RecognitionStatus'
+                              verification_status:
+                                $ref: '#/components/schemas/VerificationStatus'
+                              category:
+                                type: string
+                                description: 文件分类
+                                example: invoice
+                              pages:
+                                type: array
+                                description: |
+                                  文件每页用于渲染的数据。  
+                                  配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
                                 items:
-                                  description: 表格数据列表
-                                  type: array
-                                  items:
+                                  type: object
+                                  properties:
+                                    angle:
+                                      type: integer
+                                      description: 旋转角度
+                                      enum:
+                                        - 0
+                                        - 90
+                                        - 180
+                                        - 270
+                                    width:
+                                      type: integer
+                                      description: 转正后的页宽
+                                      example: 1024
+                                    height:
+                                      type: integer
+                                      description: 转正后的页高
+                                      example: 1024
+                                    dpi:
+                                      type: integer
+                                      description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+                                      example: 144
+                              data:
+                                type: object
+                                description: 处理结果
+                                properties:
+                                  fields:
+                                    description: 字段列表
                                     type: array
                                     items:
                                       $ref: '#/components/schemas/KeyValue'
-                                  example:
-                                  - - key: 货物劳务名称
-                                      value: ＊电子计算机＊微型计算机主机
+                                    example:
+                                    - key: 发票代码
+                                      value: "3100231130"
                                       position:
                                       - page: 0
                                         vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                    - key: 规格型号
-                                      value: DMS-SC68
+                                    - key: 发票号码
+                                      value: "28737000"
                                       position:
                                       - page: 0
                                         vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                  - - key: 货物劳务名称
-                                      value: ＊机械计算机＊巨型计算机主机
-                                      position:
-                                      - page: 0
-                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                    - key: 规格型号
-                                      value: AN/FSQ-7
-                                      position:
-                                      - page: 0
-                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                          required:
-                            - id
-                            - name
-                            - format
-                            - recognition_status
-                            - verification_status
-                            - category
+                                  items:
+                                    description: 表格数据列表
+                                    type: array
+                                    items:
+                                      type: array
+                                      items:
+                                        $ref: '#/components/schemas/KeyValue'
+                                    example:
+                                    - - key: 货物劳务名称
+                                        value: ＊电子计算机＊微型计算机主机
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      - key: 规格型号
+                                        value: DMS-SC68
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                    - - key: 货物劳务名称
+                                        value: ＊机械计算机＊巨型计算机主机
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      - key: 规格型号
+                                        value: AN/FSQ-7
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                            required:
+                              - id
+                              - name
+                              - format
+                              - recognition_status
+                              - verification_status
+                              - category
       x-codeSamples:
         - lang: 'bash'
           label: cURL
@@ -417,31 +405,27 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
-                    example: 成功
-                  result:
-                    type: object
-                    properties:
-                      files:
-                        description: 更新后的文件列表
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            workspace_id:
-                              type: string
-                              description: 空间ID
-                              example: 1234567890
-                            id:
-                              type: string
-                              description: 文件ID
-                              example: 202412190001
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        files:
+                          description: 更新后的文件列表
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              workspace_id:
+                                type: string
+                                description: 空间ID
+                                example: 1234567890
+                              id:
+                                type: string
+                                description: 文件ID
+                                example: 202412190001
       x-codeSamples:
         - lang: 'bash'
           label: cURL
@@ -479,21 +463,17 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
-                    example: 成功
-                  result:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: 空间ID
-                        example: "1234567890"
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: 空间ID
+                          example: "1234567890"
   /api/app-api/sip/platform/v2/workspace/list:
     get:
       summary: 获取工作空间列表
@@ -522,46 +502,42 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
-                    example: 成功
-                  result:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                        description: 工作空间总数
-                        example: 100
-                      page:
-                        type: integer
-                        description: 当前页码
-                        example: 1
-                      page_size:
-                        type: integer
-                        description: 每页数量
-                        example: 20
-                      workspaces:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              description: 空间ID
-                              example: "1234567890"
-                            name:
-                              type: string
-                              description: 工作空间名称
-                              example: 我的工作空间
-                            description:
-                              type: string
-                              description: 工作空间描述
-                              example: 我的工作空间描述
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 工作空间总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        workspaces:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: 空间ID
+                                example: "1234567890"
+                              name:
+                                type: string
+                                description: 工作空间名称
+                                example: 我的工作空间
+                              description:
+                                type: string
+                                description: 工作空间描述
+                                example: 我的工作空间描述
   /api/app-api/sip/platform/v2/workspace/delete:
     put:
       summary: 删除工作空间
@@ -582,13 +558,8 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
   /api/app-api/sip/platform/v2/workspace/update:
     post:
       summary: 更新工作空间
@@ -623,13 +594,8 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
   /api/app-api/sip/platform/v2/workspace/get:
     get:
       summary: 获取工作空间
@@ -650,28 +616,25 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    $ref: '#/components/schemas/Code'
-                  msg:
-                    type: string
-                    description: 请求状态描述
-                  result:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: 空间ID
-                        example: "1234567890"
-                      name:
-                        type: string
-                        description: 工作空间名称
-                        example: 我的工作空间
-                      description:
-                        type: string
-                        description: 工作空间描述
-                        example: 我的工作空间描述
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: 空间ID
+                          example: "1234567890"
+                        name:
+                          type: string
+                          description: 工作空间名称
+                          example: 我的工作空间
+                        description:
+                          type: string
+                          description: 工作空间描述
+                          example: 我的工作空间描述
 components:
   schemas: 
     RecognitionStatus:
@@ -690,10 +653,19 @@ components:
         - 3
         - 4
         - 5
-    Code:
-      type: integer
-      description: 状态码
-      example: 200
+    CodeMessage:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        message:
+          type: string
+          description: 状态描述
+      required:
+      - code
+      - message
     KeyValue:
       type: object
       properties:
