@@ -24,7 +24,7 @@ paths:
             example: 1234567890
         - name: category
           in: query
-          description: 文件分类
+          description: 文件类别
           required: false
           schema:
             type: string
@@ -141,7 +141,7 @@ paths:
             type: string
         - name: category
           in: query
-          description: 文件分类
+          description: 文件类别
           required: false
           schema:
             type: string
@@ -228,7 +228,7 @@ paths:
                                 $ref: '#/components/schemas/VerificationStatus'
                               category:
                                 type: string
-                                description: 文件分类
+                                description: 文件类别
                                 example: invoice
                               pages:
                                 type: array
@@ -471,9 +471,7 @@ paths:
                       type: object
                       properties:
                         id:
-                          type: string
-                          description: 空间ID
-                          example: "1234567890"
+                          $ref: '#/components/schemas/WorkspaceId'
   /api/app-api/sip/platform/v2/workspace/list:
     get:
       summary: 获取工作空间列表
@@ -524,22 +522,9 @@ paths:
                         workspaces:
                           type: array
                           items:
-                            type: object
-                            properties:
-                              id:
-                                type: string
-                                description: 空间ID
-                                example: "1234567890"
-                              name:
-                                type: string
-                                description: 工作空间名称
-                                example: 我的工作空间
-                              description:
-                                type: string
-                                description: 工作空间描述
-                                example: 我的工作空间描述
+                            $ref: '#/components/schemas/WorkspaceItem'
   /api/app-api/sip/platform/v2/workspace/delete:
-    put:
+    delete:
       summary: 删除工作空间
       description: 删除工作空间
       operationId: deleteWorkspace
@@ -551,7 +536,7 @@ paths:
           description: 空间ID
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/WorkspaceId'
       responses:
         '200':
           description: 成功删除工作空间
@@ -572,22 +557,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: 空间ID
-                  example: "1234567890"
-                name:
-                  type: string
-                  description: 工作空间名称
-                  example: 我的工作空间
-                description:
-                  type: string
-                  description: 工作空间描述
-                  example: 我的工作空间描述
-              required:
-                - id
+              $ref: '#/components/schemas/WorkspaceItem'
       responses:
         '200':
           description: 成功更新工作空间
@@ -609,10 +579,48 @@ paths:
           description: 空间ID
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/WorkspaceId'
       responses:
         '200':
           description: 成功获取工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '#/components/schemas/WorkspaceItem'
+  /api/app-api/sip/platform/v2/category/create:
+    post:
+      summary: 创建文件类别
+      description: 创建文件类别
+      operationId: createCategory
+      tags:
+        - category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  $ref: '#/components/schemas/WorkspaceId'
+                name:
+                  type: string
+                  description: 文件类别名称
+                  example: 发票
+                description:
+                  type: string
+                  description: 文件类别描述
+                  example: 发票分类描述
+              required:
+                - name
+      responses:
+        '200':
+          description: 成功创建文件类别
           content:
             application/json:
               schema:
@@ -625,16 +633,374 @@ paths:
                       properties:
                         id:
                           type: string
-                          description: 空间ID
+                          description: 文件类别ID
                           example: "1234567890"
-                        name:
-                          type: string
-                          description: 工作空间名称
-                          example: 我的工作空间
-                        description:
-                          type: string
-                          description: 工作空间描述
-                          example: 我的工作空间描述
+  /api/app-api/sip/platform/v2/category/list:
+    get:
+      summary: 获取文件类别列表
+      description: 获取文件类别列表
+      operationId: listCategories
+      tags:
+        - category
+      parameters:
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+      responses:
+        '200':
+          description: 成功获取文件类别列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 文件类别总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        categories:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/CategoryListItem'
+  /api/app-api/sip/platform/v2/category/get:
+    get:
+      summary: 获取文件类别
+      description: 获取文件类别
+      operationId: getCategory
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      responses:
+        '200':
+          description: 成功获取文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '#/components/schemas/CategoryItem'
+  /api/app-api/sip/platform/v2/category/update:
+    post:
+      summary: 更新文件类别
+      description: 更新文件类别
+      operationId: updateCategory
+      tags:
+        - category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+              - type: object
+                properties:
+                  workspace_id:
+                    $ref: '#/components/schemas/WorkspaceId'
+              - $ref: '#/components/schemas/CategoryItem'
+      responses:
+        '200':
+          description: 成功更新文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/delete:
+    delete:
+      summary: 删除文件类别
+      description: 删除文件类别
+      operationId: deleteCategory
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      responses:
+        '200':
+          description: 成功删除文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/upload:
+    post:
+      summary: 上传文件类别样本
+      description: 上传文件类别样本
+      operationId: uploadCategorySample
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 成功上传文件类别样本
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          id:
+                            $ref: '#/components/schemas/CategorySampleId'
+  /api/app-api/sip/platform/v2/category/sample/list:
+    get:
+      summary: 获取文件类别样本列表
+      description: 获取文件类别样本列表
+      operationId: listCategorySamples
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+      responses:
+        '200':
+          description: 成功获取文件类别样本列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: 样本总数
+                            example: 100
+                          page:
+                            type: integer
+                            description: 当前页码
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: 每页数量
+                            example: 20
+                          samples:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategorySampleListItem'
+  /api/app-api/sip/platform/v2/category/sample/delete:
+    delete:
+      summary: 删除文件类别样本
+      description: 删除文件类别样本
+      operationId: deleteCategorySample
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功删除文件类别样本
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/download:
+    get:
+      summary: 获取文件类别样本
+      description: 获取文件类别样本
+      operationId: getCategorySample
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功获取文件类别样本
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+  /api/app-api/sip/platform/v2/category/sample/get_fields:
+    get:
+      summary: 获取文件类别样本字段
+      description: 获取文件类别样本字段
+      operationId: getCategorySampleFields
+      tags:
+        - category
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功获取文件类别样本字段
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          fields:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
 components:
   schemas: 
     RecognitionStatus:
@@ -691,7 +1057,88 @@ components:
                   type: integer
                 minItems: 8
                 maxItems: 8
-
+    WorkspaceId:
+      type: string
+      description: 空间ID
+      example: "1234567890"
+    WorkspaceItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+          description: 工作空间名称
+          example: 我的工作空间
+        description:
+          type: string
+          description: 工作空间描述
+          example: 我的工作空间描述
+    CategoryId:
+      type: string
+      description: 文件类别ID
+      example: "1234567890"
+    CategoryField:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段名
+          example: 发票代码
+        description:
+          type: string
+          description: 字段描述
+          example: 发票代码描述
+    CategoryListItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/CategoryId'
+        name:
+          type: string
+          description: 文件类别名称
+          example: 发票
+        description:
+          type: string
+          description: 文件类别描述
+          example: 发票分类描述
+        enabled:
+          type: boolean
+          description: 是否启用
+          example: true
+      required:
+      - id
+    CategoryItem:
+      allOf:
+      - $ref: '#/components/schemas/CategoryListItem'
+      - type: object
+        properties:
+          fields:
+            type: array
+            items:
+              $ref: '#/components/schemas/CategoryField'
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/CategoryField'
+    CategorySampleId:
+      type: string
+      description: 样本ID
+      example: "1234567890"
+    CategorySampleListItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/CategorySampleId'
+        name:
+          type: string
+          description: 样本文件名
+          example: 样本.pdf
+        format:
+          type: string
+          description: 样本文件格式
+          example: pdf
+          
   securitySchemes:
     ApiId: # arbitrary name for the security scheme
       type: apiKey
