@@ -663,6 +663,18 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/WorkspaceId'
+        - name: enabled
+          in: query
+          description: "启用状态 0: 禁用 1: 启用 2: 草稿"
+          required: false
+          schema:
+            type: string
+            default: "1"
+            enum:
+              - "all"
+              - "1"
+              - "0"
+              - "2"
       responses:
         '200':
           description: 成功获取文件类别列表
@@ -1103,9 +1115,13 @@ components:
           description: 文件类别描述
           example: 发票分类描述
         enabled:
-          type: boolean
-          description: 是否启用
-          example: true
+          type: integer
+          description: "启用状态 0: 禁用 1: 启用 2: 草稿"
+          example: 1
+          enum:
+            - 0
+            - 1
+            - 2
       required:
       - id
     CategoryItem:
