@@ -173,6 +173,13 @@ paths:
             type: string
             format: date-time
             example: 2024-01-01T10:00:00Z
+        - name: with_document
+          in: query
+          description: 是否返回文档的全部文字识别结果
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: 成功获取文件列表
@@ -306,6 +313,8 @@ paths:
                                         position:
                                         - page: 0
                                           vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                              document:
+                                $ref: '#/components/schemas/Document'
                             required:
                               - id
                               - name
@@ -1069,6 +1078,47 @@ components:
                   type: integer
                 minItems: 8
                 maxItems: 8
+    Document:
+      type: object
+      properties:
+        pages:
+          type: array
+          items:
+            type: object
+            properties:
+              angle:
+                type: integer
+                description: 页面的旋转角度
+              width:
+                type: integer
+                description: 页面的宽度
+              height:
+                type: integer
+                description: 页面的高度
+              lines:
+                description: 页面的文本行数组
+                type: array
+                items:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: 行文本
+                    position:
+                      type: array
+                      items:
+                        type: integer
+                        minItems: 8
+                        maxItems: 8
+                    char_positions:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: integer
+                          minItems: 8
+                          maxItems: 8
+                      
     WorkspaceId:
       type: string
       description: 空间ID
