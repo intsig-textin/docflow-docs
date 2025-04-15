@@ -318,7 +318,7 @@ paths:
                                     type: array
                                     properties:
                                       table_name:
-                                        description: 字段列表
+                                        description: 表格名称
                                         type: string
                                         example: table1
                                       table_type:
@@ -354,7 +354,7 @@ paths:
                                     description: 印章信息
                                     type: array
                                     items:
-                                      $ref: '#/components/schemas/KeyValue'
+                                      $ref: '#/components/schemas/StampValue'
                                     example:
                                       - angel: 0
                                         page: 0
@@ -378,7 +378,7 @@ paths:
                                     description: 手写体信息
                                     type: array
                                     items:
-                                      $ref: '#/components/schemas/KeyValue'
+                                      $ref: '#/components/schemas/HandWritingValue'
                                     example:
                                       - angel: 0
                                         page: 0
@@ -1161,6 +1161,71 @@ components:
         value:
           type: string
           description: 字段值
+        position:
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+          type: array
+          items:
+            type: object
+            properties:
+              page:
+                type: integer
+                description: 字段所在页。是`pages`数组的索引
+              vertices:
+                type: array
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                items:
+                  type: integer
+                minItems: 8
+                maxItems: 8
+    StampValue:
+      type: object
+      properties:
+        angel:
+          type: integer
+          description: 角度
+        page:
+          type: integer
+          description: 页码
+        text:
+          type: string
+          description: 印章文本内容
+        type:
+          type: string
+          description: 印章类型
+        color:
+          type: string
+          description: 印章颜色
+        shape:
+          type: string
+          description: 印章形状
+        position:
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+          type: array
+          items:
+            type: object
+            properties:
+              page:
+                type: integer
+                description: 字段所在页。是`pages`数组的索引
+              vertices:
+                type: array
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                items:
+                  type: integer
+                minItems: 8
+                maxItems: 8
+    HandWritingValue:
+      type: object
+      properties:
+        angel:
+          type: integer
+          description: 角度
+        page:
+          type: integer
+          description: 页码
+        text:
+          type: string
+          description: 印章文本内容
         position:
           description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
           type: array
