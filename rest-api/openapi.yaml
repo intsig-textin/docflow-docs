@@ -316,40 +316,42 @@ paths:
                                   tables:
                                     description: 全部表格数据列表（含系统表格和手动配置表格）
                                     type: array
-                                    properties:
-                                      table_name:
-                                        description: 表格名称
-                                        type: string
-                                        example: table1
-                                      table_type:
-                                        description: 表格类型， 0， 系统配置， 1 手动添加。
-                                        type: string
-                                        example: 0
-                                      items:
-                                        type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        table_name:
+                                          description: 表格名称
+                                          type: string
+                                          example: table1
+                                        table_type:
+                                          description: 表格类型， 0， 系统配置， 1 手动添加。
+                                          type: string
+                                          example: 0
                                         items:
-                                          $ref: '#/components/schemas/KeyValue'
-                                        example:
-                                          - - key: 货物劳务名称
-                                              value: ＊电子计算机＊微型计算机主机
-                                              position:
-                                                - page: 0
-                                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                            - key: 规格型号
-                                              value: DMS-SC68
-                                              position:
-                                                - page: 0
-                                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                          - - key: 货物劳务名称
-                                              value: ＊机械计算机＊巨型计算机主机
-                                              position:
-                                                - page: 0
-                                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                            - key: 规格型号
-                                              value: AN/FSQ-7
-                                              position:
-                                                - page: 0
-                                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                          type: array
+                                          items:
+                                            $ref: '#/components/schemas/KeyValue'
+                                          example:
+                                            - - key: 货物劳务名称
+                                                value: ＊电子计算机＊微型计算机主机
+                                                position:
+                                                  - page: 0
+                                                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                              - key: 规格型号
+                                                value: DMS-SC68
+                                                position:
+                                                  - page: 0
+                                                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                            - - key: 货物劳务名称
+                                                value: ＊机械计算机＊巨型计算机主机
+                                                position:
+                                                  - page: 0
+                                                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                              - key: 规格型号
+                                                value: AN/FSQ-7
+                                                position:
+                                                  - page: 0
+                                                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
                                   stamps:
                                     description: 印章信息
                                     type: array
