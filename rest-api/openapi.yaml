@@ -1123,6 +1123,287 @@ paths:
                             type: array
                             items:
                               $ref: '#/components/schemas/CategoryField'
+  /api/app-api/sip/platform/v2/review/update:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 更新审核规则
+      description: 更新审核规则，调用接口前需要调用一些前置接口。
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList
+        作用：获取分类下的字段信息
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+      
+        前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo
+        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）、fieldInfoList（当前规则配置的字段信息列表）、reviewRuleIdNo（审核规则id）
+      operationId: updateReviewRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewUpdateReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiRuleReviewUpdateRespVO'
+  /api/app-api/sip/platform/v2/review/submitReviewTask:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 提交审核任务
+      description: 提交审核任务，请求参数需从前置接口获取
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo
+        作用：获取任务id
+        关键返回结果字段：executeTaskId（任务id）
+      operationId: submitReviewTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewTaskSubmitReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewTaskSubmitRespVO'
+  /api/app-api/sip/platform/v2/review/runRule:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 试运行审核规则
+      description: 试运行审核规则，请求参数需从前置接口获取。
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo
+        作用：获取任务id
+        关键返回结果字段：executeTaskId（任务id）
+      operationId: runRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewRuleRunReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiReviewRuleTaskVO'
+  /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 根据分类ID返回任务信息列表，请求参数需从前置接口获取。
+        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+        关键返回结果字段：fileBatchNo
+      operationId: listTaskDetailInfoByClassificationIdNo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClassificationQueryReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleBindingTaskDetailRespVO'
+  /api/app-api/sip/platform/v2/review/listReviewRuleAndTask:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 返回审核规则和任务列表
+      description: 返回审核规则和任务列表，请求参数需从前置接口获取。
+        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+        关键返回结果字段：fileBatchNo
+        
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
+        作用：获取批次下的所有分类id
+        关键返回结果字段：taskClassificationIdNo（分类id）
+      operationId: listReviewRuleAndTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewRuleAndTaskReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleAndTaskRespVO'
+  /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 获取分类下的模型字段信息
+      description: 获取分类下的模型字段信息，请求参数需从前置接口获取。
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
+        作用：用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类
+        关键返回结果字段：taskClassificationIdNo（分类id）
+        
+        前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo
+        作用：用于修改规则时的前置接口，获取规则的分类id信息
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）
+      operationId: listModelFieldInfoByClassificationIdNoList
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClassificationIdNoListReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiModelFieldRespVO'
+  /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)
+      description: 根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)，请求参数需从前置接口获取
+        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+        关键返回结果字段：fileBatchNo
+      operationId: getRulesByClassificationIdNo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClassificationQueryReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleVO'
+  /api/app-api/sip/platform/v2/review/delete:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 删除审核规则
+      operationId: deleteReviewRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewDeleteReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultBoolean'
+  /api/app-api/sip/platform/v2/review/create:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 创建审核规则
+      description: 创建审核规则，调用接口前需要调用一些前置接口。
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
+        作用：获取批次下的所有分类id
+        关键返回结果字段：taskClassificationIdNo（分类id）
+        
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList
+        作用：获取分类下的字段信息
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+                        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+      operationId: createReviewRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewCreateReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiRuleReviewCreateRespVO'
+  /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo:
+    get:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 返回审核任务列表信息
+      description: 返回审核任务列表信息，请求参数需从前置接口获取。
+        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+        关键返回结果字段：fileBatchNo
+      operationId: listExecuteTasksByFileBatchNo
+      parameters:
+        - name: workspaceIdNo
+          in: query
+          required: true
+          schema:
+            type: integer
+            description: 工作空间ID
+            example: 123
+        - name: fileBatchNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 文件批次号
+            example: abcd
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiFileBatchExecuteTaskRespVO'
+  /api/app-api/sip/platform/v2/review/listByFileBatchNo:
+    get:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 返回审核批次列表信息
+      description: 返回审核批次列表信息，请求参数workspaceIdNo从页面获取
+      operationId: listByFileBatchNo
+      parameters:
+        - name: workspaceIdNo
+          in: query
+          required: true
+          schema:
+            type: integer
+            description: 工作空间唯一编号
+            example: 123456
+        - name: fileBatchNo
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 文件批次号
+            example: abcd
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiFileBatchInfoRespVO'
 components:
   schemas: 
     RecognitionStatus:
@@ -1370,7 +1651,986 @@ components:
           type: string
           description: 样本文件格式
           example: pdf
-          
+    ApiRuleReviewUpdateReqVO:
+      required:
+        - ruleIdNo
+        - ruleName
+        - rulePrompt
+      type: object
+      properties:
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
+          example: 12345
+        ruleName:
+          maxLength: 255
+          minLength: 0
+          type: string
+          description: 审核规则名称
+          example: 规则名称
+        rulePrompt:
+          maxLength: 1000
+          minLength: 0
+          type: string
+          description: 审核规则提示
+          example: 规则提示
+        fields:
+          type: array
+          description: 关联字段信息
+          items:
+            $ref: '#/components/schemas/Field'
+      description: 更新规则请求入参
+    CommonResultApiRuleReviewUpdateRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          $ref: '#/components/schemas/ApiRuleReviewUpdateRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 12345ABC
+    Field:
+      type: object
+      description: 字段信息
+      properties:
+        classificationIdNo:
+          type: integer
+          description: 分类id
+          example: 1234
+        classificationName:
+          type: string
+          description: 分类名称
+          example: 身份证
+        basicFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasicField'
+        tableFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableField'
+    BasicField:
+      type: object
+      properties:
+        fieldId:
+          type: integer
+          description: 字段id
+          example: 1234
+        fieldName:
+          type: string
+          description: 字段名称
+          example: 卡号
+    TableField:
+      type: object
+      properties:
+        tableId:
+          type: integer
+          description: 表格id
+          example: -1
+        tableName:
+          type: string
+          description: 表格名称
+          example: Table1
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasicField'
+    ApiRuleReviewUpdateRespVO:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: 版本号
+          example: 1
+      description: 更新规则的返回结果VO
+    ApiReviewTaskSubmitReqVO:
+      required:
+        - executeTaskIdList
+        - ruleIdNoList
+      type: object
+      properties:
+        ruleIdNoList:
+          type: array
+          description: 审核规则唯一ID列表
+          items:
+            type: integer
+            description: 审核规则唯一ID，含义同reviewRuleIdNo
+            example: 123
+        executeTaskIdList:
+          type: array
+          description: 任务ID列表
+          items:
+            type: integer
+            description: 任务ID列表
+            example: 123
+      description: 提交审核任务 Request VO
+    CommonResultListApiReviewTaskSubmitRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewTaskSubmitRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234ABCD
+    ApiReviewTaskSubmitRespVO:
+      type: object
+      properties:
+        reviewTaskId:
+          type: integer
+          description: 审核结果任务ID
+          example: 123
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
+          example: 123
+      description: 任务提交审核结果VO
+    ApiReviewRuleRunReqVO:
+      required:
+        - executeTaskIdList
+        - ruleIdNo
+      type: object
+      properties:
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
+          example: 123
+        executeTaskIdList:
+          type: array
+          description: 任务ID列表
+          items:
+            type: integer
+            description: 任务ID列表
+            example: 123
+      description: 审核API - 单次运行审核规则 Request VO
+    CommonResultApiReviewRuleTaskVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          $ref: '#/components/schemas/ApiReviewRuleTaskVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234ABCD
+    ApiReviewRuleTaskVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID（此处无意义）
+          example: 1234
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 1234
+        reviewRuleVersion:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        processStatus:
+          type: integer
+          description: 任务状态 (0:待审核 1:审核成功 2:审核失败 3:审核中)
+          example: 0
+        thinkOutput:
+          type: string
+          description: 思考输出
+          example: 思考输出内容
+        evalOutput:
+          type: string
+          description: 评估输出
+          example: 评估输出内容
+        bindingTaskIds:
+          type: array
+          description: 绑定任务ID列表
+          items:
+            type: integer
+            description: 绑定任务ID列表
+            example: 123
+        resultHighlights:
+          type: array
+          description: 结果高亮信息
+          items:
+            $ref: '#/components/schemas/DocumentOcrPosition'
+        evalResult:
+          type: boolean
+          description: '评估结果 True: 通过 False: 不通过'
+          example: true
+        duration:
+          type: integer
+          description: 任务耗时（单位：毫秒）
+          example: 12345
+        eval:
+          type: boolean
+          description: '是否为测试运行 True: 是 False: 否'
+          example: true
+        manualAuditStatus:
+          type: integer
+          description: '评估结果人工确认 0: 未确认 1: 已确认'
+          example: 0
+        manualAuditMessage:
+          type: string
+          description: 人工批注
+          example: 批注内容
+      description: 审核任务VO
+    DocumentOcrPosition:
+      type: object
+      properties:
+        fileId:
+          type: integer
+          description: 文件ID
+          example: 12345
+        taskId:
+          type: integer
+          description: 任务ID
+          example: 1234
+        text:
+          type: string
+          description: 文本
+          example: 文本内容
+        position:
+          type: array
+          description: 位置信息
+          items:
+            type: integer
+            description: 位置信息
+            example: 1
+        page:
+          type: integer
+          description: 页码
+          example: 0
+        angel:
+          type: integer
+          description: 旋转角度
+          example: 0
+        startPos:
+          type: integer
+          description: 起始位置
+          example: 0
+        endPos:
+          type: integer
+          description: 结束位置
+          example: 100
+    ApiClassificationQueryReqVO:
+      required:
+        - fileBatchNo
+        - workspaceIdNo
+      type: object
+      properties:
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 123
+        workspaceIdNo:
+          type: integer
+          description: 工作空间ID
+          example: 123
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+      description: 根据分类ID返回任务队列信息列表-请求VO
+    CommonResultListApiReviewRuleBindingTaskDetailRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewRuleBindingTaskDetailRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiReviewRuleBindingTaskDetailRespVO:
+      type: object
+      properties:
+        executeTaskId:
+          type: integer
+          description: 任务ID
+          example: 1234
+      description: 审核规则绑定任务id详情响应VO
+    ApiReviewRuleAndTaskReqVO:
+      required:
+        - fileBatchNo
+        - workspaceIdNo
+      type: object
+      properties:
+        workspaceIdNo:
+          type: integer
+          description: 工作空间ID
+          example: 1234
+        fileBatchNo:
+          type: string
+          description: 文件批次ID
+          example: abcd
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 1234
+      description: 返回审核规则和任务列表 Request VO
+    CommonResultListApiReviewRuleAndTaskRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewRuleAndTaskRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiReviewRuleAndTaskRespVO:
+      type: object
+      properties:
+        reviewRule:
+          $ref: '#/components/schemas/ReviewRuleDTO'
+        latestReviewRuleTask:
+          $ref: '#/components/schemas/ReviewRuleTaskDO'
+      description: 规则和任务信息
+    ReviewRuleDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID
+          example: 1
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 123
+        reviewRuleType:
+          type: string
+          description: 审核规则类型
+          example: single
+        reviewRulePrompt:
+          type: string
+          description: 审核规则提示
+          example: 审核规则提示内容
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        reviewRuleName:
+          type: string
+          description: 审核规则名称
+          example: 审核规则名称
+        workspaceIdNo:
+          type: integer
+          description: 工作空间唯一编号
+          example: 123456
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 1234
+        version:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        fieldInfoList:
+          type: array
+          description: 字段信息平铺列表
+          items:
+            $ref: '#/components/schemas/ReviewRuleFieldDTO'
+      description: 规则审核DTO
+    ReviewRuleFieldDTO:
+      type: object
+      properties:
+        fieldId:
+          type: integer
+          description: 字段ID
+          example: 1234
+        fieldName:
+          type: string
+          description: 字段名称
+          example: 名称
+        blockType:
+          type: integer
+          description: 字段类型 0:基本字段 1:表格字段
+          example: 0
+        tableId:
+          type: integer
+          description: 表格ID
+          example: -1
+        tableName:
+          type: string
+          description: 表格名称
+          example: Table1
+        classificationIdNo:
+          type: integer
+          description: 分类id
+          example: 123
+        classificationName:
+          type: string
+          description: 分类名称
+          example: 身份证
+      description: 审核规则字段信息DTO
+    ReviewRuleTaskDO:
+      type: object
+      properties:
+        gmtCreate:
+          type: string
+        gmtModified:
+          type: string
+        creatorId:
+          type: integer
+          description: 创建人用户id
+          example: 1
+        operatorId:
+          type: integer
+          description: 操作人用户id
+          example: 1
+        deleted:
+          type: integer
+          description: 是否删除，0-未删除，1-已删除
+          example: 0
+        id:
+          type: integer
+          description: 审核规则任务唯一id
+          example: 1
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 1
+        reviewRuleVersion:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        processStatus:
+          type: integer
+          description: 审核任务状态（0:待审核、1:审核成功、2:审核失败、3:审核中）
+          example: 1
+        thinkOutput:
+          type: string
+          description: 思考输出
+          example: 思考输出内容
+        evalOutput:
+          type: string
+          description: 评估输出
+          example: 评估输出内容
+        bindingTaskIds:
+          type: array
+          description: 绑定任务ID列表
+          items:
+            type: integer
+            description: 绑定任务ID
+            example: 1234
+        resultHighlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentOcrPosition'
+        evalResult:
+          type: boolean
+          description: 评估结果（true：通过、false：不通过）
+          example: true
+        duration:
+          type: integer
+          description: 任务耗时
+          example: 100
+        eval:
+          type: boolean
+          description: 是否为测试运行
+          example: false
+        manualAuditStatus:
+          type: integer
+          description: 评估结果人工确认
+          example: 0:未确认、1:已确认
+        manualAuditMessage:
+          type: string
+          description: 人工批注
+          example: 人工批注内容
+    ApiClassificationIdNoListReqVO:
+      required:
+        - classificationIdNoList
+      type: object
+      properties:
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          example:
+            - 1
+            - 2
+            - 3
+          items:
+            type: integer
+            description: 分类ID
+            example: 1
+      description: 分类ID列表请求VO
+    CommonResultListApiModelFieldRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiModelFieldRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiModelFieldRespVO:
+      required:
+        - description
+        - fieldName
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID，此字段含义同fieldId
+          example: 29026
+        fieldName:
+          type: string
+          description: 字段名称
+          example: 赵六
+        description:
+          type: string
+          description: 字段描述
+          example: 赵六
+        fieldPrompt:
+          type: string
+          description: 字段提示
+          example: 赵六
+        modelIdNo:
+          type: string
+          description: 所属模型IdNo
+          example: '1024'
+        fieldCode:
+          type: string
+          description: 字段code
+          example: '1024'
+        sysFieldId:
+          type: string
+          description: 关联系统字段ID
+          example: '1024'
+        fieldType:
+          type: string
+          description: 字段类型
+          example: '1024'
+        fieldFormat:
+          type: string
+          description: 字段格式化格式
+          example: '1024'
+        blockType:
+          type: integer
+          description: 字段模块 0:基本字段 1:表格字段
+          example: 1024
+        tableIdNo:
+          type: integer
+          description: 表格ID
+          example: 1024
+        tableId:
+          type: integer
+          description: 表格ID，含义同tableIdNo
+          example: 1024
+        tableName:
+          type: string
+          description: 表格名称
+          example: Table Name
+        requiredStatus:
+          type: integer
+          description: 是否必填状态 0:选填字段 1:必填字段
+          example: 1024
+        sort:
+          type: integer
+          description: 排序
+          example: 1
+        textInLines:
+          type: array
+          description: 字段坐标
+          items:
+            $ref: '#/components/schemas/TextInLines'
+        enableStatus:
+          type: integer
+          description: '是否启用 0：禁用  1；启用  2: 草稿'
+          example: 1
+        enableFlag:
+          type: string
+          description: 是否开启, Y:是, N:否
+          example: Y
+        classificationIdNo:
+          type: integer
+          description: 分类ID
+          example: 123
+      description: 模型基础字段表格信息 Response VO
+    TextInLines:
+      type: object
+      properties:
+        angle:
+          type: string
+          description: 角度
+          example: 0
+        pos:
+          type: array
+          description: 坐标
+          items:
+            type: integer
+            description: 坐标
+            example: 1
+        page:
+          type: integer
+          description: 页码
+          example: 1
+        text:
+          type: string
+          description: 文本
+          example: 文本内容
+        char_pos:
+          type: array
+          description: 字符坐标
+          items:
+            type: array
+            description: 字符坐标
+            items:
+              type: integer
+              description: 字符坐标
+              example: 1
+      description: 字段坐标
+    CommonResultListApiReviewRuleVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewRuleVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiReviewRuleVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID
+          example: 1
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 1
+        reviewRuleType:
+          type: string
+          description: 审核规则类型 (single | multiple)
+          example: single
+        reviewRulePrompt:
+          type: string
+          description: 审核规则提示
+          example: 审核规则提示内容
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        reviewRuleName:
+          type: string
+          description: 审核规则名称
+          example: abcd
+        workspaceIdNo:
+          type: integer
+          description: 工作空间唯一编号
+          example: 1234
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 1234
+        version:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        fieldInfoList:
+          type: array
+          description: 字段信息平铺列表
+          items:
+            $ref: '#/components/schemas/ReviewRuleFieldDTO'
+      description: 规则审核VO
+    ApiRuleReviewDeleteReqVO:
+      required:
+        - ruleIdNo
+      type: object
+      properties:
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一id，含义同reviewRuleIdNo
+          example: 123
+      description: 删除审核规则请求参数
+    CommonResultBoolean:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: boolean
+          description: 是否成功（true：成功、false：失败）
+          example: true
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiRuleReviewCreateReqVO:
+      required:
+        - classificationIdNoList
+        - fileBatchNo
+        - ruleName
+        - rulePrompt
+        - workspaceIdNo
+      type: object
+      properties:
+        ruleName:
+          maxLength: 255
+          minLength: 0
+          type: string
+          description: 审核规则名称
+          example: 审核规则123
+        rulePrompt:
+          maxLength: 1000
+          minLength: 0
+          type: string
+          description: 审核规则提示
+          example: 审核规则提示内容
+        classificationIdNoList:
+          maxItems: 2147483647
+          minItems: 1
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 123
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        workspaceIdNo:
+          type: integer
+          description: 工作空间ID
+          example: 123
+        fields:
+          type: array
+          description: 关联的字段信息
+          items:
+            $ref: '#/components/schemas/Field'
+      description: 创建规则ReqVO
+    CommonResultApiRuleReviewCreateRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          $ref: '#/components/schemas/ApiRuleReviewCreateRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiRuleReviewCreateRespVO:
+      type: object
+      properties:
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一id，含义同reviewRuleIdNo
+          example: 1234
+      description: 创建规则返回结果VO
+    CommonResultListApiFileBatchExecuteTaskRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiFileBatchExecuteTaskRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 200
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiFileBatchExecuteTaskRespVO:
+      type: object
+      properties:
+        taskId:
+          type: integer
+          description: 任务ID
+          example: 123456
+        fileId:
+          type: integer
+          description: 文件ID
+          example: 123456
+        fileName:
+          type: string
+          description: 文件名称
+          example: 文件名称1
+        taskStatus:
+          type: integer
+          description: 任务状态 0待识别 1识别成功 2识别失败 3分类中 4抽取中 5准备中 6拆套中
+          example: 1
+        taskClassificationIdNo:
+          type: integer
+          description: 任务分类ID
+          example: 123456
+        taskClassificationName:
+          type: string
+          description: 任务分类名称
+          example: 身份证
+      description: 批次下审核任务列表结果字段
+    CommonResultListApiFileBatchInfoRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiFileBatchInfoRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiFileBatchInfoRespVO:
+      type: object
+      properties:
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        uploadDate:
+          type: string
+          description: 上传日期
+        updateTime:
+          type: string
+          description: 修改时间
+        recognitionStatus:
+          type: integer
+          description: '识别状态，0: 识别中/1: 识别完成/2: 识别失败，识别失败表示存在部分任务识别失败'
+          example: 1
+        recognitionSuccessCount:
+          type: integer
+          description: 识别成功数量
+          example: 10
+        recognitionFailCount:
+          type: integer
+          description: 识别失败数量
+          example: 2
+        taskCount:
+          type: integer
+          description: 任务数量
+          example: 3
+        reviewRuleCount:
+          type: integer
+          description: 包含规则数
+          example: 4
+        fileProcessStatus:
+          type: integer
+          description: 文件任务处理状态（0:无、1:通过、2:不通过、3:审核中、4:待审核）
+          example: 1
+        classificationVOList:
+          type: array
+          description: 分类信息
+          items:
+            $ref: '#/components/schemas/ClassificationVO'
+        hasReviewRuleRepo:
+          type: boolean
+          description: 是否有可用规则库（true：有、false：没有）
+          example: true
+      description: 根据批次展示审核列表返回结果
+    ClassificationVO:
+      type: object
+      properties:
+        classificationIdNo:
+          type: integer
+          description: 分类id
+          example: 1234
+        classificationName:
+          type: string
+          description: 分类名称
+          example: 身份证
   securitySchemes:
     ApiId: # arbitrary name for the security scheme
       type: apiKey
