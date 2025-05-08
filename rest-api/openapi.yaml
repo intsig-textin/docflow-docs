@@ -1128,14 +1128,23 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 更新审核规则
-      description: 更新审核规则，调用接口前需要调用一些前置接口。
-        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList
-        作用：获取分类下的字段信息
+      description: >-
+        更新审核规则，调用接口前需要调用一些前置接口。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
         关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
         tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
-      
-        前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo
-        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则 
+
         关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）、fieldInfoList（当前规则配置的字段信息列表）、reviewRuleIdNo（审核规则id）
       operationId: updateReviewRule
       requestBody:
@@ -1156,9 +1165,15 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 提交审核任务
-      description: 提交审核任务，请求参数需从前置接口获取
-        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo
-        作用：获取任务id
+      description: >-
+        提交审核任务，部分请求参数需从前置接口获取。
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
         关键返回结果字段：executeTaskId（任务id）
       operationId: submitReviewTask
       requestBody:
@@ -1179,9 +1194,15 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 试运行审核规则
-      description: 试运行审核规则，请求参数需从前置接口获取。
-        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo
-        作用：获取任务id
+      description: >-
+        试运行审核规则，部分请求参数需从前置接口获取。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
         关键返回结果字段：executeTaskId（任务id）
       operationId: runRule
       requestBody:
@@ -1201,9 +1222,12 @@ paths:
     post:
       tags:
         - DocFlow-平台化接口 审核部分
-      summary: 根据分类ID返回任务信息列表，请求参数需从前置接口获取。
-        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
-        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+      summary: 根据分类ID返回任务信息列表
+      description: |-
+        根据分类ID返回任务信息列表，请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
         关键返回结果字段：fileBatchNo
       operationId: listTaskDetailInfoByClassificationIdNo
       requestBody:
@@ -1224,13 +1248,22 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 返回审核规则和任务列表
-      description: 返回审核规则和任务列表，请求参数需从前置接口获取。
-        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
-        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+      description: >-
+        返回审核规则和任务列表，请求参数需从前置接口获取。 
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+
         关键返回结果字段：fileBatchNo
-        
-        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
-        作用：获取批次下的所有分类id
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
         关键返回结果字段：taskClassificationIdNo（分类id）
       operationId: listReviewRuleAndTask
       requestBody:
@@ -1251,13 +1284,22 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 获取分类下的模型字段信息
-      description: 获取分类下的模型字段信息，请求参数需从前置接口获取。
-        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
-        作用：用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类
+      description: >-
+        获取分类下的模型字段信息，请求参数需从前置接口获取。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类 
+
         关键返回结果字段：taskClassificationIdNo（分类id）
-        
-        前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo
-        作用：用于修改规则时的前置接口，获取规则的分类id信息
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：用于修改规则时的前置接口，获取规则的分类id信息 
+
         关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）
       operationId: listModelFieldInfoByClassificationIdNoList
       requestBody:
@@ -1278,9 +1320,11 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)
-      description: 根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)，请求参数需从前置接口获取
-        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
-        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+      description: |-
+        根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)，部分请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
         关键返回结果字段：fileBatchNo
       operationId: getRulesByClassificationIdNo
       requestBody:
@@ -1320,15 +1364,25 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 创建审核规则
-      description: 创建审核规则，调用接口前需要调用一些前置接口。
-        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
-        作用：获取批次下的所有分类id
+      description: >-
+        创建审核规则，调用接口前需要调用一些前置接口。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
         关键返回结果字段：taskClassificationIdNo（分类id）
-        
-        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList
-        作用：获取分类下的字段信息
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
         关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
-                        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
       operationId: createReviewRule
       requestBody:
         content:
@@ -1348,9 +1402,11 @@ paths:
       tags:
         - DocFlow-平台化接口 审核部分
       summary: 返回审核任务列表信息
-      description: 返回审核任务列表信息，请求参数需从前置接口获取。
-        前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo
-        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取
+      description: |-
+        返回审核任务列表信息，请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
         关键返回结果字段：fileBatchNo
       operationId: listExecuteTasksByFileBatchNo
       parameters:
