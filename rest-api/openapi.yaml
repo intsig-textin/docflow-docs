@@ -1123,35 +1123,86 @@ paths:
                             type: array
                             items:
                               $ref: '#/components/schemas/CategoryField'
-  /api/app-api/sip/platform/v2/review/update:
+  /api/app-api/sip/platform/v2/review/listByFileBatchNo:
+    get:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 审核批次列表信息
+      description: 审核批次列表信息，请求参数workspaceIdNo从页面获取
+      operationId: listByFileBatchNo
+      parameters:
+        - name: workspaceIdNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 工作空间唯一编号
+            example: 123456
+        - name: fileBatchNo
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 文件批次号
+            example: abcd
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiFileBatchInfoRespVO'
+  /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo:
+    get:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 文件任务类别列表信息
+      description: |-
+        文件任务类别列表信息，请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
+      operationId: listExecuteTasksByFileBatchNo
+      parameters:
+        - name: workspaceIdNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 工作空间ID
+            example: 123
+        - name: fileBatchNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 文件批次号
+            example: abcd
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiFileBatchExecuteTaskRespVO'
+  /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo:
     post:
       tags:
         - DocFlow-平台化接口 审核部分
-      summary: 更新审核规则
-      description: >-
-        更新审核规则，调用接口前需要调用一些前置接口。 
+      summary: 审核规则列表
+      description: |-
+        审核规则列表(一般不传分类获取批次下所有规则)，部分请求参数需从前置接口获取。 
 
-
-        >
-        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
-
-        作用：获取分类下的字段信息 
-
-        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
-        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
-
-
-        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
-
-        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则 
-
-        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）、fieldInfoList（当前规则配置的字段信息列表）、reviewRuleIdNo（审核规则id）
-      operationId: updateReviewRule
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
+      operationId: getRulesByClassificationIdNo
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApiRuleReviewUpdateReqVO'
+              $ref: '#/components/schemas/ApiClassificationQueryReqVO'
         required: true
       responses:
         '200':
@@ -1159,72 +1210,14 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/CommonResultApiRuleReviewUpdateRespVO'
-  /api/app-api/sip/platform/v2/review/submitReviewTask:
-    post:
-      tags:
-        - DocFlow-平台化接口 审核部分
-      summary: 提交审核任务
-      description: >-
-        提交审核任务，部分请求参数需从前置接口获取。
-
-
-        >
-        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
-
-        作用：获取任务id 
-
-        关键返回结果字段：executeTaskId（任务id）
-      operationId: submitReviewTask
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiReviewTaskSubmitReqVO'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/CommonResultListApiReviewTaskSubmitRespVO'
-  /api/app-api/sip/platform/v2/review/runRule:
-    post:
-      tags:
-        - DocFlow-平台化接口 审核部分
-      summary: 试运行审核规则
-      description: >-
-        试运行审核规则，部分请求参数需从前置接口获取。 
-
-
-        >
-        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
-
-        作用：获取任务id 
-
-        关键返回结果字段：executeTaskId（任务id）
-      operationId: runRule
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiReviewRuleRunReqVO'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/CommonResultApiReviewRuleTaskVO'
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleVO'
   /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo:
     post:
       tags:
         - DocFlow-平台化接口 审核部分
-      summary: 根据分类ID返回任务信息列表
+      summary: 文件任务信息列表
       description: |-
-        根据分类ID返回任务信息列表，请求参数需从前置接口获取。 
+        文件任务信息列表，请求参数需从前置接口获取。 
 
         > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
         作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
@@ -1243,49 +1236,13 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CommonResultListApiReviewRuleBindingTaskDetailRespVO'
-  /api/app-api/sip/platform/v2/review/listReviewRuleAndTask:
-    post:
-      tags:
-        - DocFlow-平台化接口 审核部分
-      summary: 返回审核规则和任务列表
-      description: >-
-        返回审核规则和任务列表，请求参数需从前置接口获取。 
-
-
-        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
-
-        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
-
-        关键返回结果字段：fileBatchNo
-
-
-        >
-        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
-
-        作用：获取批次下的所有分类id 
-
-        关键返回结果字段：taskClassificationIdNo（分类id）
-      operationId: listReviewRuleAndTask
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiReviewRuleAndTaskReqVO'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/CommonResultListApiReviewRuleAndTaskRespVO'
   /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList:
     post:
       tags:
         - DocFlow-平台化接口 审核部分
-      summary: 获取分类下的模型字段信息
+      summary: 模型字段列表
       description: >-
-        获取分类下的模型字段信息，请求参数需从前置接口获取。 
+        模型字段列表，请求参数需从前置接口获取。 
 
 
         >
@@ -1315,50 +1272,6 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CommonResultListApiModelFieldRespVO'
-  /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo:
-    post:
-      tags:
-        - DocFlow-平台化接口 审核部分
-      summary: 根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)
-      description: |-
-        根据分类ID返回审核规则列表(一般不传分类获取批次下所有规则)，部分请求参数需从前置接口获取。 
-
-        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
-        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
-        关键返回结果字段：fileBatchNo
-      operationId: getRulesByClassificationIdNo
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiClassificationQueryReqVO'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/CommonResultListApiReviewRuleVO'
-  /api/app-api/sip/platform/v2/review/delete:
-    post:
-      tags:
-        - DocFlow-平台化接口 审核部分
-      summary: 删除审核规则
-      operationId: deleteReviewRule
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ApiRuleReviewDeleteReqVO'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/CommonResultBoolean'
   /api/app-api/sip/platform/v2/review/create:
     post:
       tags:
@@ -1397,69 +1310,156 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CommonResultApiRuleReviewCreateRespVO'
-  /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo:
-    get:
+  /api/app-api/sip/platform/v2/review/update:
+    post:
       tags:
         - DocFlow-平台化接口 审核部分
-      summary: 返回审核任务列表信息
-      description: |-
-        返回审核任务列表信息，请求参数需从前置接口获取。 
+      summary: 更新审核规则
+      description: >-
+        更新审核规则，调用接口前需要调用一些前置接口。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则 
+
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）、fieldInfoList（当前规则配置的字段信息列表）、reviewRuleIdNo（审核规则id）
+      operationId: updateReviewRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewUpdateReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiRuleReviewUpdateRespVO'
+  /api/app-api/sip/platform/v2/review/delete:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 删除审核规则
+      operationId: deleteReviewRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewDeleteReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultBoolean'
+  /api/app-api/sip/platform/v2/review/runRule:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 试运行审核规则
+      description: >-
+        试运行审核规则，部分请求参数需从前置接口获取。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
+        关键返回结果字段：executeTaskId（任务id）
+      operationId: runRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewRuleRunReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiReviewRuleTaskVO'
+  /api/app-api/sip/platform/v2/review/submitReviewTask:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 提交审核任务
+      description: >-
+        提交审核任务，部分请求参数需从前置接口获取。
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
+        关键返回结果字段：executeTaskId（任务id）
+      operationId: submitReviewTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewTaskSubmitReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewTaskSubmitRespVO'
+  /api/app-api/sip/platform/v2/review/listReviewRuleAndTask:
+    post:
+      tags:
+        - DocFlow-平台化接口 审核部分
+      summary: 审核规则和审核任务列表
+      description: >-
+        审核规则和审核任务列表，请求参数需从前置接口获取。 
+
 
         > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+
         作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+
         关键返回结果字段：fileBatchNo
-      operationId: listExecuteTasksByFileBatchNo
-      parameters:
-        - name: workspaceIdNo
-          in: query
-          required: true
-          schema:
-            type: integer
-            description: 工作空间ID
-            example: 123
-        - name: fileBatchNo
-          in: query
-          required: true
-          schema:
-            type: string
-            description: 文件批次号
-            example: abcd
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
+      operationId: listReviewRuleAndTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewRuleAndTaskReqVO'
+        required: true
       responses:
         '200':
           description: OK
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/CommonResultListApiFileBatchExecuteTaskRespVO'
-  /api/app-api/sip/platform/v2/review/listByFileBatchNo:
-    get:
-      tags:
-        - DocFlow-平台化接口 审核部分
-      summary: 返回审核批次列表信息
-      description: 返回审核批次列表信息，请求参数workspaceIdNo从页面获取
-      operationId: listByFileBatchNo
-      parameters:
-        - name: workspaceIdNo
-          in: query
-          required: true
-          schema:
-            type: integer
-            description: 工作空间唯一编号
-            example: 123456
-        - name: fileBatchNo
-          in: query
-          required: false
-          schema:
-            type: string
-            description: 文件批次号
-            example: abcd
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/CommonResultListApiFileBatchInfoRespVO'
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleAndTaskRespVO'
 components:
   schemas: 
     RecognitionStatus:
@@ -1715,7 +1715,7 @@ components:
       type: object
       properties:
         ruleIdNo:
-          type: integer
+          type: string
           description: 审核规则唯一ID，含义同reviewRuleIdNo
           example: 12345
         ruleName:
@@ -1758,7 +1758,7 @@ components:
       description: 字段信息
       properties:
         classificationIdNo:
-          type: integer
+          type: string
           description: 分类id
           example: 1234
         classificationName:
@@ -1824,7 +1824,7 @@ components:
           type: array
           description: 任务ID列表
           items:
-            type: integer
+            type: string
             description: 任务ID列表
             example: 123
       description: 提交审核任务 Request VO
@@ -1866,14 +1866,14 @@ components:
       type: object
       properties:
         ruleIdNo:
-          type: integer
+          type: string
           description: 审核规则唯一ID，含义同reviewRuleIdNo
           example: 123
         executeTaskIdList:
           type: array
           description: 任务ID列表
           items:
-            type: integer
+            type: string
             description: 任务ID列表
             example: 123
       description: 审核API - 单次运行审核规则 Request VO
@@ -2002,11 +2002,11 @@ components:
           type: array
           description: 分类ID列表
           items:
-            type: integer
+            type: string
             description: 分类ID
             example: 123
         workspaceIdNo:
-          type: integer
+          type: string
           description: 工作空间ID
           example: 123
         fileBatchNo:
@@ -2048,7 +2048,7 @@ components:
       type: object
       properties:
         workspaceIdNo:
-          type: integer
+          type: string
           description: 工作空间ID
           example: 1234
         fileBatchNo:
@@ -2059,7 +2059,7 @@ components:
           type: array
           description: 分类ID列表
           items:
-            type: integer
+            type: string
             description: 分类ID
             example: 1234
       description: 返回审核规则和任务列表 Request VO
@@ -2257,7 +2257,7 @@ components:
             - 2
             - 3
           items:
-            type: integer
+            type: string
             description: 分类ID
             example: 1
       description: 分类ID列表请求VO
@@ -2471,7 +2471,7 @@ components:
       type: object
       properties:
         ruleIdNo:
-          type: integer
+          type: string
           description: 审核规则唯一id，含义同reviewRuleIdNo
           example: 123
       description: 删除审核规则请求参数
@@ -2521,7 +2521,7 @@ components:
           type: array
           description: 分类ID列表
           items:
-            type: integer
+            type: string
             description: 分类ID
             example: 123
         fileBatchNo:
@@ -2529,7 +2529,7 @@ components:
           description: 文件批次号
           example: abcd
         workspaceIdNo:
-          type: integer
+          type: string
           description: 工作空间ID
           example: 123
         fields:
@@ -2609,7 +2609,7 @@ components:
           type: string
           description: 任务分类名称
           example: 身份证
-      description: 批次下审核任务列表结果字段
+      description: 文件任务类别列表信息结果字段
     CommonResultListApiFileBatchInfoRespVO:
       type: object
       properties:
