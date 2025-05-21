@@ -2031,6 +2031,13 @@ components:
                   example: 超过当天次数上限
         document:
           $ref: '#/components/schemas/Document'
+        fromParentPositionList:
+          type: array
+          description: 位置信息
+          items:
+            type: integer
+            description: 位置信息
+            example: 1
     WorkspaceId:
       type: string
       description: 空间ID
