@@ -1657,7 +1657,7 @@ components:
   schemas: 
     RecognitionStatus:
       type: integer
-      description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败"
+      description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败 3: 分类中 4:抽取中 5:准备中 6:拆套中 7:切图中"
       enum:
       - 0
       - 1
