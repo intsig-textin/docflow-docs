@@ -2033,7 +2033,7 @@ components:
           $ref: '#/components/schemas/Document'
         from_parent_position_list:
           type: array
-          description: 位置信息
+          description: 切图结果在原文件中的坐标位置
           items:
             type: integer
             description: 位置信息
