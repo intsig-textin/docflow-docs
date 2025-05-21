@@ -46,6 +46,20 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: split_flag
+          in: query
+          description: 是否进行文件拆分
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: crop_flag
+          in: query
+          description: 是否进行多图切分
+          required: false
+          schema:
+            type: boolean
+            default: false
       requestBody:
         required: true
         content:
@@ -225,6 +239,10 @@ paths:
                                 type: string
                                 description: 任务ID
                                 example: 202412190001
+                              task_type:
+                                type: integer
+                                description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+                                example: 1
                               batch_number:
                                 type: string
                                 description: 批次编号
@@ -423,6 +441,11 @@ paths:
                                         example: 超过当天次数上限
                               document:
                                 $ref: '#/components/schemas/Document'
+                              child_files:
+                                description: 子任务信息
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/SubFileDetailInfo'
                             required:
                               - id
                               - name
@@ -1791,7 +1814,223 @@ components:
                           type: integer
                           minItems: 8
                           maxItems: 8
-                      
+    SubFileDetailInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 文件ID
+          example: 202412190001
+        task_id:
+          type: string
+          description: 任务ID
+          example: 202412190001
+        task_type:
+          type: integer
+          description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+          example: 1
+        parent_task_id:
+          type: string
+          description: 父任务ID（不为0时有意义）
+          example: 202412190001
+        batch_number:
+          type: string
+          description: 批次编号
+          example: 202412190001
+        name:
+          type: string
+          description: 文件名
+          example: invoice.pdf
+        format:
+          type: string
+          description: 文件格式
+        recognition_status:
+          $ref: '#/components/schemas/RecognitionStatus'
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatus'
+        category:
+          type: string
+          description: 文件类别
+          example: invoice
+        pages:
+          type: array
+          description: |
+            文件每页用于渲染的数据。  
+            配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+          items:
+            type: object
+            properties:
+              angle:
+                type: integer
+                description: 旋转角度
+                enum:
+                  - 0
+                  - 90
+                  - 180
+                  - 270
+              width:
+                type: integer
+                description: 转正后的页宽
+                example: 1024
+              height:
+                type: integer
+                description: 转正后的页高
+                example: 1024
+              dpi:
+                type: integer
+                description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+                example: 144
+        data:
+          type: object
+          description: 处理结果
+          properties:
+            fields:
+              description: 字段列表
+              type: array
+              items:
+                $ref: '#/components/schemas/KeyValue'
+              example:
+                - key: 发票代码
+                  value: "3100231130"
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - key: 发票号码
+                  value: "28737000"
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            items:
+              description: 表格数据列表
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KeyValue'
+              example:
+                - - key: 货物劳务名称
+                    value: ＊电子计算机＊微型计算机主机
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  - key: 规格型号
+                    value: DMS-SC68
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - - key: 货物劳务名称
+                    value: ＊机械计算机＊巨型计算机主机
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  - key: 规格型号
+                    value: AN/FSQ-7
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            tables:
+              description: 全部表格数据列表（含系统表格和手动配置表格）
+              type: array
+              items:
+                type: object
+                properties:
+                  table_name:
+                    description: 表格名称
+                    type: string
+                    example: table1
+                  table_type:
+                    description: 表格类型， 0， 系统配置， 1 手动添加。
+                    type: string
+                    example: 0
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KeyValue'
+                    example:
+                      - - key: 货物劳务名称
+                          value: ＊电子计算机＊微型计算机主机
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                        - key: 规格型号
+                          value: DMS-SC68
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - - key: 货物劳务名称
+                          value: ＊机械计算机＊巨型计算机主机
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                        - key: 规格型号
+                          value: AN/FSQ-7
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            stamps:
+              description: 印章信息
+              type: array
+              items:
+                $ref: '#/components/schemas/StampValue'
+              example:
+                - angel: 0
+                  page: 0
+                  text: 全国统一发票监制章
+                  type: 其他
+                  color: 红色
+                  shape: 椭圆章
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - angel: 0
+                  page: 0
+                  text: 税务局章
+                  type: 其他
+                  color: 红色
+                  shape: 椭圆章
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            handwritings:
+              description: 手写体信息
+              type: array
+              items:
+                $ref: '#/components/schemas/HandWritingValue'
+              example:
+                - angel: 0
+                  page: 0
+                  text: 3月1日
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - angel: 0
+                  page: 0
+                  text: 张三
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            invoice_verify_result:
+              description: 发票验真结果
+              type: object
+              properties:
+                invoice_verify_status:
+                  type: integer
+                  description: 发票验真是否成功(0:否,1:是, null:未验真)
+                  example: 0
+                invoice_verify_error_code:
+                  type: integer
+                  description: 发票验真错误码
+                  example: 0
+                invoice_verify_can_retry:
+                  type: integer
+                  description: 发票验真是否可以重试/发起(0:否,1:是)
+                  example: 0
+                invoice_verify_fail_msg:
+                  type: string
+                  description: 发票验真失败原因
+                  example: 超过当天次数上限
+        document:
+          $ref: '#/components/schemas/Document'
     WorkspaceId:
       type: string
       description: 空间ID
