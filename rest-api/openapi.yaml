@@ -2031,7 +2031,7 @@ components:
                   example: 超过当天次数上限
         document:
           $ref: '#/components/schemas/Document'
-        fromParentPositionList:
+        from_parent_position_list:
           type: array
           description: 位置信息
           items:
