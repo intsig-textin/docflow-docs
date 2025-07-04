@@ -60,6 +60,20 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: target_process
+          in: query
+          description: |
+            目标处理类型。  
+            可选值：  
+            - `classify`: 分类  
+            - `extract`: 抽取  
+          required: false
+          schema:
+            type: string
+            enum:
+              - classify
+              - extract
+            example: classify
       requestBody:
         required: true
         content:
@@ -1653,7 +1667,7 @@ components:
   schemas: 
     RecognitionStatus:
       type: integer
-      description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败 3: 分类中 4:抽取中 5:准备中 6:拆套中 7:切图中"
+      description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败 3: 分类中 4:抽取中 5:准备中 6:拆套中 7:切图中 10: 分类完成(当upload接口的target_process为classify时才有此状态)"
       enum:
       - 0
       - 1
@@ -1663,6 +1677,7 @@ components:
       - 5
       - 6
       - 7
+      - 10
     VerificationStatus:
       type: integer
       description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
@@ -3047,7 +3062,14 @@ components:
           description: 修改时间
         recognitionStatus:
           type: integer
-          description: '识别状态，0: 识别中/1: 识别完成/2: 识别失败，识别失败表示存在部分任务识别失败'
+          description: |
+            识别状态。  
+            可选值：  
+            - `0`: 识别中  
+            - `1`: 识别完成  
+            - `2`: 识别失败  
+            - `10`: 分类成功(当upload接口的target_process为classify时才有此状态)  
+            识别失败表示存在部分任务识别失败。  
           example: 1
         recognitionSuccessCount:
           type: integer
