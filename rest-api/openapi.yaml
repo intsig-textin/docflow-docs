@@ -389,18 +389,14 @@ paths:
                                         type: 其他
                                         color: 红色
                                         shape: 椭圆章
-                                        position:
-                                          - page: 0
-                                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
                                       - angel: 0
                                         page: 0
                                         text: 税务局章
                                         type: 其他
                                         color: 红色
                                         shape: 椭圆章
-                                        position:
-                                          - page: 0
-                                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
                                   handwritings:
                                     description: 手写体信息
                                     type: array
@@ -1736,21 +1732,11 @@ components:
           type: string
           description: 印章形状
         position:
-          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
           type: array
+          description: 位置信息
           items:
-            type: object
-            properties:
-              page:
-                type: integer
-                description: 字段所在页。是`pages`数组的索引
-              vertices:
-                type: array
-                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
-                items:
-                  type: integer
-                minItems: 8
-                maxItems: 8
+            type: integer
+            example: 1
     HandWritingValue:
       type: object
       properties:
@@ -1984,18 +1970,14 @@ components:
                   type: 其他
                   color: 红色
                   shape: 椭圆章
-                  position:
-                    - page: 0
-                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
                 - angel: 0
                   page: 0
                   text: 税务局章
                   type: 其他
                   color: 红色
                   shape: 椭圆章
-                  position:
-                    - page: 0
-                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
             handwritings:
               description: 手写体信息
               type: array
