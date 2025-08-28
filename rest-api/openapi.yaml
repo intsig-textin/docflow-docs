@@ -1801,6 +1801,15 @@ components:
                           type: integer
                           minItems: 8
                           maxItems: 8
+    TaskCropResult:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: 所属原文件的页索引，0代表源文件的第一页
+        imageAngle:
+          type: string
+          description: 角度
     CommonFieldDetailRespVO:
       type: object
       properties:
@@ -2019,6 +2028,8 @@ components:
             type: integer
             description: 位置信息
             example: 1
+        crop_info:
+          $ref: '#/components/schemas/TaskCropResult'
     WorkspaceId:
       type: string
       description: 空间ID
