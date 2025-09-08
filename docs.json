@@ -9,156 +9,77 @@
   },
   "favicon": "/favicon.png",
   "navigation": {
-    "languages": [
-      {
-        "language": "cn",
-        "tabs": [
-          {
-            "tab": "Guides",
-            "groups": [
-              {
-                "group": "产品概览",
-                "pages": [
-                  "docflow-global/cn/00-overview/intro",
-                  "docflow-global/cn/00-overview/quickstart",
-                  "docflow-global/cn/00-overview/auth"
-                ]
-              },
-              {
-                "group": "文档上传",
-                "pages": [
-                  "docflow-global/cn/01-upload/quickstart",
-                  "docflow-global/cn/01-upload/response",
-                  "docflow-global/cn/01-upload/support_format"
-                ]
-              },
-              {
-                "group": "文档解析",
-                "pages": [
-                  "docflow-global/cn/03-parse/quickstart",
-                  "docflow-global/cn/03-parse/coordinate",
-                  "docflow-global/cn/03-parse/visualization"
-                ]
-              },
-              {
-                "group": "文档分类",
-                "pages": [
-                  "docflow-global/cn/04-classify/quickstart",
-                  "docflow-global/cn/04-classify/target_process",
-                  "docflow-global/cn/04-classify/manual"
-                ]
-              },
-              {
-                "group": "文档拆分",
-                "pages": [
-                  "docflow-global/cn/05-split/quickstart",
-                  "docflow-global/cn/05-split/split",
-                  "docflow-global/cn/05-split/crop"
-                ]
-              },
-              {
-                "group": "文档抽取",
-                "pages": [
-                  "docflow-global/cn/06-extract/quickstart",
-                  "docflow-global/cn/06-extract/fields",
-                  "docflow-global/cn/06-extract/tables",
-                  "docflow-global/cn/06-extract/stamps",
-                  "docflow-global/cn/06-extract/handwritings"
-                ]
-              },
-              {
-                "group": "常见问题",
-                "pages": [
-                  "docflow-global/cn/08-faq/get_workspace_id",
-                  "docflow-global/cn/08-faq/setup_category",
-                  "docflow-global/cn/08-faq/chinese_category_param",
-                  "docflow-global/cn/08-faq/product_charge"
-                ]
-              }
-            ]
-          },
-          {
-            "tab": "API",
-            "openapi": "docflow-global/cn/rest-api/openapi.yaml"
-          }
+      "tabs": [
+        {
+          "tab": "Guides",
+          "groups": [
+            {
+              "group": "Overview",
+              "pages": [
+                "docflow-global/en/00-overview/intro",
+                "docflow-global/en/00-overview/quickstart",
+                "docflow-global/en/00-overview/auth"
+              ]
+            },
+            {
+              "group": "Upload",
+              "pages": [
+                "docflow-global/en/01-upload/quickstart",
+                "docflow-global/en/01-upload/response",
+                "docflow-global/en/01-upload/support_format"
+              ]
+            },
+            {
+              "group": "Parse",
+              "pages": [
+                "docflow-global/en/03-parse/quickstart",
+                "docflow-global/en/03-parse/coordinate",
+                "docflow-global/en/03-parse/visualization"
+              ]
+            },
+            {
+              "group": "Classify",
+              "pages": [
+                "docflow-global/en/04-classify/quickstart",
+                "docflow-global/en/04-classify/target_process",
+                "docflow-global/en/04-classify/manual"
+              ]
+            },
+            {
+              "group": "Split",
+              "pages": [
+                "docflow-global/en/05-split/quickstart",
+                "docflow-global/en/05-split/split",
+                "docflow-global/en/05-split/crop"
+              ]
+            },
+            {
+              "group": "Extract",
+              "pages": [
+                "docflow-global/en/06-extract/quickstart",
+                "docflow-global/en/06-extract/fields",
+                "docflow-global/en/06-extract/tables",
+                "docflow-global/en/06-extract/stamps",
+                "docflow-global/en/06-extract/handwritings"
+              ]
+            },
+            {
+              "group": "FAQ",
+              "pages": [
+                "docflow-global/en/08-faq/get_workspace_id",
+                "docflow-global/en/08-faq/setup_category",
+                "docflow-global/en/08-faq/chinese_category_param",
+                "docflow-global/en/08-faq/product_charge"
+              ]
+            }
+          ]
+        },
+        {
+          "tab": "API",
+          "openapi": "docflow-global/en/rest-api/openapi.yaml"
+        }
 
-        ]
-      },
-      {
-        "language": "en",
-        "tabs": [
-          {
-            "tab": "Guides",
-            "groups": [
-              {
-                "group": "Overview",
-                "pages": [
-                  "docflow-global/en/00-overview/intro",
-                  "docflow-global/en/00-overview/quickstart",
-                  "docflow-global/en/00-overview/auth"
-                ]
-              },
-              {
-                "group": "Upload",
-                "pages": [
-                  "docflow-global/en/01-upload/quickstart",
-                  "docflow-global/en/01-upload/response",
-                  "docflow-global/en/01-upload/support_format"
-                ]
-              },
-              {
-                "group": "Parse",
-                "pages": [
-                  "docflow-global/en/03-parse/quickstart",
-                  "docflow-global/en/03-parse/coordinate",
-                  "docflow-global/en/03-parse/visualization"
-                ]
-              },
-              {
-                "group": "Classify",
-                "pages": [
-                  "docflow-global/en/04-classify/quickstart",
-                  "docflow-global/en/04-classify/target_process",
-                  "docflow-global/en/04-classify/manual"
-                ]
-              },
-              {
-                "group": "Split",
-                "pages": [
-                  "docflow-global/en/05-split/quickstart",
-                  "docflow-global/en/05-split/split",
-                  "docflow-global/en/05-split/crop"
-                ]
-              },
-              {
-                "group": "Extract",
-                "pages": [
-                  "docflow-global/en/06-extract/quickstart",
-                  "docflow-global/en/06-extract/fields",
-                  "docflow-global/en/06-extract/tables",
-                  "docflow-global/en/06-extract/stamps",
-                  "docflow-global/en/06-extract/handwritings"
-                ]
-              },
-              {
-                "group": "FAQ",
-                "pages": [
-                  "docflow-global/en/08-faq/get_workspace_id",
-                  "docflow-global/en/08-faq/setup_category",
-                  "docflow-global/en/08-faq/chinese_category_param",
-                  "docflow-global/en/08-faq/product_charge"
-                ]
-              }
-            ]
-          },
-          {
-            "tab": "API",
-            "openapi": "docflow-global/en/rest-api/openapi.yaml"
-          }
-
-        ]
-      }
-    ]
+      ]
   },
   "logo": {
     "light": "/logo/light.png",
