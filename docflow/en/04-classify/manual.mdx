@@ -1,0 +1,259 @@
+---
+title: "Specify Classification Upload"
+description: "Specify the file category during upload to skip the automatic classification process and proceed directly to extraction."
+---
+
+When you already know the document category, you can specify the file category through the `category` parameter during file upload, so DocFlow will skip the automatic classification process and go directly to the extraction stage.
+
+<Tip>
+  The specified `category` must be a file category that has been configured in the DocFlow workspace, otherwise processing will fail.
+</Tip>
+
+<Tip>
+  Manual classification can save processing time and is particularly suitable for batch processing scenarios with the same type of documents.
+</Tip>
+
+## Use Cases
+
+1. **Batch processing of same type documents**: Such as batch processing invoices, contracts, etc.
+2. **Known document types**: Document category is determined before uploading files
+3. **Improve processing efficiency**: Skip classification step and go directly to extraction stage
+
+## Specify Category During Upload
+
+Add the `category` parameter to the file upload interface to achieve manual classification:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/invoice.pdf"
+category = "invoice"  # Specify file category
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category": category
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## Specify Category for Batch Upload
+
+For batch upload, you can specify the same category for all files:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice1.pdf" \
+  -F "file=@/path/to/invoice2.pdf" \
+  -F "file=@/path/to/invoice3.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice&batch_number=INV-2024-001"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category = "invoice"
+batch_number = "INV-2024-001"
+
+# Prepare multiple files
+files = [
+    "/path/to/invoice1.pdf",
+    "/path/to/invoice2.pdf", 
+    "/path/to/invoice3.pdf"
+]
+
+# Build multipart data
+fields = {}
+for i, filepath in enumerate(files):
+    mime_type = "application/pdf"
+    if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+        mime_type = "image/jpeg"
+    
+    fields[f"file"] = (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+
+payload = MultipartEncoder(fields=fields)
+
+resp = requests.post(
+    url="https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload",
+    params={
+        "workspace_id": workspace_id,
+        "category": category,
+        "batch_number": batch_number
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## Processing Workflow Comparison
+
+### Automatic Classification Workflow
+
+```
+Upload → Parse → Automatic Classification → Extract → Complete
+```
+
+### Manual Classification Workflow
+
+```
+Upload (specify category) → Parse → Extract → Complete
+```
+
+## Notes
+
+1. **Category must be configured**: The specified `category` must have been configured in the DocFlow workspace, otherwise an error will be returned
+2. **Category name matching**: Category name must exactly match what was configured (case-sensitive)
+3. **Processing status**: Files with manual classification will skip classification status directly in query results
+4. **Error handling**: If the specified category does not exist, file processing will fail. It is recommended to first ensure the category is correctly configured through [Configure File Categories](../08-faq/setup_category)
+
+## Query Processing Results
+
+After files with manual classification are processed, you can query results through the `file/fetch` interface:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file_id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File name: {f.get('name')}")
+    print(f"Specified category: {f.get('category')}")
+    print(f"Processing status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## Return Result Example
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice_sample.pdf",
+        "category": "invoice",
+        "recognition_status": 1,
+        "extract_result": {
+          // Extraction result fields
+        }
+      }
+    ]
+  }
+}
+```
+
+## Chinese File Category Parameter Passing
+
+When you need to specify Chinese or other non-English file categories, you need to perform UTF-8 URL encoding on the `category` parameter.
+
+### Encoding Example
+
+<Tip>
+  Use the `urllib.parse.quote()` function to URL encode Chinese category names.
+</Tip>
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+# Using encoded Chinese category
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=%E5%8F%91%E7%A5%A8"
+```
+
+
+```python Python expandable icon=python lines
+import urllib.parse
+
+# Chinese category name
+chinese_category = "发票"
+encoded_category = urllib.parse.quote(chinese_category)
+print(f"Original category: {chinese_category}")
+print(f"After encoding: {encoded_category}")
+# Output: Original category: 发票
+# Output: After encoding: %E5%8F%91%E7%A5%A8
+```
+
+</CodeGroup>

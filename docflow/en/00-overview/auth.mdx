@@ -1,0 +1,144 @@
+---
+title: "Access Credentials"
+description: "How to obtain and use APIs access credentials"
+---
+
+## 01 Access Credential Acquisition
+
+### 1.1 Public Cloud Usage
+
+DocFlow uses [TextIn](https://textin.ai/) accounts.
+
+Please register on [TextIn](https://textin.ai/) first, then obtain `x-ti-app-id` and `x-ti-secret-code` on the [TextIn Homepage - Account & Billing - Account & Developer Information](https://textin.ai/console/dashboard/setting) page for request authentication.
+
+### 1.2 **Private Cloud Usage**
+
+Please contact the technical support personnel you are working with to obtain API call credentials for on-prem deployment.
+
+## 02 Request Authentication
+
+DocFlow interface supports two request authentication methods:
+
+1. **Simple Authentication**. This method is simple but has limited security, usually used for quick integration to experience DocFlow processes and effects.
+2. **Signature Authentication**. This method is complex but has higher security. It can prevent access credentials from being obtained by man-in-the-middle attacks and tampering with requests.
+
+### 2.1 Simple Authentication
+
+Use `x-ti-app-id` and `x-ti-secret-code` as HTTP headers for authentication.
+
+Example:
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+### 2.2 Signature Authentication
+
+Authenticate requests using signatures, requiring 3 HTTP Headers:
+
+| Header           | Description                                              |
+| ---------------- | -------------------------------------------------------- |
+| `x-ti-app-id`    | `x-ti-app-id` obtained from TextIn developer information |
+| `x-ti-timestamp` | Unix Epoch timestamp, in seconds                         |
+| `x-ti-signature` | Request signature, calculation method described below    |
+
+#### Signature Calculation
+
+The signature calculation method is:
+
+```
+signature = lower(hex(HMAC_SHA256(signing_key, string_to_sign)))
+```
+
+Notes:
+
+1. `lower()` is the lowercase letter conversion function
+2. `hex()` converts byte array to hexadecimal string
+3. `HMAC_SHA256` is a cryptographic hash function, refer to libraries in various development languages
+4. `signing_key = HMAC_SHA256(x-ti-secret-code, epoch)`. Where `x-ti-secret-code` is the TextIn developer credential. `epoch` is the Unix Epoch timestamp (seconds).
+5. `string_to_sign`, detailed explanation below
+
+##### string_to_sign
+
+`string_to_sign` is a string concatenated from the following content:
+
+```
+"HTTP Method" + "\n"
+"Request URL" + "\n"
+"Sorted URL Parameters" + "\n"
+"sha256(HTTP Request Body)"
+```
+
+Notes:
+
+1. HTTP method is uppercase, e.g., `GET`, `POST`
+2. Request URL, the path part of the URL (excluding protocol and domain), e.g., `/api/app-api/sip/platform/v2/file/upload`
+3. URL parameter sorting sorts all request parameters in ascending order by parameter name dictionary order (ASCII code). Parameter values do not participate in sorting. For example:
+
+   Suppose the parameters are `workspace_id=12345&batch_num=54321&file_name=invoice.pdf`,\
+   The sorted result is `batch_num=54321&file_name=invoice.pdf&workspace_id=12345`.
+
+   Important:
+   1. Parameter values do not need url encoding when performing signature calculation
+   2. Parameters are joined with `&`, with no `&` at the end
+
+Example:
+
+<CodeGroup>
+
+```python Python expandable {7,8,9,10,11,23,24,25,26,27,28,29,30,31,32,33,34} icon=python lines
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import hashlib
+import hmac
+import time
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+filename = "file.pdf"
+filepath = "/path/to/your/file.pdf"
+params = {"workspace_id":"1871454238893576192","category":"采购订单"}
+
+epoch_time = int(time.time())
+http_method = "POST"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+payload = MultipartEncoder(
+    fields={
+        "file": (filename, open(filepath, "rb"), "application/pdf"),
+    }
+)
+
+signing_key = hmac.new(ti_secret_code.encode('utf-8'), str(epoch_time).encode('utf-8'), hashlib.sha256).digest()
+payload_raw = payload.to_string()
+payload_hash = hashlib.sha256(payload_raw).hexdigest()
+string_to_sign = f"{http_method}\n{url}\n{'&'.join(f'{k}={v}' for k, v in sorted(params.items()))}\n{payload_hash}"
+signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+
+print(f"epoch_time: {epoch_time}")
+print(f"http_method: {http_method}")
+print(f"signing_key: {signing_key}")
+print(f"payload_hash: {payload_hash}")
+print(f"string_to_sign: {string_to_sign}")
+print(f"signature: {signature}")
+
+resp = requests.post(url=f"https://docflow.textin.ai{url}", 
+                     params=params, 
+                     data=payload_raw, 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-timestamp": str(epoch_time),
+                              "x-ti-signature": signature,
+                              })
+
+print(resp.text)
+```
+
+</CodeGroup>

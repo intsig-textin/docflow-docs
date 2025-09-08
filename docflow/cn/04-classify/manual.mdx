@@ -1,0 +1,253 @@
+---
+title: "指定分类上传"
+description: "在上传时指定文件类别，跳过自动分类过程直接进入抽取"
+---
+
+当您已经知道文档的类别时，可以在文件上传时通过 `category` 参数指定文件类别，这样 DocFlow 会跳过自动分类过程，直接进入抽取阶段。
+
+<Tip>
+指定的 `category` 必须是已在 DocFlow 空间配置过的文件类别，否则会导致处理失败。
+</Tip>
+
+<Tip>
+手动分类可以节省处理时间，特别适用于批量处理相同类型文档的场景。
+</Tip>
+
+## 使用场景
+
+1. **批量处理相同类型文档**：如批量处理发票、合同等
+2. **已知文档类型**：上传文件前已经确定文档类别
+3. **提高处理效率**：跳过分类步骤，直接进入抽取阶段
+
+## 上传时指定类别
+
+在文件上传接口中添加 `category` 参数即可实现手动分类：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+```python Python icon=python expandable lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/invoice.pdf"
+category = "invoice"  # 指定文件类别
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category": category
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 批量上传时指定类别
+
+对于批量上传，可以为所有文件指定相同的类别：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice1.pdf" \
+  -F "file=@/path/to/invoice2.pdf" \
+  -F "file=@/path/to/invoice3.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice&batch_number=INV-2024-001"
+```
+
+```python Python icon=python expandable lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category = "invoice"
+batch_number = "INV-2024-001"
+
+# 准备多个文件
+files = [
+    "/path/to/invoice1.pdf",
+    "/path/to/invoice2.pdf", 
+    "/path/to/invoice3.pdf"
+]
+
+# 构建 multipart 数据
+fields = {}
+for i, filepath in enumerate(files):
+    mime_type = "application/pdf"
+    if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+        mime_type = "image/jpeg"
+    
+    fields[f"file"] = (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+
+payload = MultipartEncoder(fields=fields)
+
+resp = requests.post(
+    url="https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload",
+    params={
+        "workspace_id": workspace_id,
+        "category": category,
+        "batch_number": batch_number
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 处理流程对比
+
+### 自动分类流程
+```
+上传 → 解析 → 自动分类 → 抽取 → 完成
+```
+
+### 手动分类流程
+```
+上传(指定category) → 解析 → 抽取 → 完成
+```
+
+## 注意事项
+
+1. **类别必须已配置**：指定的 `category` 必须在 DocFlow 空间中已经配置过，否则会返回错误
+2. **类别名称匹配**：类别名称必须与配置时完全一致（区分大小写）
+3. **处理状态**：手动分类的文件在查询结果中，`recognition_status` 会直接跳过分类状态
+4. **错误处理**：如果指定的类别不存在，文件处理会失败，建议先通过[配置文件类别](../08-faq/setup_category)确保类别已正确配置
+
+## 查询处理结果
+
+手动分类的文件处理完成后，可以通过 `file/fetch` 接口查询结果：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file_id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"文件ID: {f['id']}")
+    print(f"文件名: {f.get('name')}")
+    print(f"指定类别: {f.get('category')}")
+    print(f"处理状态: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## 返回结果示例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice_sample.pdf",
+        "category": "invoice",
+        "recognition_status": 1,
+        "extract_result": {
+          // 抽取结果字段
+        }
+      }
+    ]
+  }
+}
+```
+
+## 中文文件类别传参
+
+当您需要指定中文或其他非英语的文件类别时，需要对 `category` 参数进行 UTF-8 URL 编码。
+
+### 编码示例
+
+<Tip>
+使用 `urllib.parse.quote()` 函数对中文类别名称进行 URL 编码。
+</Tip>
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+# 使用编码后的中文类别
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=%E5%8F%91%E7%A5%A8"
+```
+
+```python Python icon=python expandable lines
+import urllib.parse
+
+# 中文类别名称
+chinese_category = "发票"
+encoded_category = urllib.parse.quote(chinese_category)
+print(f"原始类别: {chinese_category}")
+print(f"编码后: {encoded_category}")
+# 输出: 原始类别: 发票
+# 输出: 编码后: %E5%8F%91%E7%A5%A8
+```
+
+</CodeGroup>

@@ -1,0 +1,96 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate document classification functionality with APIs"
+---
+
+After [configuring file classification templates](../08-faq/setup_category) in the DocFlow workspace settings page, when files are uploaded subsequently without specifying the file type, Docflow will automatically classify the files for subsequent extraction or review use.
+
+File classification use cases:
+
+1. Reimbursement scenarios have different types of documents such as restaurant invoices, taxi invoices, flight itineraries that need classification
+2. Logistics import/export scenarios have materials such as import customs declarations, export customs declarations, freight insurance policies, certificates of origin that need classification
+
+<Tip>
+  Classification templates must be configured in the Docflow workspace to use the classification function.
+</Tip>
+
+<Tip>
+  Docflow performs the complete parsing-\>classification-\>extraction workflow by default.\
+  If you only want classification results, please refer to the [Classification Only](./target_process) documentation.
+</Tip>
+
+## Classification Principle
+
+After configuring sample files for classification in Docflow, the files are first parsed. The title, file type, field configuration, classification prompts, and other attributes of the sample files are then vectorized and analyzed.
+
+Once new files are uploaded and their parsing is completed, algorithms compare them with the configured classification samples to determine the best-matching classification result.
+
+## Get Classification Results
+
+You can query through the result retrieval interface `file/fetch`.\
+The interface returns a JSON structure, with file classification information in the `result.files[].category` field.
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file_id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f["id"], f.get("name"), " Category:", f.get("category"))
+```
+
+</CodeGroup>
+
+## Classification Result Structure and Status
+
+In the return from `file/fetch`, key fields for each file include:
+
+- `id`: File ID
+- `name`: File name
+- `category`: Classification result (e.g., `invoice`)
+- `recognition_status`: Recognition status
+
+Common statuses (see OpenAPI `RecognitionStatus` for complete values):
+
+- `0` Pending recognition
+- `1` Recognition successful (when complete workflow ends)
+- `2` Recognition failed
+- `3` Classifying
+- `10` Classification complete (only appears as final state when uploading with `target_process=classify`)
+
+### Return Example (Excerpt)
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "sample.pdf",
+        "category": "invoice",
+        "recognition_status": 1
+      }
+    ]
+  }
+}
+```

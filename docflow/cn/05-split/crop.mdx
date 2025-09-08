@@ -1,0 +1,216 @@
+---
+title: "多图切分"
+description: "智能识别并切分一页包含多张独立图片的文档，支持报销贴票等场景"
+---
+
+## 功能概述
+
+多图切分功能能够自动识别一页文档中包含的多张独立图片或票据，并将其分别切分为独立的子文档。这对于处理报销贴票、多票据扫描等场景非常有用。
+
+## 使用场景
+
+### 1. 报销贴发票场景
+
+一张A4纸上平铺贴有：
+- 火车票
+- 飞机行程单
+- 多个出租车发票
+- 餐饮发票
+
+通过多图切分功能，可以将每张票据分别识别和切分出来，便于后续的分类和金额提取。
+
+![crop example](../images/crop_example.jpg)
+
+## API 参数配置
+
+### 启用多图切分功能
+
+在上传接口中设置 `crop_flag=true` 来启用多图切分功能：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/multi-image-document.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&crop_flag=true"
+```
+
+</CodeGroup>
+
+### 参数说明
+
+| 参数名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `crop_flag` | boolean | false | 是否启用多图切分功能 |
+
+## 示例代码
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def upload_with_crop(file_path, workspace_id, app_id, secret_code):
+    """
+    上传文件并启用多图切分功能
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+    
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    
+    params = {
+        "workspace_id": workspace_id,
+        "crop_flag": "true"  # 启用多图切分功能
+    }
+    
+    with open(file_path, 'rb') as file:
+        files = {'file': file}
+        response = requests.post(url, headers=headers, params=params, files=files)
+    
+    return response.json()
+
+def fetch_crop_results(workspace_id, batch_number, app_id, secret_code):
+    """
+    查询多图切分结果
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    
+    params = {
+        "workspace_id": workspace_id,
+        "batch_number": batch_number
+    }
+    
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+def parse_crop_coordinates(from_parent_position_list):
+    """
+    解析切分坐标信息
+    坐标格式: [x1, y1, x2, y2, x3, y3, x4, y4]
+    表示矩形的四个顶点坐标
+    """
+    if len(from_parent_position_list) != 8:
+        return None
+    
+    coordinates = {
+        "top_left": (from_parent_position_list[0], from_parent_position_list[1]),
+        "top_right": (from_parent_position_list[2], from_parent_position_list[3]),
+        "bottom_right": (from_parent_position_list[4], from_parent_position_list[5]),
+        "bottom_left": (from_parent_position_list[6], from_parent_position_list[7])
+    }
+    
+    # 计算边界框
+    x_coords = [coord[0] for coord in coordinates.values()]
+    y_coords = [coord[1] for coord in coordinates.values()]
+    
+    bbox = {
+        "x_min": min(x_coords),
+        "y_min": min(y_coords),
+        "x_max": max(x_coords),
+        "y_max": max(y_coords),
+        "width": max(x_coords) - min(x_coords),
+        "height": max(y_coords) - min(y_coords)
+    }
+    
+    return {"coordinates": coordinates, "bbox": bbox}
+
+# 使用示例
+if __name__ == "__main__":
+    # 配置信息
+    WORKSPACE_ID = "your-workspace-id"
+    APP_ID = "your-app-id"
+    SECRET_CODE = "your-secret-code"
+    FILE_PATH = "/path/to/multi-image-document.pdf"
+    
+    # 上传文件并启用多图切分
+    upload_result = upload_with_crop(FILE_PATH, WORKSPACE_ID, APP_ID, SECRET_CODE)
+    print("上传结果:", json.dumps(upload_result, indent=2, ensure_ascii=False))
+    
+    # 获取批次号
+    batch_number = upload_result.get("result", {}).get("batch_number")
+    
+    if batch_number:
+        # 查询多图切分结果
+        fetch_result = fetch_crop_results(WORKSPACE_ID, batch_number, APP_ID, SECRET_CODE)
+        print("多图切分结果:", json.dumps(fetch_result, indent=2, ensure_ascii=False))
+        
+        # 解析坐标信息
+        files = fetch_result.get("result", {}).get("files", [])
+        for file in files:
+            child_files = file.get("child_files", [])
+            for child in child_files:
+                if child.get("task_type") == 3:  # 多图切分产生的子文件
+                    position_list = child.get("from_parent_position_list")
+                    if position_list:
+                        coord_info = parse_crop_coordinates(position_list)
+                        print(f"子文件 {child.get('name')} 的坐标信息:", coord_info)
+```
+
+</CodeGroup>
+
+## 返回结果说明
+
+### 多图切分结果结构
+
+当启用多图切分功能后，`file/fetch` 接口返回的结果中会包含 `child_files` 字段，用于描述切分后的子文档信息：
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "parent-file-001",
+        "name": "multi-image-document.pdf",
+        "format": "pdf",
+        "child_files": [
+          {
+            "id": "child-001",
+            "task_id": "task-001",
+            "task_type": 3,  // 3表示多图切分产生的子文件
+            "name": "multi-image-document.pdf#1",
+            "format": "pdf",
+            "category": "invoice",
+            "from_parent_position_list": [12, 30, 420, 30, 420, 320, 12, 320],
+            "crop_info":{"page":0,"imageAngle":"0"}
+            "status": "success"
+          },
+          {
+            "id": "child-002",
+            "task_id": "task-002", 
+            "task_type": 3,
+            "name": "multi-image-document.pdf#2",
+            "format": "pdf",
+            "category": "receipt",
+            "from_parent_position_list": [450, 30, 800, 30, 800, 200, 450, 200],
+            "crop_info":{"page":0,"imageAngle":"0"}
+            "status": "success"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 关键字段说明
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `child_files` | array | 切分后的子文件列表 |
+| `child_files[].id` | string | 子文件唯一标识 |
+| `child_files[].task_type` | integer | 任务类型，3表示多图切分产生 |
+| `child_files[].category` | string | 文档分类结果 |
+| `child_files[].from_parent_position_list` | array | 切分区域在原图中的坐标，可以参考[坐标系说明](../03-parse/coordinate) |
+| `child_files[].crop_info` | object | 多图切分的详细信息，包含页面索引和角度信息 |

@@ -1,0 +1,14 @@
+/* 隐藏语言选择按钮 */
+/* #navbar
+  button[data-state="closed"][aria-haspopup="menu"][aria-expanded="false"] {
+  display: none;
+} */
+
+/* 隐藏广告 */
+/* #footer > :last-child {
+  display: none;
+}
+
+.p-4 .p-px > .min-h-fit .overflow-auto {
+  max-height: 60vh;
+} */

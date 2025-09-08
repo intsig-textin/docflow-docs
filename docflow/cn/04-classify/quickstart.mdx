@@ -1,0 +1,95 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档分类功能"
+---
+
+当在 DocFlow 空间设置页面[配置好文件分类模板](../08-faq/setup_category)后，后续文件上传时，如果不指定该文件类型，Docflow 都会自动对文件进行分类，以便后续抽取或审核使用。
+
+文件分类的使用场景
+
+1. 报销场景有餐饮发票、出租车发票、飞机行程单等类型单据需要分类
+2. 物流进出口场景有进口报关单、出口报关单、货运保单、原产地证明等材料需要分类
+
+<Tip>
+必须在 Docflow 空间下配置好分类模板，才能使用分类功能。
+</Tip>
+
+<Tip>
+Docflow 默认会进行完整的 解析->分类->抽取 流程。  
+如果只想要分类结果，请参考[仅分类](./target_process)文档说明。
+</Tip>
+
+## 分类原理
+
+Docflow 配置的分类示例文件后，示例文件先经过解析，然后会对示例文件的标题、文件类型、字段配置、分类提示词等进行向量化分析。
+
+在新文件上传并完成解析后，通过算法将新文件与已配置的分类进行比较，得出最匹配的分类结果。
+
+## 获取分类结果
+
+可通过结果获取接口 `file/fetch` 查询。  
+接口返回 JSON 结构，文件分类信息在`result.files[].category`字段中。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file_id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f["id"], f.get("name"), " Category:", f.get("category"))
+```
+
+</CodeGroup>
+
+## 分类结果结构与状态
+
+`file/fetch` 的返回中，每个文件的关键字段包括：
+
+- `id`：文件 ID
+- `name`：文件名
+- `category`：分类结果（例如 `invoice`）
+- `recognition_status`：识别状态
+
+常见状态（完整取值参见 OpenAPI `RecognitionStatus`）：
+
+- `0` 待识别
+- `1` 识别成功（完整流程结束时）
+- `2` 识别失败
+- `3` 分类中
+- `10` 分类完成（仅当上传时 `target_process=classify` 才会出现此终态）
+
+### 返回示例（节选）
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "sample.pdf",
+        "category": "invoice",
+        "recognition_status": 1
+      }
+    ]
+  }
+}
+```

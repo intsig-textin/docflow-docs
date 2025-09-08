@@ -1,0 +1,133 @@
+---
+title: 仅使用分类
+---
+
+Docflow 默认会进行完整的 解析->分类->抽取 流程。  
+如果按照业务需求只想要分类结果，可以在上传接口中加入`target_process=classify`参数，流程就会在完成分类后终止，跳过抽取过程。
+
+## 上传文件进行仅分类
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&target_process=classify"
+```
+
+```python Python icon=python expandable lines
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import os
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "target_process": "classify"
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 查询分类结果
+
+使用 `file/fetch` 接口查询分类结果：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file-id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"文件ID: {f['id']}")
+    print(f"文件名: {f.get('name')}")
+    print(f"分类结果: {f.get('category')}")
+    print(f"识别状态: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## 仅分类时的 recognition_status 状态说明
+
+当使用 `target_process=classify` 进行仅分类时，`recognition_status` 字段会有以下状态变化：
+
+### 状态值说明
+
+- `0` - 待识别：文件刚上传，等待处理
+- `3` - 分类中：正在进行分类处理
+- `10` - 分类完成：**仅分类流程的最终状态**，表示分类已完成，不会进行抽取
+- `2` - 分类失败：分类过程中出现错误
+
+### 与完整流程的区别
+
+**完整流程（默认）**的状态变化：
+- `0` → `3` → `4` → `1`（待识别 → 分类中 → 抽取中 → 识别成功）
+
+**仅分类流程**的状态变化：
+- `0` → `3` → `10`（待识别 → 分类中 → 分类完成）
+
+### 返回示例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "category": "invoice",
+        "recognition_status": 10,
+        "data": null
+      }
+    ]
+  }
+}
+```

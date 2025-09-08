@@ -1,0 +1,96 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成工作空间管理功能"
+---
+
+本文介绍如何使用工作空间相关接口：创建、查看、更新与删除。
+
+## 创建工作空间
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "我的工作空间", "description": "用于演示的空间"}' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/create"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/create"
+
+headers = {
+    "x-ti-app-id": "<your-app-id>",
+    "x-ti-secret-code": "<your-secret-code>",
+    "Content-Type": "application/json",
+}
+
+resp = requests.post(f"{host}{url}", json={
+    "name": "我的工作空间",
+    "description": "用于演示的空间"
+}, headers=headers, timeout=30)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 列出工作空间
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list?page=1&page_size=20"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list",
+    params={"page": 1, "page_size": 20},
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=30,
+)
+print(resp.json())
+```
+
+</CodeGroup>
+
+## 获取工作空间详情
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/get?id=<your-workspace-id>"
+```
+
+## 更新工作空间
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{"id": "<your-workspace-id>", "name": "新的空间名", "description": "新的描述"}' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/update"
+```
+
+## 删除工作空间
+
+```bash curl icon=terminal wrap
+curl -X DELETE \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/delete?id=<your-workspace-id>"
+```
+

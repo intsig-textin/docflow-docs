@@ -1,0 +1,173 @@
+---
+title: "Basic Field Information"
+description: "Detailed explanation of field information structure and processing methods in document extraction"
+---
+
+The document extraction feature identifies key field information in a document based on the fields configured for its file category.Each field includes a key-value pair and position coordinate information.
+
+## Field Structure
+
+Field information is located in `result.files[].data.fields[]`, with each field containing the following attributes:
+
+- `key`: Field name (such as "Invoice Code", "Invoice Date", etc.)
+- `value`: Field value (recognized text content)
+- `position[]`: Position coordinate information of the field in the document; fields may span pages or lines, so an array is used
+
+### Position Coordinate Structure
+
+```json
+{
+  "page": 0,           // Page number where the field is located
+  "vertices": [        // Coordinates of four vertices [x1,y1,x2,y2,x3,y3,x4,y4]
+    100, 200,          // Top-left corner
+    300, 200,          // Top-right corner
+    300, 250,          // Bottom-right corner
+    100, 250           // Bottom-left corner
+  ]
+}
+```
+
+For detailed coordinate descriptions, please refer to the [Coordinate System](../03-parse/coordinate.mdx) documentation.
+
+## Example Code
+
+<CodeGroup>
+
+```python Python expandable icon=python
+import requests
+import json
+
+def extract_fields(workspace_id, batch_number, app_id, secret_code):
+    """Extract field information from documents"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"File name: {file.get('name')}")
+        print(f"Recognition status: {file.get('recognition_status')}")
+        
+        # Extract field information
+        fields = file.get("data", {}).get("fields", [])
+        if fields:
+            print("\n=== Field Information ===")
+            for field in fields:
+                key = field.get("key", "")
+                value = field.get("value", "")
+                positions = field.get("position", [])
+                
+                print(f"Field: {key}")
+                print(f"Value: {value}")
+                
+                # Display position information
+                for i, pos in enumerate(positions):
+                    page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  Position {i+1} (Page {page+1}): {vertices}")
+                print("-" * 30)
+        else:
+            print("No field information found")
+    
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_fields(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## Return Data Example
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "fields": [
+            {
+              "key": "Invoice Code",
+              "value": "3100231130",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 150, 200, 150, 200, 180, 100, 180]
+                }
+              ]
+            },
+            {
+              "key": "Invoice Number",
+              "value": "12345678",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [250, 150, 320, 150, 320, 180, 250, 180]
+                }
+              ]
+            },
+            {
+              "key": "Invoice Date",
+              "value": "December 19, 2024",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [400, 150, 500, 150, 500, 180, 400, 180]
+                }
+              ]
+            },
+            {
+              "key": "Buyer Name",
+              "value": "Shanghai XX Technology Co., Ltd.",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 250, 400, 250, 400, 280, 100, 280]
+                }
+              ]
+            },
+            {
+              "key": "Amount",
+              "value": "1000.00",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [500, 350, 600, 350, 600, 380, 500, 380]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```

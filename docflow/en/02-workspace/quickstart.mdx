@@ -1,0 +1,95 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate workspace management functionality with APIs"
+---
+
+This document introduces how to use workspace-related interfaces: create, view, update, and delete.
+
+## Create Workspace
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Workspace", "description": "Workspace for demonstration"}' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/create"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/create"
+
+headers = {
+    "x-ti-app-id": "<your-app-id>",
+    "x-ti-secret-code": "<your-secret-code>",
+    "Content-Type": "application/json",
+}
+
+resp = requests.post(f"{host}{url}", json={
+    "name": "My Workspace",
+    "description": "Workspace for demonstration"
+}, headers=headers, timeout=30)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## List Workspaces
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list?page=1&page_size=20"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list",
+    params={"page": 1, "page_size": 20},
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=30,
+)
+print(resp.json())
+```
+
+</CodeGroup>
+
+## Get Workspace Details
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/get?id=<your-workspace-id>"
+```
+
+## Update Workspace
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{"id": "<your-workspace-id>", "name": "New Workspace Name", "description": "New description"}' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/update"
+```
+
+## Delete Workspace
+
+```bash curl icon=terminal wrap
+curl -X DELETE \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/delete?id=<your-workspace-id>"
+```

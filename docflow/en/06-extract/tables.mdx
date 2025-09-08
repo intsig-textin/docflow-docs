@@ -1,0 +1,250 @@
+---
+title: "Table Field Information"
+description: "Detailed explanation of table field information structure and processing methods in document extraction"
+---
+
+The document extraction function can recognize table structures in documents and convert table content into structured data format. Table information includes table headers, row data, position coordinates, and other detailed information.
+
+## Table Structure
+
+Table information is located in `result.files[].data.items[][]`, using a two-dimensional array structure:
+
+- `items[][]`: Table data, where the outer array represents rows and the inner array represents cells in rows
+
+### Table Data Structure
+
+```json
+{
+  "items": [
+    [
+      {"key": "Goods/Services Name", "value": "*Electronic Computer*Microcomputer Host"},
+      {"key": "Specification/Model", "value": "DMS-SC68"},
+      {"key": "Unit", "value": "Set"},
+      {"key": "Quantity", "value": "1"},
+      {"key": "Unit Price", "value": "5000.00"},
+      {"key": "Amount", "value": "5000.00"}
+    ],
+    [
+      {"key": "Goods/Services Name", "value": "*Software*System Software"},
+      {"key": "Specification/Model", "value": "V1.0"},
+      {"key": "Unit", "value": "Set"},
+      {"key": "Quantity", "value": "2"},
+      {"key": "Unit Price", "value": "1000.00"},
+      {"key": "Amount", "value": "2000.00"}
+    ]
+  ],
+}
+```
+
+## Example Code
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+import pandas as pd
+
+def extract_tables(workspace_id, batch_number, app_id, secret_code):
+    """Extract table information from documents"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"File name: {file.get('name')}")
+        
+        # Extract table information
+        items = file.get("data", {}).get("items", [])
+        
+        if items:
+            print(f"\n=== Table Information ===")
+            print(f"Number of data rows: {len(items)}")
+            
+            # Display table data
+            for i, row in enumerate(items):
+                print(f"\nRow {i+1}:")
+                for cell in row:
+                    key = cell.get("key", "")
+                    value = cell.get("value", "")
+                    print(f"  {key}: {value}")
+        else:
+            print("No table information found")
+    
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_tables(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## Return Data Example
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "items": [
+            [
+              {
+                "key": "Goods/Services Name",
+                "value": "*Electronic Computer*Microcomputer Host",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [100, 400, 300, 400, 300, 430, 100, 430]
+                  }
+                ]
+              },
+              {
+                "key": "Specification/Model",
+                "value": "DMS-SC68",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [310, 400, 400, 400, 400, 430, 310, 430]
+                  }
+                ]
+              },
+              {
+                "key": "Unit",
+                "value": "Set",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [410, 400, 450, 400, 450, 430, 410, 430]
+                  }
+                ]
+              },
+              {
+                "key": "Quantity",
+                "value": "1",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [460, 400, 500, 400, 500, 430, 460, 430]
+                  }
+                ]
+              },
+              {
+                "key": "Unit Price",
+                "value": "5000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [510, 400, 600, 400, 600, 430, 510, 430]
+                  }
+                ]
+              },
+              {
+                "key": "Amount",
+                "value": "5000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [610, 400, 700, 400, 700, 430, 610, 430]
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "key": "Goods/Services Name",
+                "value": "*Software*System Software",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [100, 440, 300, 440, 300, 470, 100, 470]
+                  }
+                ]
+              },
+              {
+                "key": "Specification/Model",
+                "value": "V1.0",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [310, 440, 400, 440, 400, 470, 310, 470]
+                  }
+                ]
+              },
+              {
+                "key": "Unit",
+                "value": "Set",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [410, 440, 450, 440, 450, 470, 410, 470]
+                  }
+                ]
+              },
+              {
+                "key": "Quantity",
+                "value": "2",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [460, 440, 500, 440, 500, 470, 460, 470]
+                  }
+                ]
+              },
+              {
+                "key": "Unit Price",
+                "value": "1000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [510, 440, 600, 440, 600, 470, 510, 470]
+                  }
+                ]
+              },
+              {
+                "key": "Amount",
+                "value": "2000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [610, 440, 700, 440, 700, 470, 610, 470]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}
+```

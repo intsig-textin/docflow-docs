@@ -1,0 +1,115 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档审核功能"
+---
+
+本文概览 DocFlow 审核相关接口的基本调用顺序：获取批次与任务 → 查询模型字段 → 创建/更新规则 → 试运行 → 提交审核任务。
+
+<Tip>
+审核接口需要额外的 `workspaceIdNo`、`fileBatchNo` 等参数，这些通常来自页面或前置接口返回。请先通过“批次列表”和“任务类别列表”接口获取。
+</Tip>
+
+## 获取批次列表（前置）
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listByFileBatchNo?workspaceIdNo=<workspaceIdNo>"
+```
+
+从响应中获得 `fileBatchNo`。
+
+## 获取任务类别列表（前置）
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo?workspaceIdNo=<workspaceIdNo>&fileBatchNo=<fileBatchNo>"
+```
+
+从响应中获得 `taskClassificationIdNo`（分类 id）。
+
+## 获取模型字段（用于规则配置）
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{"classificationIdNoList": ["<taskClassificationIdNo>"]}' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList"
+```
+
+返回的 `data[]` 中包含字段、表格及其坐标等信息。
+
+## 创建审核规则
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleName": "规则名称",
+    "rulePrompt": "规则提示",
+    "classificationIdNoList": ["<taskClassificationIdNo>"],
+    "fileBatchNo": "<fileBatchNo>",
+    "workspaceIdNo": "<workspaceIdNo>"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/create"
+```
+
+响应返回 `ruleIdNo`。
+
+## 更新审核规则（可选）
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleIdNo": "<ruleIdNo>",
+    "ruleName": "新的规则名",
+    "rulePrompt": "新的规则提示"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/update"
+```
+
+## 试运行审核规则（评估）
+
+先通过 `listTaskDetailInfoByClassificationIdNo` 获取 `executeTaskId`，再进行试运行：
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleIdNo": "<ruleIdNo>",
+    "executeTaskIdList": ["<executeTaskId>"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/runRule"
+```
+
+返回 `evalResult`、`resultHighlights` 等。
+
+## 提交审核任务
+
+当规则评估通过后，可提交正式审核任务：
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleIdNoList": [<ruleIdNo>],
+    "executeTaskIdList": ["<executeTaskId>"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/submitReviewTask"
+```
+
+响应返回 `reviewTaskId` 列表。

@@ -1,0 +1,109 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate document parsing functionality with APIs"
+---
+
+import PositionSnippet from '/snippets/cn/position.mdx';
+
+<Tip>
+  Docflow uses [xParse](https://textin.ai/market/detail/pdf_to_markdown) as its core document parsing service, which can accurately convert PDF, Word, and common image format documents into structured data containing text, tables, title hierarchies, formulas, handwritten characters, and image information for subsequent automated processing and analysis.
+
+  In application scenarios such as knowledge base construction and unstructured document image processing, powerful document parsing capabilities can meet most requirements.
+
+  The document parsing results returned by Docflow's result retrieval interface are heavily trimmed from xParse results, retaining only basic text blocks and position information for page text position visualization rendering.
+</Tip>
+
+<Tip>
+  This document uses [this sample document](https://dllf.intsig.net/download/2025/Solution/20250829/simple.pdf) as an example to explain how to obtain document parsing results.
+</Tip>
+
+## Prerequisites
+
+According to the [Document Upload](../01-upload/quickstart#upload-single-file) instructions, upload a file and obtain the returned file ID.
+
+<Tip>
+  File processing takes time. You need to wait several seconds after uploading before you can retrieve processing results.
+</Tip>
+
+## Get Document Parsing Results
+
+Document parsing results are large in size and are not returned by default.\
+When calling the result retrieval interface, add the URL parameter `with_document=true` to return document parsing results.
+
+Example:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>&with_document=true"
+```
+
+
+```python Python expandable {13} icon=python lines
+import requests
+import json
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+file_id = "your_file_id"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+params = {
+    "workspace_id":workspace_id, 
+    "with_document": "true", 
+    "file_id":file_id
+    }
+resp = requests.get(url=f"{host}{url}", 
+                    params=params,
+                    headers={"x-ti-app-id": ti_app_id,
+                             "x-ti-secret-code": ti_secret_code,
+                             })
+resp_json = json.loads(resp.text)
+
+for file in resp_json["result"]["files"]:
+  print(f"file {file["name"]} parse result: {file["document"]}")
+```
+
+</CodeGroup>
+
+## Response JSON Structure Description
+
+The document parsing structure is in `result.files[].document`, with the following example (excerpt):
+
+```json expandable
+"document":{
+    "pages":[
+        {
+            "angle":0,
+            "width":1191,
+            "height":794,
+            "lines":[
+            {
+                "text":"电子发票（普通发票）",
+                "position":[ 389, 45, 767, 45, 767, 87, 389, 87 ],
+                "charPositions":[]
+            }
+            ]
+        }
+    ]
+}
+```
+
+Field descriptions are as follows:
+
+- `document`: Document parsing result object
+  - `pages`: Array of parsing results for each page of the document
+    - `angle`: Rotation angle of the document page
+    - `width`: Width of the document page
+    - `height`: Height of the document page
+    - `lines`: Results for each text line in the document
+      - `text`: Text content
+      - `position`: Text coordinates
+      - `charPositions`: Coordinates of each character in the text
+
+The meaning of `position` can be referenced in the [Coordinate System Description](./coordinate).

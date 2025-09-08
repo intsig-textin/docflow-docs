@@ -1,0 +1,3117 @@
+openapi: 3.0.0
+info:
+  title: DocFlow API
+  description: DocFlow REST API，提供文件上传和获取文件处理结果能力
+  version: 2.0.0
+servers:
+  - url: https://docflow.textin.ai
+
+x-codeSamples: custom
+
+paths:
+  /api/app-api/sip/platform/v2/file/upload:
+    post:
+      summary: 上传文件
+      description: 上传文件
+      operationId: uploadFile
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            type: string
+            example: 1234567890
+        - name: category
+          in: query
+          description: 文件类别
+          required: false
+          schema:
+            type: string
+            example: invoice
+        - name: batch_number
+          in: query
+          description: |
+            批次编号。  
+            可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。  
+            如果值为空，则系统自动生成最长20位字符串
+          required: false
+          schema:
+            type: string
+            example: 202412190001
+        - name: auto_verify_vat
+          in: query
+          description: 是否自动进行发票验真
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: split_flag
+          in: query
+          description: 是否进行文件拆分
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: crop_flag
+          in: query
+          description: 是否进行多图切分
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: target_process
+          in: query
+          description: |
+            目标处理类型。  
+            可选值：  
+            - `classify`: 分类  
+            - `extract`: 抽取  
+          required: false
+          schema:
+            type: string
+            enum:
+              - classify
+              - extract
+            example: classify
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 文件上传成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        batch_number:
+                          type: string
+                          description: 批次编号
+                          example: 202412190001
+                        files:
+                          type: array   
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: 文件ID
+                                example: 202412190001
+                              name:
+                                type: string
+                                description: 文件名
+                                example: invoice.pdf
+                              format:
+                                type: string
+                                description: 文件格式
+                                example: pdf
+                            required:
+                            - id
+                            - name
+                            - format
+                      required:
+                      - batch_number
+                      - files
+      x-codeSamples:
+        - lang: 'bash'
+          label: cURL
+          source: | 
+            curl -X POST \
+            -H 'x-ti-app-id: 1234567890' \
+            -H 'x-ti-secret-code: 1234567890' \
+            -F 'file=@invoice.pdf'
+            -F 'file=@another.pdf'
+            'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=1234567890&category=invoice&batch_number=202412190001'
+
+  /api/app-api/sip/platform/v2/file/fetch:
+    get:
+      summary: 获取文件处理结果列表
+      description: 获取文件处理结果列表
+      operationId: getFiles
+      parameters:
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+        - name: workspace_id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            type: string
+        - name: batch_number
+          in: query
+          description: 批次编号
+          required: false
+          schema:
+            type: string
+        - name: file_id
+          in: query
+          description: 文件ID
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: 文件类别
+          required: false
+          schema:
+            type: string
+        - name: recognition_status
+          in: query
+          description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败"
+          required: false
+          schema:
+            $ref: '#/components/schemas/RecognitionStatus'
+        - name: verification_status
+          in: query
+          description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
+          required: false
+          schema:
+            $ref: '#/components/schemas/VerificationStatus'
+        - name: start_time
+          in: query
+          description: 以更新时间搜索的开始时间, RFC3339格式(YYYY-MM-DDTHH:MM:SSZ)
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: 2024-01-01T00:00:00Z
+        - name: end_time
+          in: query
+          description: 以更新时间搜索的结束时间, RFC3339格式(YYYY-MM-DDTHH:MM:SSZ)
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: 2024-01-01T10:00:00Z
+        - name: with_document
+          in: query
+          description: 是否返回文档的全部文字识别结果
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 成功获取文件列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 文件总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量 
+                          example: 20
+                        files:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: 文件ID
+                                example: 202412190001
+                              task_id:
+                                type: string
+                                description: 任务ID
+                                example: 202412190001
+                              task_type:
+                                type: integer
+                                description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+                                example: 1
+                              batch_number:
+                                type: string
+                                description: 批次编号
+                                example: 202412190001
+                              name:
+                                type: string
+                                description: 文件名
+                                example: invoice.pdf
+                              format:
+                                type: string
+                                description: 文件格式
+                              recognition_status: 
+                                $ref: '#/components/schemas/RecognitionStatus'
+                              verification_status:
+                                $ref: '#/components/schemas/VerificationStatus'
+                              category:
+                                type: string
+                                description: 文件类别
+                                example: invoice
+                              pages:
+                                type: array
+                                description: |
+                                  文件每页用于渲染的数据。  
+                                  配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+                                items:
+                                  type: object
+                                  properties:
+                                    angle:
+                                      type: integer
+                                      description: 旋转角度
+                                      enum:
+                                        - 0
+                                        - 90
+                                        - 180
+                                        - 270
+                                    width:
+                                      type: integer
+                                      description: 转正后的页宽
+                                      example: 1024
+                                    height:
+                                      type: integer
+                                      description: 转正后的页高
+                                      example: 1024
+                                    dpi:
+                                      type: integer
+                                      description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+                                      example: 144
+                              data:
+                                type: object
+                                description: 处理结果
+                                properties:
+                                  fields:
+                                    description: 字段列表
+                                    type: array
+                                    items:
+                                      $ref: '#/components/schemas/KeyValue'
+                                    example:
+                                    - key: 发票代码
+                                      value: "3100231130"
+                                      position:
+                                      - page: 0
+                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                    - key: 发票号码
+                                      value: "28737000"
+                                      position:
+                                      - page: 0
+                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                  items:
+                                    description: 表格数据列表
+                                    type: array
+                                    items:
+                                      type: array
+                                      items:
+                                        $ref: '#/components/schemas/KeyValue'
+                                    example:
+                                    - - key: 货物劳务名称
+                                        value: ＊电子计算机＊微型计算机主机
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      - key: 规格型号
+                                        value: DMS-SC68
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                    - - key: 货物劳务名称
+                                        value: ＊机械计算机＊巨型计算机主机
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                      - key: 规格型号
+                                        value: AN/FSQ-7
+                                        position:
+                                        - page: 0
+                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                                  tables:
+                                    description: 全部表格数据列表（含系统表格和手动配置表格）
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        tableName:
+                                          description: 表格名称
+                                          type: string
+                                          example: table1
+                                        tableType:
+                                          description: 表格类型， 0， 系统配置， 1 手动添加。
+                                          type: string
+                                          example: 0
+                                        items:
+                                          type: array
+                                          items:
+                                            type: array
+                                            items:
+                                              $ref: '#/components/schemas/CommonFieldDetailRespVO'
+                                  stamps:
+                                    description: 印章信息
+                                    type: array
+                                    items:
+                                      $ref: '#/components/schemas/StampValue'
+                                    example:
+                                      - angel: 0
+                                        page: 0
+                                        text: 全国统一发票监制章
+                                        type: 其他
+                                        color: 红色
+                                        shape: 椭圆章
+                                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                      - angel: 0
+                                        page: 0
+                                        text: 税务局章
+                                        type: 其他
+                                        color: 红色
+                                        shape: 椭圆章
+                                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                  handwritings:
+                                    description: 手写体信息
+                                    type: array
+                                    items:
+                                      $ref: '#/components/schemas/HandWritingValue'
+                                    example:
+                                      - angel: 0
+                                        page: 0
+                                        text: 3月1日
+                                        position:
+                                          - page: 0
+                                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                      - angel: 0
+                                        page: 0
+                                        text: 张三
+                                        position:
+                                          - page: 0
+                                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                                  invoiceVerifyResult:
+                                    description: 发票验真结果
+                                    type: object
+                                    properties:
+                                      invoiceVerifyStatus:
+                                        type: integer
+                                        description: 发票验真是否成功(0:否,1:是, null:未验真)
+                                        example: 0
+                                      invoiceVerifyErrorCode:
+                                        type: integer
+                                        description: 发票验真错误码
+                                        example: 0
+                                      invoiceVerifyCanRetry:
+                                        type: integer
+                                        description: 发票验真是否可以重试/发起(0:否,1:是)
+                                        example: 0
+                                      invoiceVerifyFailMsg:
+                                        type: string
+                                        description: 发票验真失败原因
+                                        example: 超过当天次数上限
+                              document:
+                                $ref: '#/components/schemas/Document'
+                              child_files:
+                                description: 子任务信息
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/SubFileDetailInfo'
+                            required:
+                              - id
+                              - name
+                              - format
+                              - recognition_status
+                              - verification_status
+                              - category
+      x-codeSamples:
+        - lang: 'bash'
+          label: cURL
+          source: | 
+            curl \
+            -H 'x-ti-app-id: 1234567890' \
+            -H 'x-ti-secret-code: 1234567890' \
+            'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=1234567890&batch_number=202412190001'
+  /api/app-api/sip/platform/v2/file/update:
+    post:
+      summary: 更新文件处理结果
+      description: 更新文件处理结果。通常用于人工审核校对后，上传修改后的key-value，覆盖自动识别的结果。
+      operationId: updateFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  workspace_id:
+                    type: string
+                    description: 空间ID
+                    example: 1234567890
+                  file_id:
+                    type: string
+                    description: 文件ID
+                    example: 202412190001
+                  data:
+                    description: |
+                      全量更新字段。  
+                      注意，即使只更新部分字段，也必须包含所有字段。  
+                      如果传入的字段较原字段多，则多出的字段会被添加。  
+                      如果传入的字段较原字段少，则缺少的字段会被删除。  
+                      如果传入的字段值较原字段值有变化，则字段值会被更新。  
+                      如果传入的字段与原字段完全相同，则字段会被保留。
+                    type: object
+                    properties:
+                      fields:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/KeyValue'
+                        example:
+                        - key: 发票代码
+                          value: "3100231130"
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - key: 发票号码
+                          value: "28737000"
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      items:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/KeyValue'
+                        example:
+                        - - key: 货物劳务名称
+                            value: ＊电子计算机＊微型计算机主机
+                            position:
+                            - page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                          - key: 规格型号
+                            value: DMS-SC68
+                            position:
+                            - page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - - key: 货物劳务名称
+                            value: ＊机械计算机＊巨型计算机主机
+                            position:
+                            - page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                          - key: 规格型号
+                            value: AN/FSQ-7
+                            position:
+                            - page: 0
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                required:
+                - workspace_id
+                - file_id
+                - data
+      responses:
+        '200':
+          description: 成功更新文件处理结果
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        files:
+                          description: 更新后的文件列表
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              workspace_id:
+                                type: string
+                                description: 空间ID
+                                example: 1234567890
+                              id:
+                                type: string
+                                description: 文件ID
+                                example: 202412190001
+      x-codeSamples:
+        - lang: 'bash'
+          label: cURL
+          source: | 
+            curl -X POST \
+            -H 'x-ti-app-id: 1234567890' \
+            -H 'x-ti-secret-code: 1234567890' \
+            -d '[{"workspace_id": "1234567890", "file_id": "202412190001", "data": {"fields": [{"key": "发票代码", "value": "3100231130"}]}}]' \
+            'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/update'
+  /api/app-api/sip/platform/v2/workspace/create:
+    post:
+      summary: 创建工作空间
+      description: 创建工作空间
+      operationId: createWorkspace
+      tags:
+        - 工作空间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 工作空间名称
+                  example: 我的工作空间
+                description:
+                  type: string
+                  description: 工作空间描述
+                  example: 我的工作空间描述
+      responses:
+        '200':
+          description: 成功创建空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          $ref: '#/components/schemas/WorkspaceId'
+  /api/app-api/sip/platform/v2/workspace/list:
+    get:
+      summary: 获取工作空间列表
+      description: 获取工作空间列表
+      operationId: listWorkspaces
+      tags:
+        - 工作空间
+      parameters:
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+      responses:
+        '200':
+          description: 成功获取工作空间列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 工作空间总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        workspaces:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/WorkspaceItem'
+  /api/app-api/sip/platform/v2/workspace/delete:
+    delete:
+      summary: 删除工作空间
+      description: 删除工作空间
+      operationId: deleteWorkspace
+      tags:
+        - 工作空间
+      parameters:
+        - name: id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+      responses:
+        '200':
+          description: 成功删除工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/workspace/update:
+    post:
+      summary: 更新工作空间
+      description: 更新工作空间
+      operationId: updateWorkspace
+      tags:
+        - 工作空间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceItem'
+      responses:
+        '200':
+          description: 成功更新工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/workspace/get:
+    get:
+      summary: 获取工作空间
+      description: 获取工作空间
+      operationId: getWorkspace
+      tags:
+        - 工作空间
+      parameters:
+        - name: id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+      responses:
+        '200':
+          description: 成功获取工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '#/components/schemas/WorkspaceItem'
+  /api/app-api/sip/platform/v2/category/create:
+    post:
+      summary: 创建文件类别
+      description: 创建文件类别
+      operationId: createCategory
+      tags:
+        - 文件类别
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  $ref: '#/components/schemas/WorkspaceId'
+                name:
+                  type: string
+                  description: 文件类别名称
+                  example: 发票
+                description:
+                  type: string
+                  description: 文件类别描述
+                  example: 发票分类描述
+              required:
+                - name
+      responses:
+        '200':
+          description: 成功创建文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: 文件类别ID
+                          example: "1234567890"
+  /api/app-api/sip/platform/v2/category/list:
+    get:
+      summary: 获取文件类别列表
+      description: 获取文件类别列表
+      operationId: listCategories
+      tags:
+        - 文件类别
+      parameters:
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: enabled
+          in: query
+          description: "启用状态 0: 禁用 1: 启用 2: 草稿"
+          required: false
+          schema:
+            type: string
+            default: "1"
+            enum:
+              - "all"
+              - "1"
+              - "0"
+              - "2"
+      responses:
+        '200':
+          description: 成功获取文件类别列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 文件类别总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        categories:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/CategoryListItem'
+  /api/app-api/sip/platform/v2/category/get:
+    get:
+      summary: 获取文件类别
+      description: 获取文件类别
+      operationId: getCategory
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      responses:
+        '200':
+          description: 成功获取文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '#/components/schemas/CategoryItem'
+  /api/app-api/sip/platform/v2/category/update:
+    post:
+      summary: 更新文件类别
+      description: 更新文件类别
+      operationId: updateCategory
+      tags:
+        - 文件类别
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+              - type: object
+                properties:
+                  workspace_id:
+                    $ref: '#/components/schemas/WorkspaceId'
+              - $ref: '#/components/schemas/CategoryItem'
+      responses:
+        '200':
+          description: 成功更新文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/delete:
+    delete:
+      summary: 删除文件类别
+      description: 删除文件类别
+      operationId: deleteCategory
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      responses:
+        '200':
+          description: 成功删除文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/upload:
+    post:
+      summary: 上传文件类别样本
+      description: 上传文件类别样本
+      operationId: uploadCategorySample
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 成功上传文件类别样本
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          id:
+                            $ref: '#/components/schemas/CategorySampleId'
+  /api/app-api/sip/platform/v2/category/sample/list:
+    get:
+      summary: 获取文件类别样本列表
+      description: 获取文件类别样本列表
+      operationId: listCategorySamples
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+      responses:
+        '200':
+          description: 成功获取文件类别样本列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: 样本总数
+                            example: 100
+                          page:
+                            type: integer
+                            description: 当前页码
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: 每页数量
+                            example: 20
+                          samples:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategorySampleListItem'
+  /api/app-api/sip/platform/v2/category/sample/delete:
+    delete:
+      summary: 删除文件类别样本
+      description: 删除文件类别样本
+      operationId: deleteCategorySample
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功删除文件类别样本
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/download:
+    get:
+      summary: 获取文件类别样本
+      description: 获取文件类别样本
+      operationId: getCategorySample
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功获取文件类别样本
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+  /api/app-api/sip/platform/v2/category/sample/get_fields:
+    get:
+      summary: 获取文件类别样本字段
+      description: 获取文件类别样本字段
+      operationId: getCategorySampleFields
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功获取文件类别样本字段
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          fields:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+  /api/app-api/sip/platform/v2/review/listByFileBatchNo:
+    get:
+      tags:
+        - 文件审核
+      summary: 文件批次列表
+      description: 文件批次列表，请求参数workspaceIdNo从页面获取
+      operationId: listByFileBatchNo
+      parameters:
+        - name: workspaceIdNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 工作空间唯一编号
+            example: 123456
+        - name: fileBatchNo
+          in: query
+          required: false
+          schema:
+            type: string
+            description: 文件批次号
+            example: abcd
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiFileBatchInfoRespVO'
+  /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo:
+    get:
+      tags:
+        - 文件审核
+      summary: 文件任务类别列表
+      description: |-
+        文件任务类别列表，请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
+      operationId: listExecuteTasksByFileBatchNo
+      parameters:
+        - name: workspaceIdNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 工作空间ID
+            example: 123
+        - name: fileBatchNo
+          in: query
+          required: true
+          schema:
+            type: string
+            description: 文件批次号
+            example: abcd
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiFileBatchExecuteTaskRespVO'
+  /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo:
+    post:
+      tags:
+        - 文件审核
+      summary: 审核规则列表
+      description: |-
+        审核规则列表(一般不传分类获取批次下所有规则)，部分请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
+      operationId: getRulesByClassificationIdNo
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClassificationQueryReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleVO'
+  /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo:
+    post:
+      tags:
+        - 文件审核
+      summary: 文件任务列表
+      description: |-
+        文件任务列表，请求参数需从前置接口获取。 
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
+      operationId: listTaskDetailInfoByClassificationIdNo
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClassificationQueryReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleBindingTaskDetailRespVO'
+  /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList:
+    post:
+      tags:
+        - 文件审核
+      summary: 模型字段列表
+      description: >-
+        模型字段列表，请求参数需从前置接口获取。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：用于修改规则时的前置接口，获取规则的分类id信息 
+
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）
+      operationId: listModelFieldInfoByClassificationIdNoList
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClassificationIdNoListReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiModelFieldRespVO'
+  /api/app-api/sip/platform/v2/review/create:
+    post:
+      tags:
+        - 文件审核
+      summary: 创建审核规则
+      description: >-
+        创建审核规则，调用接口前需要调用一些前置接口。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+      operationId: createReviewRule
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewCreateReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiRuleReviewCreateRespVO'
+  /api/app-api/sip/platform/v2/review/update:
+    post:
+      tags:
+        - 文件审核
+      summary: 更新审核规则
+      description: >-
+        更新审核规则，调用接口前需要调用一些前置接口。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则 
+
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）、fieldInfoList（当前规则配置的字段信息列表）、reviewRuleIdNo（审核规则id）
+      operationId: updateReviewRule
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewUpdateReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiRuleReviewUpdateRespVO'
+  /api/app-api/sip/platform/v2/review/delete:
+    post:
+      tags:
+        - 文件审核
+      summary: 删除审核规则
+      operationId: deleteReviewRule
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRuleReviewDeleteReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultBoolean'
+  /api/app-api/sip/platform/v2/review/runRule:
+    post:
+      tags:
+        - 文件审核
+      summary: 试运行审核规则
+      description: >-
+        试运行审核规则，部分请求参数需从前置接口获取。 
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
+        关键返回结果字段：executeTaskId（任务id）
+      operationId: runRule
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewRuleRunReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultApiReviewRuleTaskVO'
+  /api/app-api/sip/platform/v2/review/submitReviewTask:
+    post:
+      tags:
+        - 文件审核
+      summary: 提交审核任务
+      description: >-
+        提交审核任务，部分请求参数需从前置接口获取。
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
+        关键返回结果字段：executeTaskId（任务id）
+      operationId: submitReviewTask
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewTaskSubmitReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewTaskSubmitRespVO'
+  /api/app-api/sip/platform/v2/review/listReviewRuleAndTask:
+    post:
+      tags:
+        - 文件审核
+      summary: 审核规则任务列表
+      description: >-
+        审核规则任务列表，请求参数需从前置接口获取。 
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+
+        关键返回结果字段：fileBatchNo
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
+      operationId: listReviewRuleAndTask
+      parameters:
+        - name: x-ti-app-id
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-app-id
+            example: 1234abcd
+        - name: x-ti-secret-code
+          in: header
+          required: true
+          schema:
+            type: string
+            description: x-ti-secret-code
+            example: 1234abcd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiReviewRuleAndTaskReqVO'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CommonResultListApiReviewRuleAndTaskRespVO'
+components:
+  schemas: 
+    RecognitionStatus:
+      type: integer
+      description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败 3: 分类中 4:抽取中 5:准备中 6:文件拆分中 7:切图中 10: 分类完成(当upload接口的target_process为classify时才有此状态)"
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 10
+    VerificationStatus:
+      type: integer
+      description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
+      enum:
+        - 0
+        - 2
+        - 3
+        - 4
+        - 5
+    CodeMessage:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        message:
+          type: string
+          description: 状态描述
+      required:
+      - code
+      - message
+    KeyValue:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段名
+        value:
+          type: string
+          description: 字段值
+        position:
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+          type: array
+          items:
+            type: object
+            properties:
+              page:
+                type: integer
+                description: 字段所在页。是`pages`数组的索引
+              vertices:
+                type: array
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                items:
+                  type: integer
+                minItems: 8
+                maxItems: 8
+    StampValue:
+      type: object
+      properties:
+        angel:
+          type: integer
+          description: 角度
+        page:
+          type: integer
+          description: 页码
+        text:
+          type: string
+          description: 印章文本内容
+        type:
+          type: string
+          description: 印章类型
+        color:
+          type: string
+          description: 印章颜色
+        shape:
+          type: string
+          description: 印章形状
+        position:
+          type: array
+          description: 位置信息
+          items:
+            type: integer
+            example: 1
+    HandWritingValue:
+      type: object
+      properties:
+        angel:
+          type: integer
+          description: 角度
+        page:
+          type: integer
+          description: 页码
+        text:
+          type: string
+          description: 印章文本内容
+        position:
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+          type: array
+          items:
+            type: object
+            properties:
+              page:
+                type: integer
+                description: 字段所在页。是`pages`数组的索引
+              vertices:
+                type: array
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+                items:
+                  type: integer
+                minItems: 8
+                maxItems: 8
+    Document:
+      type: object
+      properties:
+        pages:
+          type: array
+          items:
+            type: object
+            properties:
+              angle:
+                type: integer
+                description: 页面的旋转角度
+              width:
+                type: integer
+                description: 页面的宽度
+              height:
+                type: integer
+                description: 页面的高度
+              lines:
+                description: 页面的文本行数组
+                type: array
+                items:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: 行文本
+                    position:
+                      type: array
+                      items:
+                        type: integer
+                        minItems: 8
+                        maxItems: 8
+                    char_positions:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: integer
+                          minItems: 8
+                          maxItems: 8
+    TaskCropResult:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: 所属原文件的页索引，0代表源文件的第一页
+        imageAngle:
+          type: string
+          description: 角度
+    CommonFieldDetailRespVO:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段key
+        value:
+          type: string
+          description: 字段值
+        textInLines:
+          type: array
+          description: 字段坐标
+          items:
+            $ref: '#/components/schemas/TextInLines'
+        index:
+          type: integer
+          description: 索引
+    SubFileDetailInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 文件ID
+          example: 202412190001
+        task_id:
+          type: string
+          description: 任务ID
+          example: 202412190001
+        task_type:
+          type: integer
+          description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+          example: 1
+        parent_task_id:
+          type: string
+          description: 父任务ID（不为0时有意义）
+          example: 202412190001
+        batch_number:
+          type: string
+          description: 批次编号
+          example: 202412190001
+        name:
+          type: string
+          description: 文件名
+          example: invoice.pdf
+        format:
+          type: string
+          description: 文件格式
+        recognition_status:
+          $ref: '#/components/schemas/RecognitionStatus'
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatus'
+        category:
+          type: string
+          description: 文件类别
+          example: invoice
+        pages:
+          type: array
+          description: |
+            文件每页用于渲染的数据。  
+            配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+          items:
+            type: object
+            properties:
+              angle:
+                type: integer
+                description: 旋转角度
+                enum:
+                  - 0
+                  - 90
+                  - 180
+                  - 270
+              width:
+                type: integer
+                description: 转正后的页宽
+                example: 1024
+              height:
+                type: integer
+                description: 转正后的页高
+                example: 1024
+              dpi:
+                type: integer
+                description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+                example: 144
+        data:
+          type: object
+          description: 处理结果
+          properties:
+            fields:
+              description: 字段列表
+              type: array
+              items:
+                $ref: '#/components/schemas/KeyValue'
+              example:
+                - key: 发票代码
+                  value: "3100231130"
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - key: 发票号码
+                  value: "28737000"
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            items:
+              description: 表格数据列表
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KeyValue'
+              example:
+                - - key: 货物劳务名称
+                    value: ＊电子计算机＊微型计算机主机
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  - key: 规格型号
+                    value: DMS-SC68
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - - key: 货物劳务名称
+                    value: ＊机械计算机＊巨型计算机主机
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  - key: 规格型号
+                    value: AN/FSQ-7
+                    position:
+                      - page: 0
+                        vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            tables:
+              description: 全部表格数据列表（含系统表格和手动配置表格）
+              type: array
+              items:
+                type: object
+                properties:
+                  tableName:
+                    description: 表格名称
+                    type: string
+                    example: table1
+                  tableType:
+                    description: 表格类型， 0， 系统配置， 1 手动添加。
+                    type: string
+                    example: 0
+                  items:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/CommonFieldDetailRespVO'
+            stamps:
+              description: 印章信息
+              type: array
+              items:
+                $ref: '#/components/schemas/StampValue'
+              example:
+                - angel: 0
+                  page: 0
+                  text: 全国统一发票监制章
+                  type: 其他
+                  color: 红色
+                  shape: 椭圆章
+                  position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - angel: 0
+                  page: 0
+                  text: 税务局章
+                  type: 其他
+                  color: 红色
+                  shape: 椭圆章
+                  position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            handwritings:
+              description: 手写体信息
+              type: array
+              items:
+                $ref: '#/components/schemas/HandWritingValue'
+              example:
+                - angel: 0
+                  page: 0
+                  text: 3月1日
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                - angel: 0
+                  page: 0
+                  text: 张三
+                  position:
+                    - page: 0
+                      vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            invoiceVerifyResult:
+              description: 发票验真结果
+              type: object
+              properties:
+                invoiceVerifyStatus:
+                  type: integer
+                  description: 发票验真是否成功(0:否,1:是, null:未验真)
+                  example: 0
+                invoiceVerifyErrorCode:
+                  type: integer
+                  description: 发票验真错误码
+                  example: 0
+                invoiceVerifyCanRetry:
+                  type: integer
+                  description: 发票验真是否可以重试/发起(0:否,1:是)
+                  example: 0
+                invoiceVerifyFailMsg:
+                  type: string
+                  description: 发票验真失败原因
+                  example: 超过当天次数上限
+        document:
+          $ref: '#/components/schemas/Document'
+        from_parent_position_list:
+          type: array
+          description: 切图结果在原文件中的坐标位置
+          items:
+            type: integer
+            description: 位置信息
+            example: 1
+        crop_info:
+          $ref: '#/components/schemas/TaskCropResult'
+    WorkspaceId:
+      type: string
+      description: 空间ID
+      example: "1234567890"
+    WorkspaceItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+          description: 工作空间名称
+          example: 我的工作空间
+        description:
+          type: string
+          description: 工作空间描述
+          example: 我的工作空间描述
+    CategoryId:
+      type: string
+      description: 文件类别ID
+      example: "1234567890"
+    CategoryField:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段名
+          example: 发票代码
+        description:
+          type: string
+          description: 字段描述
+          example: 发票代码描述
+    CategoryListItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/CategoryId'
+        name:
+          type: string
+          description: 文件类别名称
+          example: 发票
+        description:
+          type: string
+          description: 文件类别描述
+          example: 发票分类描述
+        enabled:
+          type: integer
+          description: "启用状态 0: 禁用 1: 启用 2: 草稿"
+          example: 1
+          enum:
+            - 0
+            - 1
+            - 2
+      required:
+      - id
+    CategoryItem:
+      allOf:
+      - $ref: '#/components/schemas/CategoryListItem'
+      - type: object
+        properties:
+          fields:
+            type: array
+            items:
+              $ref: '#/components/schemas/CategoryField'
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/CategoryField'
+    CategorySampleId:
+      type: string
+      description: 样本ID
+      example: "1234567890"
+    CategorySampleListItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/CategorySampleId'
+        name:
+          type: string
+          description: 样本文件名
+          example: 样本.pdf
+        format:
+          type: string
+          description: 样本文件格式
+          example: pdf
+    ApiRuleReviewUpdateReqVO:
+      required:
+        - ruleIdNo
+        - ruleName
+        - rulePrompt
+      type: object
+      properties:
+        ruleIdNo:
+          type: string
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
+          example: 12345
+        ruleName:
+          maxLength: 255
+          minLength: 0
+          type: string
+          description: 审核规则名称
+          example: 规则名称
+        rulePrompt:
+          maxLength: 1000
+          minLength: 0
+          type: string
+          description: 审核规则提示
+          example: 规则提示
+        fields:
+          type: array
+          description: 关联字段信息
+          items:
+            $ref: '#/components/schemas/Field'
+      description: 更新规则请求入参
+    CommonResultApiRuleReviewUpdateRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          $ref: '#/components/schemas/ApiRuleReviewUpdateRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 12345ABC
+    Field:
+      type: object
+      description: 字段信息
+      properties:
+        classificationIdNo:
+          type: string
+          description: 分类id
+          example: 1234
+        classificationName:
+          type: string
+          description: 分类名称
+          example: 身份证
+        basicFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasicField'
+        tableFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableField'
+    BasicField:
+      type: object
+      properties:
+        fieldId:
+          type: integer
+          description: 字段id
+          example: 1234
+        fieldName:
+          type: string
+          description: 字段名称
+          example: 卡号
+    TableField:
+      type: object
+      properties:
+        tableId:
+          type: integer
+          description: 表格id
+          example: -1
+        tableName:
+          type: string
+          description: 表格名称
+          example: Table1
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasicField'
+    ApiRuleReviewUpdateRespVO:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: 版本号
+          example: 1
+      description: 更新规则的返回结果VO
+    ApiReviewTaskSubmitReqVO:
+      required:
+        - executeTaskIdList
+        - ruleIdNoList
+      type: object
+      properties:
+        ruleIdNoList:
+          type: array
+          description: 审核规则唯一ID列表
+          items:
+            type: integer
+            description: 审核规则唯一ID，含义同reviewRuleIdNo
+            example: 123
+        executeTaskIdList:
+          type: array
+          description: 任务ID列表
+          items:
+            type: string
+            description: 任务ID列表
+            example: 123
+      description: 提交审核任务 Request VO
+    CommonResultListApiReviewTaskSubmitRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewTaskSubmitRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234ABCD
+    ApiReviewTaskSubmitRespVO:
+      type: object
+      properties:
+        reviewTaskId:
+          type: integer
+          description: 审核结果任务ID
+          example: 123
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
+          example: 123
+      description: 任务提交审核结果VO
+    ApiReviewRuleRunReqVO:
+      required:
+        - executeTaskIdList
+        - ruleIdNo
+      type: object
+      properties:
+        ruleIdNo:
+          type: string
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
+          example: 123
+        executeTaskIdList:
+          type: array
+          description: 任务ID列表
+          items:
+            type: string
+            description: 任务ID列表
+            example: 123
+      description: 审核API - 单次运行审核规则 Request VO
+    CommonResultApiReviewRuleTaskVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          $ref: '#/components/schemas/ApiReviewRuleTaskVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234ABCD
+    ApiReviewRuleTaskVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID（此处无意义）
+          example: 1234
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 1234
+        reviewRuleVersion:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        processStatus:
+          type: integer
+          description: 任务状态 (0:待审核 1:审核成功 2:审核失败 3:审核中)
+          example: 0
+        thinkOutput:
+          type: string
+          description: 思考输出
+          example: 思考输出内容
+        evalOutput:
+          type: string
+          description: 评估输出
+          example: 评估输出内容
+        bindingTaskIds:
+          type: array
+          description: 绑定任务ID列表
+          items:
+            type: integer
+            description: 绑定任务ID列表
+            example: 123
+        resultHighlights:
+          type: array
+          description: 结果高亮信息
+          items:
+            $ref: '#/components/schemas/DocumentOcrPosition'
+        evalResult:
+          type: boolean
+          description: '评估结果 True: 通过 False: 不通过'
+          example: true
+        duration:
+          type: integer
+          description: 任务耗时（单位：毫秒）
+          example: 12345
+        eval:
+          type: boolean
+          description: '是否为测试运行 True: 是 False: 否'
+          example: true
+        manualAuditStatus:
+          type: integer
+          description: '评估结果人工确认 0: 未确认 1: 已确认'
+          example: 0
+        manualAuditMessage:
+          type: string
+          description: 人工批注
+          example: 批注内容
+      description: 审核任务VO
+    DocumentOcrPosition:
+      type: object
+      properties:
+        fileId:
+          type: integer
+          description: 文件ID
+          example: 12345
+        taskId:
+          type: integer
+          description: 任务ID
+          example: 1234
+        text:
+          type: string
+          description: 文本
+          example: 文本内容
+        position:
+          type: array
+          description: 位置信息
+          items:
+            type: integer
+            description: 位置信息
+            example: 1
+        page:
+          type: integer
+          description: 页码
+          example: 0
+        angel:
+          type: integer
+          description: 旋转角度
+          example: 0
+        startPos:
+          type: integer
+          description: 起始位置
+          example: 0
+        endPos:
+          type: integer
+          description: 结束位置
+          example: 100
+    ApiClassificationQueryReqVO:
+      required:
+        - fileBatchNo
+        - workspaceIdNo
+      type: object
+      properties:
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: string
+            description: 分类ID
+            example: 123
+        workspaceIdNo:
+          type: string
+          description: 工作空间ID
+          example: 123
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+      description: 根据分类ID返回任务队列信息列表-请求VO
+    CommonResultListApiReviewRuleBindingTaskDetailRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewRuleBindingTaskDetailRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiReviewRuleBindingTaskDetailRespVO:
+      type: object
+      properties:
+        executeTaskId:
+          type: integer
+          description: 任务ID
+          example: 1234
+      description: 审核规则绑定任务id详情响应VO
+    ApiReviewRuleAndTaskReqVO:
+      required:
+        - fileBatchNo
+        - workspaceIdNo
+      type: object
+      properties:
+        workspaceIdNo:
+          type: string
+          description: 工作空间ID
+          example: 1234
+        fileBatchNo:
+          type: string
+          description: 文件批次ID
+          example: abcd
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: string
+            description: 分类ID
+            example: 1234
+      description: 返回审核规则和任务列表 Request VO
+    CommonResultListApiReviewRuleAndTaskRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewRuleAndTaskRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiReviewRuleAndTaskRespVO:
+      type: object
+      properties:
+        reviewRule:
+          $ref: '#/components/schemas/ReviewRuleDTO'
+        latestReviewRuleTask:
+          $ref: '#/components/schemas/ReviewRuleTaskDO'
+      description: 规则和任务信息
+    ReviewRuleDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID
+          example: 1
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 123
+        reviewRuleType:
+          type: string
+          description: 审核规则类型
+          example: single
+        reviewRulePrompt:
+          type: string
+          description: 审核规则提示
+          example: 审核规则提示内容
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        reviewRuleName:
+          type: string
+          description: 审核规则名称
+          example: 审核规则名称
+        workspaceIdNo:
+          type: integer
+          description: 工作空间唯一编号
+          example: 123456
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 1234
+        version:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        fieldInfoList:
+          type: array
+          description: 字段信息平铺列表
+          items:
+            $ref: '#/components/schemas/ReviewRuleFieldDTO'
+      description: 规则审核DTO
+    ReviewRuleFieldDTO:
+      type: object
+      properties:
+        fieldId:
+          type: integer
+          description: 字段ID
+          example: 1234
+        fieldName:
+          type: string
+          description: 字段名称
+          example: 名称
+        blockType:
+          type: integer
+          description: 字段类型 0:基本字段 1:表格字段
+          example: 0
+        tableId:
+          type: integer
+          description: 表格ID
+          example: -1
+        tableName:
+          type: string
+          description: 表格名称
+          example: Table1
+        classificationIdNo:
+          type: integer
+          description: 分类id
+          example: 123
+        classificationName:
+          type: string
+          description: 分类名称
+          example: 身份证
+      description: 审核规则字段信息DTO
+    ReviewRuleTaskDO:
+      type: object
+      properties:
+        gmtCreate:
+          type: string
+        gmtModified:
+          type: string
+        creatorId:
+          type: integer
+          description: 创建人用户id
+          example: 1
+        operatorId:
+          type: integer
+          description: 操作人用户id
+          example: 1
+        deleted:
+          type: integer
+          description: 是否删除，0-未删除，1-已删除
+          example: 0
+        id:
+          type: integer
+          description: 审核规则任务唯一id
+          example: 1
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 1
+        reviewRuleVersion:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        processStatus:
+          type: integer
+          description: 审核任务状态（0:待审核、1:审核成功、2:审核失败、3:审核中）
+          example: 1
+        thinkOutput:
+          type: string
+          description: 思考输出
+          example: 思考输出内容
+        evalOutput:
+          type: string
+          description: 评估输出
+          example: 评估输出内容
+        bindingTaskIds:
+          type: array
+          description: 绑定任务ID列表
+          items:
+            type: integer
+            description: 绑定任务ID
+            example: 1234
+        resultHighlights:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentOcrPosition'
+        evalResult:
+          type: boolean
+          description: 评估结果（true：通过、false：不通过）
+          example: true
+        duration:
+          type: integer
+          description: 任务耗时
+          example: 100
+        eval:
+          type: boolean
+          description: 是否为测试运行
+          example: false
+        manualAuditStatus:
+          type: integer
+          description: 评估结果人工确认
+          example: 0:未确认、1:已确认
+        manualAuditMessage:
+          type: string
+          description: 人工批注
+          example: 人工批注内容
+    ApiClassificationIdNoListReqVO:
+      required:
+        - classificationIdNoList
+      type: object
+      properties:
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          example:
+            - 1
+            - 2
+            - 3
+          items:
+            type: string
+            description: 分类ID
+            example: 1
+      description: 分类ID列表请求VO
+    CommonResultListApiModelFieldRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiModelFieldRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiModelFieldRespVO:
+      required:
+        - description
+        - fieldName
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID，此字段含义同fieldId
+          example: 29026
+        fieldName:
+          type: string
+          description: 字段名称
+          example: 赵六
+        description:
+          type: string
+          description: 字段描述
+          example: 赵六
+        fieldPrompt:
+          type: string
+          description: 字段提示
+          example: 赵六
+        modelIdNo:
+          type: string
+          description: 所属模型IdNo
+          example: '1024'
+        fieldCode:
+          type: string
+          description: 字段code
+          example: '1024'
+        sysFieldId:
+          type: string
+          description: 关联系统字段ID
+          example: '1024'
+        fieldType:
+          type: string
+          description: 字段类型
+          example: '1024'
+        fieldFormat:
+          type: string
+          description: 字段格式化格式
+          example: '1024'
+        blockType:
+          type: integer
+          description: 字段模块 0:基本字段 1:表格字段
+          example: 1024
+        tableIdNo:
+          type: integer
+          description: 表格ID
+          example: 1024
+        tableId:
+          type: integer
+          description: 表格ID，含义同tableIdNo
+          example: 1024
+        tableName:
+          type: string
+          description: 表格名称
+          example: Table Name
+        requiredStatus:
+          type: integer
+          description: 是否必填状态 0:选填字段 1:必填字段
+          example: 1024
+        sort:
+          type: integer
+          description: 排序
+          example: 1
+        textInLines:
+          type: array
+          description: 字段坐标
+          items:
+            $ref: '#/components/schemas/TextInLines'
+        enableStatus:
+          type: integer
+          description: '是否启用 0：禁用  1；启用  2: 草稿'
+          example: 1
+        enableFlag:
+          type: string
+          description: 是否开启, Y:是, N:否
+          example: Y
+        classificationIdNo:
+          type: integer
+          description: 分类ID
+          example: 123
+      description: 模型基础字段表格信息 Response VO
+    TextInLines:
+      type: object
+      properties:
+        angle:
+          type: string
+          description: 角度
+          example: 0
+        pos:
+          type: array
+          description: 坐标
+          items:
+            type: integer
+            description: 坐标
+            example: 1
+        page:
+          type: integer
+          description: 页码
+          example: 1
+        text:
+          type: string
+          description: 文本
+          example: 文本内容
+        char_pos:
+          type: array
+          description: 字符坐标
+          items:
+            type: array
+            description: 字符坐标
+            items:
+              type: integer
+              description: 字符坐标
+              example: 1
+      description: 字段坐标
+    CommonResultListApiReviewRuleVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiReviewRuleVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiReviewRuleVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 主键ID
+          example: 1
+        reviewRuleIdNo:
+          type: integer
+          description: 审核规则唯一id
+          example: 1
+        reviewRuleType:
+          type: string
+          description: 审核规则类型 (single | multiple)
+          example: single
+        reviewRulePrompt:
+          type: string
+          description: 审核规则提示
+          example: 审核规则提示内容
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        reviewRuleName:
+          type: string
+          description: 审核规则名称
+          example: abcd
+        workspaceIdNo:
+          type: integer
+          description: 工作空间唯一编号
+          example: 1234
+        classificationIdNoList:
+          type: array
+          description: 分类ID列表
+          items:
+            type: integer
+            description: 分类ID
+            example: 1234
+        version:
+          type: integer
+          description: 审核规则版本
+          example: 1
+        fieldInfoList:
+          type: array
+          description: 字段信息平铺列表
+          items:
+            $ref: '#/components/schemas/ReviewRuleFieldDTO'
+      description: 规则审核VO
+    ApiRuleReviewDeleteReqVO:
+      required:
+        - ruleIdNo
+      type: object
+      properties:
+        ruleIdNo:
+          type: string
+          description: 审核规则唯一id，含义同reviewRuleIdNo
+          example: 123
+      description: 删除审核规则请求参数
+    CommonResultBoolean:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: boolean
+          description: 是否成功（true：成功、false：失败）
+          example: true
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiRuleReviewCreateReqVO:
+      required:
+        - classificationIdNoList
+        - fileBatchNo
+        - ruleName
+        - rulePrompt
+        - workspaceIdNo
+      type: object
+      properties:
+        ruleName:
+          maxLength: 255
+          minLength: 0
+          type: string
+          description: 审核规则名称
+          example: 审核规则123
+        rulePrompt:
+          maxLength: 1000
+          minLength: 0
+          type: string
+          description: 审核规则提示
+          example: 审核规则提示内容
+        classificationIdNoList:
+          maxItems: 2147483647
+          minItems: 1
+          type: array
+          description: 分类ID列表
+          items:
+            type: string
+            description: 分类ID
+            example: 123
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        workspaceIdNo:
+          type: string
+          description: 工作空间ID
+          example: 123
+        fields:
+          type: array
+          description: 关联的字段信息
+          items:
+            $ref: '#/components/schemas/Field'
+      description: 创建规则ReqVO
+    CommonResultApiRuleReviewCreateRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          $ref: '#/components/schemas/ApiRuleReviewCreateRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiRuleReviewCreateRespVO:
+      type: object
+      properties:
+        ruleIdNo:
+          type: integer
+          description: 审核规则唯一id，含义同reviewRuleIdNo
+          example: 1234
+      description: 创建规则返回结果VO
+    CommonResultListApiFileBatchExecuteTaskRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiFileBatchExecuteTaskRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 200
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiFileBatchExecuteTaskRespVO:
+      type: object
+      properties:
+        taskId:
+          type: integer
+          description: 任务ID
+          example: 123456
+        fileId:
+          type: integer
+          description: 文件ID
+          example: 123456
+        fileName:
+          type: string
+          description: 文件名称
+          example: 文件名称1
+        taskStatus:
+          type: integer
+          description: 任务状态 0待识别 1识别成功 2识别失败 3分类中 4抽取中 5准备中 6文件拆分中
+          example: 1
+        taskClassificationIdNo:
+          type: integer
+          description: 任务分类ID
+          example: 123456
+        taskClassificationName:
+          type: string
+          description: 任务分类名称
+          example: 身份证
+      description: 文件任务类别列表结果字段
+    CommonResultListApiFileBatchInfoRespVO:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiFileBatchInfoRespVO'
+        msg:
+          type: string
+          description: 状态信息
+          example: 成功
+        traceId:
+          type: string
+          description: 链路id
+          example: 1234abcd
+    ApiFileBatchInfoRespVO:
+      type: object
+      properties:
+        fileBatchNo:
+          type: string
+          description: 文件批次号
+          example: abcd
+        uploadDate:
+          type: string
+          description: 上传日期
+        updateTime:
+          type: string
+          description: 修改时间
+        recognitionStatus:
+          type: integer
+          description: |
+            识别状态。  
+            可选值：  
+            - `0`: 识别中  
+            - `1`: 识别完成  
+            - `2`: 识别失败  
+            - `10`: 分类成功(当upload接口的target_process为classify时才有此状态)  
+            识别失败表示存在部分任务识别失败。  
+          example: 1
+        recognitionSuccessCount:
+          type: integer
+          description: 识别成功数量
+          example: 10
+        recognitionFailCount:
+          type: integer
+          description: 识别失败数量
+          example: 2
+        taskCount:
+          type: integer
+          description: 任务数量
+          example: 3
+        reviewRuleCount:
+          type: integer
+          description: 包含规则数
+          example: 4
+        fileProcessStatus:
+          type: integer
+          description: 文件任务处理状态（0:无、1:通过、2:不通过、3:审核中、4:待审核）
+          example: 1
+        classificationVOList:
+          type: array
+          description: 分类信息
+          items:
+            $ref: '#/components/schemas/ClassificationVO'
+        hasReviewRuleRepo:
+          type: boolean
+          description: 是否有可用规则库（true：有、false：没有）
+          example: true
+      description: 根据批次展示审核列表返回结果
+    ClassificationVO:
+      type: object
+      properties:
+        classificationIdNo:
+          type: integer
+          description: 分类id
+          example: 1234
+        classificationName:
+          type: string
+          description: 分类名称
+          example: 身份证
+  securitySchemes:
+    ApiId: # arbitrary name for the security scheme
+      type: apiKey
+      in: header # can be "header", "query" or "cookie"
+      name: x-ti-app-id
+    SecretCode: # arbitrary name for the security scheme
+      type: apiKey
+      in: header # can be "header", "query" or "cookie"
+      name: x-ti-secret-code
+
+security:
+  - ApiId: []
+    SecretCode: []

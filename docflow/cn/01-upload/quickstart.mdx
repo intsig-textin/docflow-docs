@@ -1,0 +1,260 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档上传功能"
+---
+
+<Tip>
+  本文演示如何通过 REST API 上传文件到 DocFlow。更多支持的文件格式见[文件格式支持](./support_format)。
+</Tip>
+
+Docflow 的业务处理流程是异步流程，上传接口可以上传一个或多个文件至Docflow，一旦上传成功，将会获得一个批次编码(`batch_number`)和若干文件标识(`file_id`)，用于后续业务流程查询业务处理结果。
+
+Docflow 支持常见图片格式、PDF和Office文件格式，多页文档最大**支持1000页**。可以参考更详细的[文件格式支持和限制](./support_format)页面。
+
+## 01 上传单个文件
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@</path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+### 参数说明
+
+#### 必填参数
+
+- `workspace_id`: 空间ID。可以参考[获取工作空间ID](../08-faq/get_workspace_id)文档。
+
+#### 选填参数
+
+可在 URL 查询参数中按需添加：
+
+- `category`: 文件类别（例如：invoice）
+- `batch_number`: 批次编号，未提供时系统自动生成（推荐：同批多文件共用一个批次号，便于一起查询）
+- `auto_verify_vat`: 是否开启发票验真，默认 false
+- `split_flag`: 是否进行文件拆分，默认 false（详见[文件拆分](../05-split/split)章节）
+- `crop_flag`: 是否进行多图切分，默认 false（详见[多图切分](../05-split/crop)章节）
+- `target_process`: 目标处理类型，可选 `classify` 或 `extract`。\
+  Docflow 会默认会进行 解析-\>分类-\>抽取 完整流程。当`target_process`为`classify`时，流程执行至分类即结束，以此实现**仅分类**的需求
+
+示例：
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+## 02 批量上传
+
+当想要多份文件关联到一个批次时，可以采用批量上传。
+
+批量上传有两种方式
+
+1. 在一个请求中上传多个文件。该方案相对简单， 同一次请求可重复附带多个 `file` 字段实现批量上传：
+
+示例:
+
+<CodeGroup>
+
+```bash curl icon=terminal
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/1.pdf" \
+  -F "file=@/path/to/2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import time
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+
+host = "https://docflow.textin.ai"
+epoch_time = int(time.time())
+http_method = "POST"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = {
+    "workspace_id":workspace_id, 
+    }
+
+payload = MultipartEncoder(
+    fields=[
+        ("file", ("file1.jpg", open("/path/to/file1.jpg", "rb"), "image/jpeg")),
+        ("file", ("file2.jpg", open(filepath, "rb"), "image/jpeg")),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}", 
+                     params=params, 
+                     data=payload_raw, 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+响应中会返回 `result.batch_number` 和上传成功的 `files` 列表。
+
+2. 多个请求上传，通过`batch_number`关联这些文件。\
+   当多个文件的总大小体积太大时，可以通过这种方式关联多个文件。
+   第一次请求会返回`batch_number`，后续请求复用这个`batch_number`来关联剩余的文件。
+
+示例：
+
+<CodeGroup>
+
+```python Python expandable {35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50} icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import time
+import os
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+filepaths = ["/path/to/your/file1.png", "/path/to/your/file2.png"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = {
+    "workspace_id":workspace_id, 
+    }
+
+payload = MultipartEncoder(
+    fields=[
+        ("file", (os.path.basename(filepaths[0]), open(filepaths[0], "rb"), "image/png")),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}", 
+                     params=params, 
+                     data=payload.to_string(), 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+
+# get and reuse `batch_number`
+batch_number = resp_json["result"]["batch_number"]
+params["batch_number"] = batch_number
+payload = MultipartEncoder(
+    fields=[
+        ("file", (os.path.basename(filepaths[1]), open(filepaths[1], "rb"), "image/png")),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}", 
+                     params=params, 
+                     data=payload.to_string(), 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+## 03 使用批次号查询处理结果
+
+上传完成后，可使用 `batch_number` 查询该批次下的处理结果：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f["id"], f.get("name"), f.get("recognition_status"), f.get("category"))
+```
+
+</CodeGroup>

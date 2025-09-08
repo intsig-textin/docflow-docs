@@ -1,0 +1,34 @@
+---
+title: 返回JSON结构说明
+---
+
+<Tip>
+Docflow 文件上传是一个异步接口。  
+接口调用成功时返回结果标识(`batch_number`和`文件ID`)，用于后续结果获取。
+</Tip>
+
+上传接口请求成功后，响应将按照以下结构的JSON格式返回：
+
+```json expandable
+{
+   "code":200,
+   "msg":"成功",
+   "result":{
+      "batch_number":"1955840540571376304",
+      "files":[
+         {
+            "id":"1955840505753140508",
+            "name":"企业信用报告.pdf",
+            "format":"pdf"
+         }
+      ]
+   }
+}
+```
+
+## 重要字段说明
+
+- `batch_number`: 文件批次编号。可以关联多个同一批次的文件。
+- `files[].id`: 本次上传的文件ID。
+
+`batch_number`和`files[].id`都可以作为查询条件用于后续结果获取。

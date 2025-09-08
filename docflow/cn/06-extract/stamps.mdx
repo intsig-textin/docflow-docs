@@ -1,0 +1,138 @@
+---
+title: "印章信息"
+description: "详细说明文档抽取中的印章信息结构和处理方法"
+---
+
+文档抽取功能能够识别文档中的印章信息，包括印章类型、颜色、位置等详细信息。印章信息对于文档的真实性验证和合规性检查具有重要意义。
+
+## 印章结构
+
+印章信息位于 `result.files[].data.stamps[]` 中，每个印章包含以下属性：
+
+- `page`: 印章所在页码（从0开始）
+- `text`: 印章中的文字内容
+- `type`: 印章类型（如"发票专用章"、"财务专用章"等）
+- `color`: 印章颜色（如"红色"、"蓝色"等）
+- `shape`: 印章形状（如"圆章"、"方章"等）
+
+### 印章数据结构
+
+```json
+{
+  "page": 0,                    // 页码
+  "text": "全国统一发票监制章",  // 印章文字
+  "type": "其他",               // 印章类型
+  "color": "红色"               // 印章颜色
+}
+```
+
+
+## 示例代码
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_stamps(workspace_id, batch_number, app_id, secret_code):
+    """提取文档中的印章信息"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"请求失败: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"文件名: {file.get('name')}")
+        
+        # 提取印章信息
+        stamps = file.get("data", {}).get("stamps", [])
+        
+        if stamps:
+            print(f"\n=== 印章信息 ===")
+            print(f"印章数量: {len(stamps)}")
+            
+            for i, stamp in enumerate(stamps):
+                page = stamp.get("page", 0)
+                text = stamp.get("text", "")
+                stamp_type = stamp.get("type", "")
+                color = stamp.get("color", "")
+                
+                print(f"\n印章 {i+1}:")
+                print(f"  页码: 第{page+1}页")
+                print(f"  文字: {text}")
+                print(f"  类型: {stamp_type}")
+                print(f"  颜色: {color}")
+        else:
+            print("未找到印章信息")
+    
+    return data
+
+# 使用示例
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_stamps(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## 返回数据示例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "stamps": [
+            {
+              "page": 0,
+              "text": "全国统一发票监制章",
+              "type": "其他",
+              "color": "红色"
+            },
+            {
+              "page": 0,
+              "text": "上海某某科技有限公司发票专用章",
+              "type": "发票专用章",
+              "color": "红色"
+            },
+            {
+              "page": 0,
+              "text": "2024年12月19日",
+              "type": "日期章",
+              "color": "蓝色"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```

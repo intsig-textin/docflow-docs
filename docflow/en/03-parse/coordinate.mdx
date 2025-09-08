@@ -1,0 +1,31 @@
+---
+title: Coordinate System
+---
+
+Coordinates are an array containing 8 integers, in the format `[x1, y1, x2, y2, x3, y3, x4, y4]`
+
+Representing the coordinates of four vertices of a quadrilateral, arranged clockwise.
+Namely:
+
+- Top-left: (x1, y1)
+- Top-right: (x2, y2)
+- Bottom-right: (x3, y3)
+- Bottom-left: (x4, y4)
+
+Coordinate values are absolute pixel values. The coordinate system is as follows:
+
+```
+Image coordinate system (origin at top-left corner)
+┌────────────width───────────> x
+│(0,0)
+│
+│
+│      (x1,y1) ────────── (x2,y2)
+│         │                     │     
+height             Text area        
+│         │                     │
+│      (x4,y4) ────────── (x3,y3)
+│
+v
+y
+```

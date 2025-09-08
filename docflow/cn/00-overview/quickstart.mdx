@@ -1,0 +1,144 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成Docflow功能"
+---
+
+<Tip>
+  本文通过示例说明如何快速通过API接入Docflow工作流。\
+  但如果您没有在Web UI上使用过Docflow，建议您先在[Web页面](https://docflow.textin.com/)上传文件直观体验一下Docflow的工作方式。
+</Tip>
+
+## 01 先决条件：获取访问凭证
+
+### 1.1 公有云使用
+
+使用Docflow API时，您需要先获取API Key。\
+请先登录后前往 [TextIn工作台 - 账号与开发者信息](https://www.textin.com/console/dashboard/setting) 获取您的`x-ti-app-id`和`x-ti-secret-code`。
+
+### 1.2 私有云使用
+
+请联系对接的技术支持人员，获取用于私有化部署的API调用凭证。
+
+## 02 前置准备
+
+### 2.1 配置Docflow空间与分类
+
+先参考[获取工作空间ID](../08-faq/get_workspace_id)和[配置文件类别](../08-faq/setup_category)文档，完成配置，获取工作空间ID。
+
+## 2.2 上传文件
+
+示例：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F file=@</path/to/your/file.pdf \
+  "https://docflow.textin.com/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable {6,7,8,9} icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import os
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+workspace_id = "your-workspace-id"
+filepath = "/your/file/path.pdf"
+
+host = "https://docflow.textin.com"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = { "workspace_id":workspace_id}
+
+# determine filepath is image or pdf
+if filepath.endswith(".jpg") or filepath.endswith(".jpeg") or filepath.endswith(".png"):
+    mime_type = "image/jpeg"
+else:
+    mime_type = "application/pdf"
+
+payload = MultipartEncoder(
+    fields=[
+        "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}", 
+                     params=params, 
+                     data=payload.to_string(), 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+使用您的参数执行上面示例代码后，可以在 Web 页面对应空间下查看刚上传的文件。
+
+## 2.3 结果获取
+
+示例：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.com/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable {4,5,6} icon=python lines
+import requests
+import json
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+workspace_id = "your-workspace-id"
+
+host = "https://docflow.textin.com"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+params = { "workspace_id":workspace_id}
+
+resp = requests.get(url=f"{host}{url}", 
+                    params=params, 
+                    data=payload.to_string(), 
+                    headers={"Content-Type": payload.content_type,
+                             "x-ti-app-id": ti_app_id,
+                             "x-ti-secret-code": ti_secret_code,
+                             })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+## 2.4 结果解析
+
+获取到的结果是JSON格式的文档处理后的结果，可以通过解析JSON获取文档解析、分类、抽取后的结果。
+
+<Tip>
+  下面示例是输出文档字段抽取结果，其他信息的解析可以参考其余文档章节。
+</Tip>
+
+<CodeGroup>
+
+```python Python icon=python lines
+# 接续《结果获取》的示例代码
+
+for file in resp_json["result"]["files"]:
+  for item in file["data"]["items"]:
+    print(f"{item["key"]}: {item["value"]}")
+```
+
+</CodeGroup>

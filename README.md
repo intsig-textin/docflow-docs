@@ -1,25 +1,32 @@
----
-icon: hand-wave
-cover: https://gitbookio.github.io/onboarding-template-images/header.png
-coverY: 0
-layout:
-  cover:
-    visible: true
-    size: full
-  title:
-    visible: true
-  description:
-    visible: false
-  tableOfContents:
-    visible: true
-  outline:
-    visible: true
-  pagination:
-    visible: true
----
+# Mintlify docs for Textin
 
-# 欢迎
+Click on `Use this template` to copy the Mintlify starter kit. The starter kit contains examples including
 
-DocFlow票据自动化处理平台，提供文件采集、智能分类及结构化信息抽取服务，有效提升企业在大量票据业务处理场景数据录入及审核效率。
+- Guide pages
+- Navigation
+- Customizations
+- API Reference pages
+- Use of popular components
 
-本文档提供一套RESTful OpenAPI接口，用于上传待处理票据与获取处理结果。
+### Development
+
+Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview the documentation changes locally. To install, use the following command
+
+```
+npm i -g mint
+```
+
+Run the following command at the root of your documentation (where docs.json is)
+
+```
+mint dev
+```
+
+### Publishing Changes
+
+Install our Github App to auto propagate changes from your repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard.
+
+#### Troubleshooting
+
+- It the dev environment isn't running - Run `mint install` it'll re-install dependencies.
+- Page loads as a 404 - Make sure you are running in a folder with `docs.json`

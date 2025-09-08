@@ -1,0 +1,42 @@
+---
+title: "中文类别参数传参问题"
+description: "解决中文或其他非英语类别名称在API传参时的问题"
+---
+
+在使用 DocFlow API 时，如果文件类别名称是中文或其他非英语字符，直接传递原始类别名称可能会导致以下问题：
+
+1. **类别匹配失败**：API 无法正确识别中文类别名称
+2. **处理错误**：返回类别不存在的错误信息
+3. **编码问题**：URL 参数包含非 ASCII 字符导致请求失败
+
+## 解决方案
+
+### 1. URL 编码处理
+
+中文类别名称必须进行 UTF-8 URL 编码后才能作为 API 参数传递。
+
+#### Python 示例
+
+```python
+import urllib.parse
+
+# 原始中文类别名称
+category = "发票"
+
+# URL 编码
+encoded_category = urllib.parse.quote(category)
+print(f"编码后: {encoded_category}")
+# 输出: %E5%8F%91%E7%A5%A8
+```
+
+#### JavaScript 示例
+
+```javascript
+// 原始中文类别名称
+const category = "发票";
+
+// URL 编码
+const encodedCategory = encodeURIComponent(category);
+console.log(`编码后: ${encodedCategory}`);
+// 输出: %E5%8F%91%E7%A5%A8
+```

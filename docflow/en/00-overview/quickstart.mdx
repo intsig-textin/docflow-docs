@@ -1,0 +1,144 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate Docflow functionality with APIs"
+---
+
+<Tip>
+  This document provides examples on how to quickly integrate with the DocFlow workflow via APIs.\
+  If you have not used DocFlow in the Web UI before, we recommend uploading a file on the [Web page](https://docflow.textin.ai/) first to get a clear idea of how DocFlow works.
+</Tip>
+
+## 01 Prerequisites: Obtain Access Credentials
+
+### 1.1 Public Cloud Usage
+
+When using the Docflow API, you need to obtain an API Key first.\
+Please log in first and go to [TextIn Console - Account & Developer Information](https://textin.ai/console/dashboard/setting) to obtain your `x-ti-app-id` and `x-ti-secret-code`.
+
+### 1.2 Private Cloud Usage
+
+Please contact the technical support personnel you are working with to obtain API call credentials for private deployment.
+
+## 02 Preparation
+
+### 2.1 Configure Docflow Workspace and Classification
+
+First, refer to the [Get Workspace ID](../08-faq/get_workspace_id) and [Configure File Categories](../08-faq/setup_category) documents to complete the configuration and obtain the workspace ID.
+
+## 2.2 Upload Files
+
+Example:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F file=@</path/to/your/file.pdf \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable {6,7,8,9} icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import os
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+workspace_id = "your-workspace-id"
+filepath = "/your/file/path.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = { "workspace_id":workspace_id}
+
+# determine filepath is image or pdf
+if filepath.endswith(".jpg") or filepath.endswith(".jpeg") or filepath.endswith(".png"):
+    mime_type = "image/jpeg"
+else:
+    mime_type = "application/pdf"
+
+payload = MultipartEncoder(
+    fields=[
+        "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}", 
+                     params=params, 
+                     data=payload.to_string(), 
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+After executing the above example code with your parameters, you can view the just uploaded file in the corresponding workspace on the Web page.
+
+## 2.3 Retrieve Results
+
+Example:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable {4,5,6} icon=python lines
+import requests
+import json
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+workspace_id = "your-workspace-id"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+params = { "workspace_id":workspace_id}
+
+resp = requests.get(url=f"{host}{url}", 
+                    params=params, 
+                    data=payload.to_string(), 
+                    headers={"Content-Type": payload.content_type,
+                             "x-ti-app-id": ti_app_id,
+                             "x-ti-secret-code": ti_secret_code,
+                             })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+## 2.4 Result Parsing
+
+The retrieved result is in JSON format containing the processed document results. You can obtain the document parsing, classification, and extraction results by parsing the JSON.
+
+<Tip>
+  The example below shows the extracted document fields in the output. For parsing of other information, refer to the relevant sections of this documentation.
+</Tip>
+
+<CodeGroup>
+
+```python Python icon=python lines
+# Continuing from the "Retrieve Results" example code
+
+for file in resp_json["result"]["files"]:
+  for item in file["data"]["items"]:
+    print(f"{item["key"]}: {item["value"]}")
+```
+
+</CodeGroup>

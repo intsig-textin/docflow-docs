@@ -1,0 +1,169 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档抽取功能"
+---
+
+文档抽取会输出结构化的字段、表格、印章与手写体信息等。本文展示如何触发抽取并解析核心结果。
+
+## 触发抽取
+
+Docflow 默认业务流程是 解析->分类->抽取。  
+因此上传文件后，默认情况下，最终都能获取到抽取结果。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+</CodeGroup>
+
+也可以结合 `category` 指定文档类别，这会跳过自动分类，以便匹配相应的字段模板：
+
+<CodeGroup>
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+</CodeGroup>
+
+## 获取并解析抽取结果
+
+<CodeGroup>
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+</CodeGroup>
+
+结果以JSON结构返回。
+
+其中`result.files[].recognition_status`表示文件识别状态。跟抽取相关的状态有：
+
+- `0`: 待识别
+- `1`: 抽取成功
+- `2`: 抽取失败
+
+字段与表格数据位于 `result.files[].data` 中，关键字段如下：
+
+- `fields[]`: 关键键值对，每项包含 `key`、`value` 与 `position[]`（可用于画坐标）
+- `items[][]`: 表格行的键值对集合
+- `stamps[]`: 印章信息
+- `handwritings[]`: 手写体信息
+
+### Python 示例：打印字段和表格
+
+```python Python icon=python lines
+import requests, json
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    f"{host}{url}",
+    params={"workspace_id": "<your-workspace-id>", "batch_number": "<your-batch-number>"},
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for file in data.get("result", {}).get("files", []):
+    print("==>", file.get("name"))
+    # 基础字段
+    for kv in (file.get("data", {}).get("fields", []) or []):
+        print(kv.get("key"), ":", kv.get("value"))
+
+    # 表格（items 按行）
+    for row in (file.get("data", {}).get("items", []) or []):
+        row_dict = {cell.get("key"): cell.get("value") for cell in row}
+        print("ROW:", json.dumps(row_dict, ensure_ascii=False))
+```
+
+### 关联页面坐标进行可视化
+
+结合 `files[].pages[]` 的 `width/height/angle/dpi` 与 `fields[].position[].vertices`，可在前端精确绘制字段框，详见[解析结果可视化](../03-parse/visualization)。
+
+## 关键返回字段示例（节选）
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "format": "pdf",
+        "pages": [
+          {"angle": 0, "width": 1024, "height": 1448, "dpi": 144}
+        ],
+        "data": {
+          "fields": [
+            {
+              "key": "发票代码",
+              "value": "3100231130",
+              "position": [
+                {"page": 0, "vertices": [0,0,100,0,100,100,0,100]}
+              ]
+            }
+          ],
+          "items": [
+            [
+              {"key": "货物劳务名称", "value": "＊电子计算机＊微型计算机主机"},
+              {"key": "规格型号", "value": "DMS-SC68"}
+            ]
+          ],
+          "tables": [
+            {"tableName": "table1", "tableType": "0", "items": []}
+          ],
+          "stamps": [
+            {"page": 0, "text": "全国统一发票监制章", "type": "其他", "color": "红色"}
+          ],
+          "handwritings": [
+            {
+              "page": 0,
+              "text": "3月1日",
+              "position": [{"page": 0, "vertices": [0,0,100,0,100,100,0,100]}]
+            }
+          ],
+          "invoiceVerifyResult": {
+            "invoiceVerifyStatus": 0,
+            "invoiceVerifyErrorCode": 0,
+            "invoiceVerifyCanRetry": 1
+          }
+        },
+        "document": {
+          "pages": [
+            {
+              "angle": 0,
+              "width": 1024,
+              "height": 1448,
+              "lines": [
+                {"text": "电子发票（普通发票）", "position": [389,45,767,45,767,87,389,87]}
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## 相关页面
+
+- [基本字段信息](./fields) - 详细说明基本字段信息结构和处理方法
+- [表格字段信息](./tables) - 详细说明表格字段信息结构和处理方法  
+- [印章信息](./stamps) - 详细说明印章信息结构和处理方法
+- [手写信息](./handwritings) - 详细说明手写信息结构和处理方法
+
+

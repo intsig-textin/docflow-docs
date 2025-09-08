@@ -1,0 +1,185 @@
+---
+title: "Handwriting Information"
+description: "Detailed explanation of handwriting information structure and processing methods in document extraction"
+---
+
+The document extraction function can recognize handwriting information in documents, including handwritten text content, position coordinates, and other detailed information. Handwriting recognition is significant for processing documents containing handwritten content (such as handwritten signatures, handwritten notes, etc.).
+
+## Handwriting Information Structure
+
+Handwriting information is located in `result.files[].data.handwritings[]`, with each handwriting item containing the following attributes:
+
+- `page`: Page number where handwriting content is located (starting from 0)
+- `text`: Recognized handwritten text content
+- `position[]`: Position coordinate information of handwriting content in the document
+
+### Handwriting Information Data Structure
+
+```json
+{
+  "page": 0,           // Page number
+  "text": "March 1st",    // Handwritten text content
+  "position": [
+    {
+      "page": 0,       // Page number
+      "vertices": [    // Coordinates of four vertices [x1,y1,x2,y2,x3,y3,x4,y4]
+        100, 200,      // Top-left corner
+        200, 200,      // Top-right corner
+        200, 250,      // Bottom-right corner
+        100, 250       // Bottom-left corner
+      ]
+    }
+  ]
+}
+```
+
+### Position Coordinate Structure
+
+```json
+{
+  "page": 0,           // Page number (starting from 0)
+  "vertices": [        // Coordinates of four vertices [x1,y1,x2,y2,x3,y3,x4,y4]
+    100, 200,          // Top-left corner
+    200, 200,          // Top-right corner
+    200, 250,          // Bottom-right corner
+    100, 250           // Bottom-left corner
+  ]
+}
+```
+
+For detailed coordinate descriptions, please refer to the [Coordinate System](../03-parse/coordinate.mdx) documentation.
+
+## Example Code
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_handwritings(workspace_id, batch_number, app_id, secret_code):
+    """Extract handwriting information from documents"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"File name: {file.get('name')}")
+        
+        # Extract handwriting information
+        handwritings = file.get("data", {}).get("handwritings", [])
+        
+        if handwritings:
+            print(f"\n=== Handwriting Information ===")
+            print(f"Number of handwriting items: {len(handwritings)}")
+            
+            for i, handwriting in enumerate(handwritings):
+                page = handwriting.get("page", 0)
+                text = handwriting.get("text", "")
+                positions = handwriting.get("position", [])
+                
+                print(f"\nHandwriting item {i+1}:")
+                print(f"  Page: Page {page+1}")
+                print(f"  Content: {text}")
+                
+                # Display position information
+                for j, pos in enumerate(positions):
+                    pos_page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  Position {j+1} (Page {pos_page+1}): {vertices}")
+        else:
+            print("No handwriting information found")
+    
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_handwritings(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## Return Data Example
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "contract.pdf",
+        "recognition_status": 1,
+        "data": {
+          "handwritings": [
+            {
+              "page": 0,
+              "text": "John Smith",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 500, 150, 500, 150, 520, 100, 520]
+                }
+              ]
+            },
+            {
+              "page": 0,
+              "text": "December 19, 2024",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [200, 500, 300, 500, 300, 520, 200, 520]
+                }
+              ]
+            },
+            {
+              "page": 0,
+              "text": "Agree to this clause",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 600, 200, 600, 200, 620, 100, 620]
+                }
+              ]
+            },
+            {
+              "page": 1,
+              "text": "Jane Doe",
+              "position": [
+                {
+                  "page": 1,
+                  "vertices": [100, 300, 150, 300, 150, 320, 100, 320]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```

@@ -1,0 +1,138 @@
+---
+title: "Stamp Information"
+description: "Detailed explanation of stamp information structure and processing methods in document extraction"
+---
+
+The document extraction function can recognize stamp information in documents, including stamp type, color, position, and other detailed information. Stamp information is significant for document authenticity verification and compliance checking.
+
+## Stamp Structure
+
+Stamp information is located in `result.files[].data.stamps[]`, with each stamp containing the following attributes:
+
+- `page`: Page number where the stamp is located (starting from 0)
+- `text`: Text content in the stamp
+- `type`: Stamp type (such as "Invoice Special Seal", "Financial Special Seal", etc.)
+- `color`: Stamp color (such as "Red", "Blue", etc.)
+- `shape`: Stamp shape (such as "Round Seal", "Square Seal", etc.)
+
+### Stamp Data Structure
+
+```json
+{
+  "page": 0,                    // Page number
+  "text": "National Unified Invoice Supervision Seal",  // Stamp text
+  "type": "Other",               // Stamp type
+  "color": "Red"               // Stamp color
+}
+```
+
+
+## Example Code
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_stamps(workspace_id, batch_number, app_id, secret_code):
+    """Extract stamp information from documents"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"File name: {file.get('name')}")
+        
+        # Extract stamp information
+        stamps = file.get("data", {}).get("stamps", [])
+        
+        if stamps:
+            print(f"\n=== Stamp Information ===")
+            print(f"Number of stamps: {len(stamps)}")
+            
+            for i, stamp in enumerate(stamps):
+                page = stamp.get("page", 0)
+                text = stamp.get("text", "")
+                stamp_type = stamp.get("type", "")
+                color = stamp.get("color", "")
+                
+                print(f"\nStamp {i+1}:")
+                print(f"  Page: Page {page+1}")
+                print(f"  Text: {text}")
+                print(f"  Type: {stamp_type}")
+                print(f"  Color: {color}")
+        else:
+            print("No stamp information found")
+    
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_stamps(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## Return Data Example
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "stamps": [
+            {
+              "page": 0,
+              "text": "National Unified Invoice Supervision Seal",
+              "type": "Other",
+              "color": "Red"
+            },
+            {
+              "page": 0,
+              "text": "Shanghai XX Technology Co., Ltd. Invoice Special Seal",
+              "type": "Invoice Special Seal",
+              "color": "Red"
+            },
+            {
+              "page": 0,
+              "text": "December 19, 2024",
+              "type": "Date Seal",
+              "color": "Blue"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```

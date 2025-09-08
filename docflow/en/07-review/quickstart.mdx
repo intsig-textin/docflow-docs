@@ -1,0 +1,115 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate document review functionality with APIs"
+---
+
+This document provides an overview of the basic calling sequence for DocFlow review-related interfaces: get batch and task → query model fields → create/update rules → trial run → submit review task.
+
+<Tip>
+Review interfaces require additional parameters such as `workspaceIdNo`, `fileBatchNo`, etc., which usually come from page or preceding interface returns. Please first obtain them through "batch list" and "task category list" interfaces.
+</Tip>
+
+## Get Batch List (Prerequisite)
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listByFileBatchNo?workspaceIdNo=<workspaceIdNo>"
+```
+
+Get `fileBatchNo` from the response.
+
+## Get Task Category List (Prerequisite)
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo?workspaceIdNo=<workspaceIdNo>&fileBatchNo=<fileBatchNo>"
+```
+
+Get `taskClassificationIdNo` (classification id) from the response.
+
+## Get Model Fields (For Rule Configuration)
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{"classificationIdNoList": ["<taskClassificationIdNo>"]}' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList"
+```
+
+The returned `data[]` contains information about fields, tables, and their coordinates.
+
+## Create Review Rule
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleName": "Rule Name",
+    "rulePrompt": "Rule Prompt",
+    "classificationIdNoList": ["<taskClassificationIdNo>"],
+    "fileBatchNo": "<fileBatchNo>",
+    "workspaceIdNo": "<workspaceIdNo>"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/create"
+```
+
+The response returns `ruleIdNo`.
+
+## Update Review Rule (Optional)
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleIdNo": "<ruleIdNo>",
+    "ruleName": "New Rule Name",
+    "rulePrompt": "New Rule Prompt"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/update"
+```
+
+## Trial Run Review Rule (Evaluation)
+
+First get `executeTaskId` through `listTaskDetailInfoByClassificationIdNo`, then run the trial:
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleIdNo": "<ruleIdNo>",
+    "executeTaskIdList": ["<executeTaskId>"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/runRule"
+```
+
+Returns `evalResult`, `resultHighlights`, etc.
+
+## Submit Review Task
+
+After rule evaluation passes, you can submit a formal review task:
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ruleIdNoList": [<ruleIdNo>],
+    "executeTaskIdList": ["<executeTaskId>"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/submitReviewTask"
+```
+
+The response returns a list of `reviewTaskId`.

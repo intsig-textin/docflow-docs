@@ -1,0 +1,186 @@
+---
+title: "手写信息"
+description: "详细说明文档抽取中的手写信息结构和处理方法"
+---
+
+文档抽取功能能够识别文档中的手写体信息，包括手写文字内容、位置坐标等详细信息。手写信息识别对于处理包含手写内容的文档（如手写签名、手写备注等）具有重要意义。
+
+## 手写信息结构
+
+手写信息位于 `result.files[].data.handwritings[]` 中，每个手写项包含以下属性：
+
+- `page`: 手写内容所在页码（从0开始）
+- `text`: 识别出的手写文字内容
+- `position[]`: 手写内容在文档中的位置坐标信息
+
+### 手写信息数据结构
+
+```json
+{
+  "page": 0,           // 页码
+  "text": "3月1日",    // 手写文字内容
+  "position": [
+    {
+      "page": 0,       // 页码
+      "vertices": [    // 四个顶点的坐标 [x1,y1,x2,y2,x3,y3,x4,y4]
+        100, 200,      // 左上角
+        200, 200,      // 右上角
+        200, 250,      // 右下角
+        100, 250       // 左下角
+      ]
+    }
+  ]
+}
+```
+
+### 位置坐标结构
+
+```json
+{
+  "page": 0,           // 页码（从0开始）
+  "vertices": [        // 四个顶点的坐标 [x1,y1,x2,y2,x3,y3,x4,y4]
+    100, 200,          // 左上角
+    200, 200,          // 右上角
+    200, 250,          // 右下角
+    100, 250           // 左下角
+  ]
+}
+```
+
+详细的坐标说明请参考[坐标系](../03-parse/coordinate.mdx)文档。
+
+## 示例代码
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_handwritings(workspace_id, batch_number, app_id, secret_code):
+    """提取文档中的手写信息"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"请求失败: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"文件名: {file.get('name')}")
+        
+        # 提取手写信息
+        handwritings = file.get("data", {}).get("handwritings", [])
+        
+        if handwritings:
+            print(f"\n=== 手写信息 ===")
+            print(f"手写项数量: {len(handwritings)}")
+            
+            for i, handwriting in enumerate(handwritings):
+                page = handwriting.get("page", 0)
+                text = handwriting.get("text", "")
+                positions = handwriting.get("position", [])
+                
+                print(f"\n手写项 {i+1}:")
+                print(f"  页码: 第{page+1}页")
+                print(f"  内容: {text}")
+                
+                # 显示位置信息
+                for j, pos in enumerate(positions):
+                    pos_page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  位置 {j+1} (第{pos_page+1}页): {vertices}")
+        else:
+            print("未找到手写信息")
+    
+    return data
+
+# 使用示例
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_handwritings(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## 返回数据示例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "contract.pdf",
+        "recognition_status": 1,
+        "data": {
+          "handwritings": [
+            {
+              "page": 0,
+              "text": "张三",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 500, 150, 500, 150, 520, 100, 520]
+                }
+              ]
+            },
+            {
+              "page": 0,
+              "text": "2024年12月19日",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [200, 500, 300, 500, 300, 520, 200, 520]
+                }
+              ]
+            },
+            {
+              "page": 0,
+              "text": "同意此条款",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 600, 200, 600, 200, 620, 100, 620]
+                }
+              ]
+            },
+            {
+              "page": 1,
+              "text": "李四",
+              "position": [
+                {
+                  "page": 1,
+                  "vertices": [100, 300, 150, 300, 150, 320, 100, 320]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+

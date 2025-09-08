@@ -1,0 +1,106 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档解析功能"
+---
+
+import PositionSnippet from '/snippets/cn/position.mdx';
+
+
+<Tip>
+Docflow 采用[xParse](https://www.textin.com/market/detail/pdf_to_markdown)作为核心文档解析服务，能够将 PDF、Word 以及常见图片格式的文档，精准转换为包含文本、表格、标题层级、公式、手写字符和图片信息的结构化数据，便于后续的自动化处理与分析。
+
+在知识库构建、非结构化文档图像处理等应用场景中，强大的文档解析能力即可满足大多数需求。
+
+Docflow 获取结果接口返回的文档解析结果对 xParse 结果进行大量裁剪，仅保留基础的文本块和位置信息，用来做页面文本位置可视化渲染。
+</Tip>
+
+<Tip>
+本文档以[此示例样本](https://dllf.intsig.net/download/2025/Solution/20250829/simple.pdf)为例。说明如何获取文档解析结果。
+</Tip>
+
+## 前置条件
+
+根据[文档上传](../01-upload/quickstart#上传单个文件)说明，上传文件，并获得返回的文件ID。
+
+<Tip>
+文件处理需要时间，刚上传完后需要等待若干秒后才能获取处理结果。
+</Tip>
+
+## 获取文档解析结果
+
+文档解析结果体积较大，默认不返回。  
+在调用获取结果接口时，URL参数加上`with_document=true`，返回文档解析结果。
+
+示例：
+
+<CodeGroup>
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>&with_document=true"
+```
+```python Python icon=python expandable lines highlight={13}
+import requests
+import json
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+file_id = "your_file_id"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+params = {
+    "workspace_id":workspace_id, 
+    "with_document": "true", 
+    "file_id":file_id
+    }
+resp = requests.get(url=f"{host}{url}", 
+                    params=params,
+                    headers={"x-ti-app-id": ti_app_id,
+                             "x-ti-secret-code": ti_secret_code,
+                             })
+resp_json = json.loads(resp.text)
+
+for file in resp_json["result"]["files"]:
+  print(f"file {file["name"]} parse result: {file["document"]}")
+```
+</CodeGroup>
+
+## 返回JSON结构说明
+
+文档解析结构在`result.files[].document`中，示例(节选)如下：
+
+```json expandable
+"document":{
+    "pages":[
+        {
+            "angle":0,
+            "width":1191,
+            "height":794,
+            "lines":[
+            {
+                "text":"电子发票（普通发票）",
+                "position":[ 389, 45, 767, 45, 767, 87, 389, 87 ],
+                "charPositions":[]
+            }
+            ]
+        }
+    ]
+}
+```
+
+字段说明如下：
+
+- `document`: 文档解析的结果对象
+  - `pages`: 文档每页解析结果数组
+    - `angle`: 文档页的旋转角度
+    - `width`: 文档页的宽
+    - `height`: 文档页的高
+    - `lines`: 文档中每个文本行的结果
+      - `text`: 文本内容
+      - `position`: 文本坐标
+      - `charPositions`: 文本每个字符坐标
+
+`position`的意义可以参考[坐标体系说明](./coordinate)。

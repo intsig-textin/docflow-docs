@@ -1,0 +1,175 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate document extraction functionality with APIs"
+---
+
+Document extraction outputs structured field, table, stamp, and handwriting information. This document shows how to trigger extraction and parse core results.
+
+## Trigger Extraction
+
+Docflow's default business workflow is parsing-\>classification-\>extraction.\
+Therefore, after uploading files, extraction results can be obtained by default in the final step.
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+</CodeGroup>
+
+You can also combine with `category` to specify document category, which will skip automatic classification to match corresponding field templates:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+</CodeGroup>
+
+## Get and Parse Extraction Results
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+</CodeGroup>
+
+Results are returned in JSON structure.
+
+`result.files[].recognition_status` indicates the file recognition status.Extraction-related statuses include:
+
+- `0`: Pending recognition
+- `1`: Extraction successful
+- `2`: Extraction failed
+
+Field and table data are located in `result.files[].data`. Key properties include:
+
+- `fields[]`: Key-value pairs, each containing `key`, `value`, and `position[]` (can be used for drawing coordinates)
+- `items[][]`: Table row key-value pair collections
+- `stamps[]`: Stamp information
+- `handwritings[]`: Handwriting information
+
+### Python Example: Print Fields and Tables
+
+```python Python icon=python lines
+import requests, json
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    f"{host}{url}",
+    params={"workspace_id": "<your-workspace-id>", "batch_number": "<your-batch-number>"},
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for file in data.get("result", {}).get("files", []):
+    print("==>", file.get("name"))
+    # Basic fields
+    for kv in (file.get("data", {}).get("fields", []) or []):
+        print(kv.get("key"), ":", kv.get("value"))
+
+    # Tables (items by row)
+    for row in (file.get("data", {}).get("items", []) or []):
+        row_dict = {cell.get("key"): cell.get("value") for cell in row}
+        print("ROW:", json.dumps(row_dict, ensure_ascii=False))
+```
+
+### Linking Page Coordinates for Visualization
+
+By combining `files[].pages[]` properties (`width`, `height`, `angle`, `dpi`) with `fields[].position[].vertices`, you can accurately draw field bounding boxes on the frontend.Refer to [Parsing Result Visualization](../03-parse/visualization) for details.
+
+### Associate Page Coordinates for Visualization
+
+Combining `files[].pages[]`'s `width/height/angle/dpi` with `fields[].position[].vertices`, you can accurately draw field boxes on the frontend. See [Parsing Result Visualization](../03-parse/visualization) for details.
+
+## Key Return Field Example (Excerpt)
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "format": "pdf",
+        "pages": [
+          {"angle": 0, "width": 1024, "height": 1448, "dpi": 144}
+        ],
+        "data": {
+          "fields": [
+            {
+              "key": "Invoice Code",
+              "value": "3100231130",
+              "position": [
+                {"page": 0, "vertices": [0,0,100,0,100,100,0,100]}
+              ]
+            }
+          ],
+          "items": [
+            [
+              {"key": "Goods/Services Name", "value": "*Electronic Computer*Microcomputer Host"},
+              {"key": "Specification/Model", "value": "DMS-SC68"}
+            ]
+          ],
+          "tables": [
+            {"tableName": "table1", "tableType": "0", "items": []}
+          ],
+          "stamps": [
+            {"page": 0, "text": "National Unified Invoice Supervision Seal", "type": "Other", "color": "Red"}
+          ],
+          "handwritings": [
+            {
+              "page": 0,
+              "text": "March 1st",
+              "position": [{"page": 0, "vertices": [0,0,100,0,100,100,0,100]}]
+            }
+          ],
+          "invoiceVerifyResult": {
+            "invoiceVerifyStatus": 0,
+            "invoiceVerifyErrorCode": 0,
+            "invoiceVerifyCanRetry": 1
+          }
+        },
+        "document": {
+          "pages": [
+            {
+              "angle": 0,
+              "width": 1024,
+              "height": 1448,
+              "lines": [
+                {"text": "Electronic Invoice (General Invoice)", "position": [389,45,767,45,767,87,389,87]}
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## Related Pages
+
+- [Basic Field Information](./fields) - Detailed explanation of basic field information structure and processing methods
+- [Table Field Information](./tables) - Detailed explanation of table field information structure and processing methods
+- [Stamp Information](./stamps) - Detailed explanation of stamp information structure and processing methods
+- [Handwriting Information](./handwritings) - Detailed explanation of handwriting information structure and processing methods

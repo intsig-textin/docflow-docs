@@ -1,0 +1,250 @@
+---
+title: "表格字段信息"
+description: "详细说明文档抽取中的表格字段信息结构和处理方法"
+---
+
+文档抽取功能能够识别文档中的表格结构，将表格内容转换为结构化的数据格式。表格信息包含表头、行数据和位置坐标等详细信息。
+
+## 表格结构
+
+表格信息位于 `result.files[].data.items[][]` 中，采用二维数组结构：
+
+- `items[][]`: 表格数据，外层数组表示行，内层数组表示行中的单元格
+
+### 表格数据结构
+
+```json
+{
+  "items": [
+    [
+      {"key": "货物劳务名称", "value": "＊电子计算机＊微型计算机主机"},
+      {"key": "规格型号", "value": "DMS-SC68"},
+      {"key": "单位", "value": "台"},
+      {"key": "数量", "value": "1"},
+      {"key": "单价", "value": "5000.00"},
+      {"key": "金额", "value": "5000.00"}
+    ],
+    [
+      {"key": "货物劳务名称", "value": "＊软件＊系统软件"},
+      {"key": "规格型号", "value": "V1.0"},
+      {"key": "单位", "value": "套"},
+      {"key": "数量", "value": "2"},
+      {"key": "单价", "value": "1000.00"},
+      {"key": "金额", "value": "2000.00"}
+    ]
+  ],
+}
+```
+
+## 示例代码
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+import pandas as pd
+
+def extract_tables(workspace_id, batch_number, app_id, secret_code):
+    """提取文档中的表格信息"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+    
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id, 
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id, 
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"请求失败: {resp.status_code}")
+        return None
+    
+    data = resp.json()
+    
+    for file in data.get("result", {}).get("files", []):
+        print(f"文件名: {file.get('name')}")
+        
+        # 提取表格信息
+        items = file.get("data", {}).get("items", [])
+        
+        if items:
+            print(f"\n=== 表格信息 ===")
+            print(f"数据行数: {len(items)}")
+            
+            # 显示表格数据
+            for i, row in enumerate(items):
+                print(f"\n第 {i+1} 行:")
+                for cell in row:
+                    key = cell.get("key", "")
+                    value = cell.get("value", "")
+                    print(f"  {key}: {value}")
+        else:
+            print("未找到表格信息")
+    
+    return data
+
+# 使用示例
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_tables(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## 返回数据示例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "items": [
+            [
+              {
+                "key": "货物劳务名称",
+                "value": "＊电子计算机＊微型计算机主机",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [100, 400, 300, 400, 300, 430, 100, 430]
+                  }
+                ]
+              },
+              {
+                "key": "规格型号",
+                "value": "DMS-SC68",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [310, 400, 400, 400, 400, 430, 310, 430]
+                  }
+                ]
+              },
+              {
+                "key": "单位",
+                "value": "台",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [410, 400, 450, 400, 450, 430, 410, 430]
+                  }
+                ]
+              },
+              {
+                "key": "数量",
+                "value": "1",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [460, 400, 500, 400, 500, 430, 460, 430]
+                  }
+                ]
+              },
+              {
+                "key": "单价",
+                "value": "5000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [510, 400, 600, 400, 600, 430, 510, 430]
+                  }
+                ]
+              },
+              {
+                "key": "金额",
+                "value": "5000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [610, 400, 700, 400, 700, 430, 610, 430]
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "key": "货物劳务名称",
+                "value": "＊软件＊系统软件",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [100, 440, 300, 440, 300, 470, 100, 470]
+                  }
+                ]
+              },
+              {
+                "key": "规格型号",
+                "value": "V1.0",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [310, 440, 400, 440, 400, 470, 310, 470]
+                  }
+                ]
+              },
+              {
+                "key": "单位",
+                "value": "套",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [410, 440, 450, 440, 450, 470, 410, 470]
+                  }
+                ]
+              },
+              {
+                "key": "数量",
+                "value": "2",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [460, 440, 500, 440, 500, 470, 460, 470]
+                  }
+                ]
+              },
+              {
+                "key": "单价",
+                "value": "1000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [510, 440, 600, 440, 600, 470, 510, 470]
+                  }
+                ]
+              },
+              {
+                "key": "金额",
+                "value": "2000.00",
+                "position": [
+                  {
+                    "page": 0,
+                    "vertices": [610, 440, 700, 440, 700, 470, 610, 470]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}
+```

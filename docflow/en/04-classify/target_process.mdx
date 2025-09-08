@@ -1,0 +1,137 @@
+---
+title: "Classification Only"
+---
+
+Docflow performs the complete parsing-\>classification-\>extraction workflow by default.\
+If business requirements only need classification results, you can add the `target_process=classify` parameter to the upload interface, and the workflow will terminate after completing classification, skipping the extraction process.
+
+## Upload Files for Classification Only
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&target_process=classify"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import os
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "target_process": "classify"
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## Query Classification Results
+
+Use the `file/fetch` interface to query classification results:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file-id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File name: {f.get('name')}")
+    print(f"Classification result: {f.get('category')}")
+    print(f"Recognition status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## Recognition_status Status Description for Classification Only
+
+When using `target_process=classify` for classification only, the `recognition_status` field will have the following status changes:
+
+### Status Value Description
+
+- `0` - Pending recognition: File just uploaded, waiting for processing
+- `3` - Classifying: Classification processing in progress
+- `10` - Classification complete: **Final state for classification-only workflow**, indicating classification is complete and extraction will not be performed
+- `2` - Classification failed: Error occurred during classification process
+
+### Difference from Complete Workflow
+
+**Complete workflow (default)** status changes:
+
+- `0` → `3` → `4` → `1` (Pending recognition → Classifying → Extracting → Recognition successful)
+
+**Classification-only workflow** status changes:
+
+- `0` → `3` → `10` (Pending recognition → Classifying → Classification complete)
+
+### Return Example
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "category": "invoice",
+        "recognition_status": 10,
+        "data": null
+      }
+    ]
+  }
+}
+```
