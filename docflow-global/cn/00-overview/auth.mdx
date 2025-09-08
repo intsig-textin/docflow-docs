@@ -7,9 +7,9 @@ description: "如何获取并使用API访问凭证"
 
 ### 1.1 公有云使用
 
-DocFlow使用[TextIn](https://www.textin.com/)账号。
+DocFlow使用[TextIn](https://textin.ai/)账号。
 
-请在[TextIn](https://www.textin.com/)上注册后，在 [TextIn首页-账户与充值-账号与开发者信息 ](https://www.textin.com/console/dashboard/setting)页面获取 `x-ti-app-id` 和 `x-ti-secret-code`，用于请求认证。
+请在[TextIn](https://textin.ai/)上注册后，在 [TextIn首页-账户与充值-账号与开发者信息 ](https://textin.ai/console/dashboard/setting)页面获取 `x-ti-app-id` 和 `x-ti-secret-code`，用于请求认证。
 
 ### 1.2 私有云使用
 
@@ -34,7 +34,7 @@ DocFlow接口支持两种请求认证方法：
 curl \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.com/api/app-api/sip/platform/v2/file/upload"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
 ```
 
 </CodeGroup>
@@ -129,7 +129,7 @@ print(f"payload_hash: {payload_hash}")
 print(f"string_to_sign: {string_to_sign}")
 print(f"signature: {signature}")
 
-resp = requests.post(url=f"https://docflow.textin.com{url}", 
+resp = requests.post(url=f"https://docflow.textin.ai{url}", 
                      params=params, 
                      data=payload_raw, 
                      headers={"Content-Type": payload.content_type,

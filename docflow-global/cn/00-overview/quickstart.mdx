@@ -5,7 +5,7 @@ description: "参考示例，快速用API集成Docflow功能"
 
 <Tip>
   本文通过示例说明如何快速通过API接入Docflow工作流。\
-  但如果您没有在Web UI上使用过Docflow，建议您先在[Web页面](https://docflow.textin.com/)上传文件直观体验一下Docflow的工作方式。
+  但如果您没有在Web UI上使用过Docflow，建议您先在[Web页面](https://docflow.textin.ai/)上传文件直观体验一下Docflow的工作方式。
 </Tip>
 
 ## 01 先决条件：获取访问凭证
@@ -13,7 +13,7 @@ description: "参考示例，快速用API集成Docflow功能"
 ### 1.1 公有云使用
 
 使用Docflow API时，您需要先获取API Key。\
-请先登录后前往 [TextIn工作台 - 账号与开发者信息](https://www.textin.com/console/dashboard/setting) 获取您的`x-ti-app-id`和`x-ti-secret-code`。
+请先登录后前往 [TextIn工作台 - 账号与开发者信息](https://textin.ai/console/dashboard/setting) 获取您的`x-ti-app-id`和`x-ti-secret-code`。
 
 ### 1.2 私有云使用
 
@@ -36,7 +36,7 @@ curl \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
   -F file=@</path/to/your/file.pdf \
-  "https://docflow.textin.com/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
 ```
 
 
@@ -51,7 +51,7 @@ ti_secret_code = "your-app-secret"
 workspace_id = "your-workspace-id"
 filepath = "/your/file/path.pdf"
 
-host = "https://docflow.textin.com"
+host = "https://docflow.textin.ai"
 url = "/api/app-api/sip/platform/v2/file/upload"
 params = { "workspace_id":workspace_id}
 
@@ -93,7 +93,7 @@ resp_json = json.loads(resp.text)
 curl \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.com/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>"
 ```
 
 
@@ -105,7 +105,7 @@ ti_app_id = "your-app-id"
 ti_secret_code = "your-app-secret"
 workspace_id = "your-workspace-id"
 
-host = "https://docflow.textin.com"
+host = "https://docflow.textin.ai"
 url = "/api/app-api/sip/platform/v2/file/fetch"
 params = { "workspace_id":workspace_id}
 
