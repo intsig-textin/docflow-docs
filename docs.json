@@ -165,12 +165,6 @@
     "dark": "/logo/dark.png"
   },
   "navbar": {
-    "comment-links": [
-      {
-        "label": "资讯中心",
-        "href": "https://textin.ai/news/list"
-      }
-    ],
     "primary": {
       "type": "button",
       "label": "Docflow",
