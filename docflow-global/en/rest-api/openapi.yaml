@@ -1077,12 +1077,12 @@ components:
           type: integer
           description: Status code
           example: 200
-        message:
+        msg:
           type: string
           description: Status description
       required:
       - code
-      - message
+      - msg
     KeyValue:
       type: object
       properties:

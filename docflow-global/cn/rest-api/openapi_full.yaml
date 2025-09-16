@@ -1675,12 +1675,12 @@ components:
           type: integer
           description: 状态码
           example: 200
-        message:
+        msg:
           type: string
           description: 状态描述
       required:
       - code
-      - message
+      - msg
     KeyValue:
       type: object
       properties:
