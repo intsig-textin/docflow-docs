@@ -39,13 +39,6 @@ paths:
           schema:
             type: string
             example: 202412190001
-        - name: auto_verify_vat
-          in: query
-          description: 是否自动进行发票验真
-          required: false
-          schema:
-            type: boolean
-            default: false
         - name: split_flag
           in: query
           description: 是否进行文件拆分
