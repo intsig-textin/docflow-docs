@@ -37,13 +37,6 @@ paths:
           schema:
             type: string
             example: 202412190001
-        - name: auto_verify_vat
-          in: query
-          description: Whether to automatically verify VAT invoice
-          required: false
-          schema:
-            type: boolean
-            default: false
         - name: split_flag
           in: query
           description: Whether to perform file splitting
@@ -987,6 +980,13 @@ paths:
             type: string
             description: x-ti-secret-code
             example: 1234abcd
+        - name: Lang
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Lang
+            example: en_US
       requestBody:
         content:
           application/json:
@@ -2097,10 +2097,10 @@ components:
           description: Trace ID
           example: 1234abcd
     ApiModelFieldRespVO:
-      required:
-        - description
-        - fieldName
-        - id
+      # required:
+      #   - description
+      #   - fieldName
+      #   - id
       type: object
       properties:
         id:
