@@ -2099,10 +2099,10 @@ components:
           description: 链路id
           example: 1234abcd
     ApiModelFieldRespVO:
-      # required:
-      #   - description
-      #   - fieldName
-      #   - id
+      required:
+        - description
+        - fieldName
+        - id
       type: object
       properties:
         id:

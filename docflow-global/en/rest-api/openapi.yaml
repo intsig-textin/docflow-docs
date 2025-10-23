@@ -2097,10 +2097,10 @@ components:
           description: Trace ID
           example: 1234abcd
     ApiModelFieldRespVO:
-      # required:
-      #   - description
-      #   - fieldName
-      #   - id
+      required:
+        - description
+        - fieldName
+        - id
       type: object
       properties:
         id:
