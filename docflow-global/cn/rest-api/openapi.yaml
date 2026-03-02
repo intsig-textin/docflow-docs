@@ -9,6 +9,189 @@ servers:
 x-codeSamples: custom
 
 paths:
+  /api/app-api/sip/platform/v2/workspace/create:
+    post:
+      summary: 创建空间
+      description: 创建一个新的工作空间
+      operationId: createWorkspace
+      tags:
+        - 空间管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 空间名称
+                  example: "我的工作空间"
+                  maxLength: 50
+                description:
+                  type: string
+                  description: 空间描述
+                  example: "这是一个用于处理发票的工作空间"
+                  maxLength: 200
+                enterprise_id:
+                  type: integer
+                  format: int64
+                  description: 企业组织ID
+                  example: 12345
+                auth_scope:
+                  type: integer
+                  description: "协作范围 0:仅自己可见 1:企业成员可见"
+                  example: 1
+                  enum:
+                    - 0
+                    - 1
+              required:
+                - name
+                - enterprise_id
+                - auth_scope
+      responses:
+        '200':
+          description: 成功创建空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          workspace_id:
+                            type: string
+                            description: 空间ID
+                            example: "1234567890"
+
+  /api/app-api/sip/platform/v2/category/create:
+    post:
+      summary: 创建文件类别
+      description: 在指定空间中创建一个新的文件类别，需要上传至少一个样本文件并配置至少一个字段
+      operationId: createCategory
+      tags:
+        - 文件类别
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: 空间ID
+                  example: "1234567890"
+                name:
+                  type: string
+                  description: 文件类别名称
+                  example: "发票"
+                  maxLength: 50
+                category_prompt:
+                  type: string
+                  description: 用于分类的提示词
+                  example: "增值税发票，包含发票代码、发票号码等字段"
+                  maxLength: 500
+                extract_model:
+                  description: 抽取模型
+                  example: "llm"
+                  enum:
+                    - llm
+                    - vlm
+                sample_files:
+                  type: array
+                  description: 样本文件列表，至少上传一个样本文件
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                fields:
+                  type: array
+                  description: 字段配置列表，至少配置一个字段
+                  items:
+                    allOf:
+                      - $ref: '#/components/schemas/CategoryFieldConfig'
+                  minItems: 1
+              required:
+                - workspace_id
+                - name
+                - extract_model
+                - sample_files
+                - fields
+      responses:
+        '200':
+          description: 成功创建文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          category_id:
+                            type: string
+                            description: 文件类别ID
+                            example: "1234567890"
+
+  /api/app-api/sip/platform/v2/category/fields/add:
+    post:
+      summary: 新增文件类别字段
+      description: 在指定文件类别下新增一个字段，支持新增普通字段和表格字段
+      operationId: addCategoryField
+      tags:
+        - 文件类别
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CategoryFieldConfig'
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: 空间ID
+                  example: "1234567890"
+                category_id:
+                  type: string
+                  description: 文件类别ID
+                  example: "1234567890"
+                table_id:
+                  type: string
+                  description: |
+                    表格ID
+                    - 不传或为空：创建普通字段，结果会出现在 result.fields 中
+                    - 传入表格ID：创建对应表格下的表格字段，结果会出现在 result.tables[].fields 中
+                  example: "1234567890"
+              required:
+                - workspace_id
+                - category_id
+                - name
+      responses:
+        '200':
+          description: 成功新增文件类别字段
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          field_id:
+                            type: string
+                            description: 新创建的字段ID
+                            example: "1234567890"
+
   /api/app-api/sip/platform/v2/file/upload:
     post:
       summary: 上传文件
@@ -2521,6 +2704,91 @@ components:
         - `2`: **父任务**：打开“文件拆分”或“多图切分”开关的文件任务执行后，该文件批次任务中的每份文件即为父任务
         - `3`: **切图子任务**：打开“多图切分”开关的文件任务执行成功后，该文件批次任务中因多图切分操作产生的子任务即为切分子任务，按照文件类别下实际切图结果数量区分子任务
       example: 1
+
+    CategoryFieldConfig:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 字段名称
+          example: 发票代码
+        description:
+          type: string
+          description: 字段描述
+          example: 发票代码描述
+        prompt:
+          type: string
+          description: 语义抽取提示词
+        use_prompt:
+          type: boolean
+          description: 是否使用语义提示词
+        alias:
+          type: array
+          description: 字段别名
+          items:
+            type: string
+        identity:
+          type: string
+          description: 导出字段名
+        multi_value:
+          type: boolean
+          description: 是否多值抽取
+        duplicate_value_distinct:
+          type: boolean
+          description: 是否重复值去重，仅当 multi_value 为 true 时有效
+        transform_settings:
+          type: object
+          description: 转换配置
+          properties:
+            type:
+              type: string
+              description: 转换类型
+              enum:
+                - datetime
+                - enumerate
+                - regex
+            datetime_settings:
+              type: object
+              description: 时间类型转换配置
+              properties:
+                format:
+                  type: string
+                  description: 日期时间格式，参考 DocFlow 日期格式说明 (https://docflow.textin.com/markdown?key=dateFormatGuide)
+                  example: yyyy-MM-dd HH:mm:ss
+            enumerate_settings:
+              type: object
+              description: 枚举类型转换配置
+              properties:
+                items:
+                  type: array
+                  description: 可选枚举值列表
+                  items:
+                    type: string
+            regex_settings:
+              type: object
+              description: 正则类型转换配置
+              properties:
+                match:
+                  type: string
+                  description: 匹配用的正则表达式
+                  example: ^\d{4}-\d{2}-\d{2}$
+                replace:
+                  type: string
+                  description: 替换用的正则表达式
+                  example: $1-$2-$3
+            mismatch_action:
+              type: object
+              description: 字段值不匹配时的处理动作
+              properties:
+                mode:
+                  type: string
+                  description: 不匹配时的处理模式
+                  enum:
+                    - default
+                    - warning
+                default_value:
+                  type: string
+                  description: 当模式为 default 时使用的默认值
 
   securitySchemes:
     ApiId: # arbitrary name for the security scheme

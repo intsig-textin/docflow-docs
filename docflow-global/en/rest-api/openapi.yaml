@@ -9,6 +9,189 @@ servers:
 x-codeSamples: custom
 
 paths:
+  /api/app-api/sip/platform/v2/workspace/create:
+    post:
+      summary: Create Workspace
+      description: Create a new workspace
+      operationId: createWorkspace
+      tags:
+        - Workspace Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Workspace name
+                  example: "My Workspace"
+                  maxLength: 50
+                description:
+                  type: string
+                  description: Workspace description
+                  example: "This is a workspace for processing invoices"
+                  maxLength: 200
+                enterprise_id:
+                  type: integer
+                  format: int64
+                  description: Enterprise organization ID
+                  example: 12345
+                auth_scope:
+                  type: integer
+                  description: "Auth scope 0: visible only to self 1: visible to enterprise members"
+                  example: 1
+                  enum:
+                    - 0
+                    - 1
+              required:
+                - name
+                - enterprise_id
+                - auth_scope
+      responses:
+        '200':
+          description: Successfully created workspace
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          workspace_id:
+                            type: string
+                            description: Workspace ID
+                            example: "1234567890"
+
+  /api/app-api/sip/platform/v2/category/create:
+    post:
+      summary: Create File Category
+      description: Create a new file category in the specified workspace, requires uploading at least one sample file and configuring at least one field
+      operationId: createCategory
+      tags:
+        - File Category
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: Workspace ID
+                  example: "1234567890"
+                name:
+                  type: string
+                  description: File category name
+                  example: "Invoice"
+                  maxLength: 50
+                category_prompt:
+                  type: string
+                  description: Prompt for classification
+                  example: "VAT invoice, including invoice code, invoice number and other fields"
+                  maxLength: 500
+                extract_model:
+                  description: Extraction model
+                  example: "llm"
+                  enum:
+                    - llm
+                    - vlm
+                sample_files:
+                  type: array
+                  description: Sample file list, at least one sample file must be uploaded
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                fields:
+                  type: array
+                  description: Field configuration list, at least one field must be configured
+                  items:
+                    allOf:
+                      - $ref: '#/components/schemas/CategoryFieldConfig'
+                  minItems: 1
+              required:
+                - workspace_id
+                - name
+                - extract_model
+                - sample_files
+                - fields
+      responses:
+        '200':
+          description: Successfully created file category
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          category_id:
+                            type: string
+                            description: File category ID
+                            example: "1234567890"
+
+  /api/app-api/sip/platform/v2/category/fields/add:
+    post:
+      summary: Add File Category Field
+      description: Add a field under the specified file category, supports adding regular fields and table fields
+      operationId: addCategoryField
+      tags:
+        - File Category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CategoryFieldConfig'
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: Workspace ID
+                  example: "1234567890"
+                category_id:
+                  type: string
+                  description: File category ID
+                  example: "1234567890"
+                table_id:
+                  type: string
+                  description: |
+                    Table ID
+                    - Not passed or empty: Create a regular field, the result will appear in result.fields
+                    - Passed table ID: Create a table field under the corresponding table, the result will appear in result.tables[].fields
+                  example: "1234567890"
+              required:
+                - workspace_id
+                - category_id
+                - name
+      responses:
+        '200':
+          description: Successfully added file category field
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          field_id:
+                            type: string
+                            description: Newly created field ID
+                            example: "1234567890"
+
   /api/app-api/sip/platform/v2/file/upload:
     post:
       summary: Upload File
@@ -2526,6 +2709,91 @@ components:
         - 2: **Parent task**: After file tasks with "File split" or "Multi-image crop" switches enabled execute, each file in that file batch task becomes a parent task
         - 3: **Crop subtask**: When a file task with "Multi-image crop" switch enabled executes successfully, the subtasks generated by multi-image crop operations in that file batch task are crop subtasks, divided according to the actual number of crop results under the file category
       example: 1
+
+    CategoryFieldConfig:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Field name
+          example: Invoice Code
+        description:
+          type: string
+          description: Field description
+          example: Invoice code description
+        prompt:
+          type: string
+          description: Semantic extraction prompt
+        use_prompt:
+          type: boolean
+          description: Whether to use semantic prompt
+        alias:
+          type: array
+          description: Field aliases
+          items:
+            type: string
+        identity:
+          type: string
+          description: Export field name
+        multi_value:
+          type: boolean
+          description: Whether to extract multiple values
+        duplicate_value_distinct:
+          type: boolean
+          description: Whether to deduplicate duplicate values, only effective when multi_value is true
+        transform_settings:
+          type: object
+          description: Transformation configuration
+          properties:
+            type:
+              type: string
+              description: Transformation type
+              enum:
+                - datetime
+                - enumerate
+                - regex
+            datetime_settings:
+              type: object
+              description: Datetime type transformation configuration
+              properties:
+                format:
+                  type: string
+                  description: Date time format, refer to DocFlow date format guide (https://docflow.textin.com/markdown?key=dateFormatGuide)
+                  example: yyyy-MM-dd HH:mm:ss
+            enumerate_settings:
+              type: object
+              description: Enumerate type transformation configuration
+              properties:
+                items:
+                  type: array
+                  description: Optional enumeration value list
+                  items:
+                    type: string
+            regex_settings:
+              type: object
+              description: Regex type transformation configuration
+              properties:
+                match:
+                  type: string
+                  description: Regular expression for matching
+                  example: ^\d{4}-\d{2}-\d{2}$
+                replace:
+                  type: string
+                  description: Regular expression for replacement
+                  example: $1-$2-$3
+            mismatch_action:
+              type: object
+              description: Action when field value does not match
+              properties:
+                mode:
+                  type: string
+                  description: Processing mode when mismatch occurs
+                  enum:
+                    - default
+                    - warning
+                default_value:
+                  type: string
+                  description: Default value when mode is default
 
   securitySchemes:
     ApiId: # arbitrary name for the security scheme
