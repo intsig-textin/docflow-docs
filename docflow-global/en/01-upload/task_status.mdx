@@ -1,0 +1,320 @@
+---
+title: "Task Status Query"
+description: "Learn how to query task status, failure reasons, task duration, and other information"
+---
+
+<Tip>
+  This article explains how to query DocFlow task processing status, failure reasons, and duration information. Task status helps you understand file processing progress and results.
+</Tip>
+
+DocFlow uses asynchronous processing mode. After file upload, files enter the processing queue. You can query task status through multiple methods to understand processing progress, failure reasons, and task duration information.
+
+## Task Status Description
+
+Task status in DocFlow is represented by the `recognition_status` field. The specific statuses are as follows:
+
+| Status Value | Status Name | Description |
+|--------------|-------------|-------------|
+| 0 | Pending Recognition | File uploaded, waiting to start processing |
+| 1 | Recognition Success | File processing completed successfully |
+| 2 | Recognition Failed | File processing failed, failure reason can be viewed |
+| 3 | Classifying | File classification processing in progress |
+| 4 | Extracting | Field extraction processing in progress |
+| 5 | Preparing | Task preparation stage |
+| 6 | File Splitting | File splitting processing in progress |
+| 7 | Image Cropping | Multi-image cropping processing in progress |
+| 10 | Classification Complete | Completion status for classification-only mode |
+| 20 | Parsing | Document parsing processing in progress |
+
+## Query Task Status
+
+### Query by Batch Number
+
+Use `batch_number` to query task status for the entire batch:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File Name: {f.get('name')}")
+    print(f"Task Status: {f.get('recognition_status')}")
+    print(f"File Category: {f.get('category')}")
+    if f.get('recognition_status') == 2:
+        print(f"Failure Reason: {f.get('failure_causes')}")
+    print("---")
+```
+
+</CodeGroup>
+
+### Query by File ID
+
+Use `file_id` to query task status for a specific file:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_id = "<your-file-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "file_id": file_id},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+file_info = data.get("result", {}).get("files", [{}])[0]
+print(f"File ID: {file_info.get('id')}")
+print(f"File Name: {file_info.get('name')}")
+print(f"Task Status: {file_info.get('recognition_status')}")
+print(f"File Category: {file_info.get('category')}")
+if file_info.get('recognition_status') == 2:
+    print(f"Failure Reason: {file_info.get('failure_causes')}")
+```
+
+</CodeGroup>
+
+### Query by Task ID
+
+Use `task_id` to query status for a specific task:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&task_id=<your-task-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "<your-task-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "task_id": task_id},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+file_info = data.get("result", {}).get("files", [{}])[0]
+print(f"Task ID: {file_info.get('task_id')}")
+print(f"File ID: {file_info.get('id')}")
+print(f"File Name: {file_info.get('name')}")
+print(f"Task Status: {file_info.get('recognition_status')}")
+print(f"File Category: {file_info.get('category')}")
+if file_info.get('recognition_status') == 2:
+    print(f"Failure Reason: {file_info.get('failure_causes')}")
+```
+
+</CodeGroup>
+
+## Query Task Duration
+
+After task processing is completed, you can view task duration through the `duration_ms` field (unit: milliseconds):
+
+<CodeGroup>
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File Name: {f.get('name')}")
+    print(f"Task Status: {f.get('recognition_status')}")
+    
+    # View task duration
+    if f.get('duration_ms'):
+        duration_seconds = f['duration_ms'] / 1000
+        print(f"Task Duration: {duration_seconds:.2f} seconds")
+    
+    print("---")
+```
+
+</CodeGroup>
+
+## Failure Reason Analysis
+
+When task status is `2` (Recognition Failed), you can view specific failure reasons through the `failure_causes` field:
+
+<CodeGroup>
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    if f.get('recognition_status') == 2:
+        print(f"File ID: {f['id']}")
+        print(f"File Name: {f.get('name')}")
+        print(f"Failure Reason: {f.get('failure_causes')}")
+        print("---")
+```
+
+</CodeGroup>
+
+## Status Filter Query
+
+You can filter tasks by specific status using the `recognition_status` parameter:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&recognition_status=2"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+# Query all failed tasks
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "recognition_status": 2},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+print(f"Failed Task Count: {len(data.get('result', {}).get('files', []))}")
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File Name: {f.get('name')}")
+    print(f"Failure Reason: {f.get('failure_causes')}")
+    print("---")
+```
+
+</CodeGroup>
+
+## Response Example
+
+Example response for querying task status:
+
+```json expandable
+{
+  "code": 200,
+  "msg": "Success",
+  "result": {
+    "files": [
+      {
+        "id": "1955840505753140508",
+        "task_id": "1981692246135111680",
+        "name": "Corporate Credit Report.pdf",
+        "format": "pdf",
+        "recognition_status": 1,
+        "verification_status": 0,
+        "category": "credit_report",
+        "duration_ms": 15000,
+        "failure_causes": null
+      },
+      {
+        "id": "1955840505753140509",
+        "task_id": "1981692246135111681",
+        "name": "Invoice.pdf",
+        "format": "pdf",
+        "recognition_status": 2,
+        "verification_status": 0,
+        "category": "invoice",
+        "duration_ms": 8000,
+        "failure_causes": "Unsupported file format"
+      }
+    ]
+  }
+}
+```

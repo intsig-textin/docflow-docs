@@ -1,0 +1,376 @@
+---
+title: "Samples Management"
+description: "Manage sample files for file categories"
+---
+
+<Tip>
+  Sample files are example documents for file categories, used to train and optimize document classification and extraction models. Each file category requires at least one sample file, with a maximum of ten sample files. This guide introduces how to manage sample files for file categories via API.
+</Tip>
+
+## Upload Sample
+
+Upload sample file(s) for a specified file category:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "workspace_id=<your-workspace-id>" \
+  -F "category_id=<category-id>" \
+  -F "file=@/path/to/sample.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/upload"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/upload"
+
+# Prepare sample file
+files = {
+    'file': open('/path/to/sample.pdf', 'rb')
+}
+
+# Prepare form data
+data = {
+    'workspace_id': workspace_id,
+    'category_id': category_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    sample_id = result.get("result", {}).get("sample_id")
+    print(f"Sample uploaded successfully, ID: {sample_id}")
+else:
+    print(f"Upload failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `file` (required): Sample file
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "sample_id": "sample_123"
+  }
+}
+```
+
+<Note>
+  **Sample file requirements**:
+  - Sample files should be typical representative documents of the category
+  - Recommended to upload 3-5 sample files to improve classification accuracy
+  - Supported file formats refer to the supported formats for document upload
+</Note>
+
+## List Samples
+
+Get the sample list for a specified file category:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/list?workspace_id=<your-workspace-id>&category_id=<category-id>&page=1&page_size=20"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "page": 1,
+        "page_size": 20
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    samples = result.get("result", {}).get("samples", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} samples")
+    for sample in samples:
+        print(f"Sample ID: {sample.get('sample_id')}, File name: {sample.get('file_name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `page` (optional): Page number, default is 1
+- `page_size` (optional): Items per page, default is 20, maximum is 100
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 5,
+    "page": 1,
+    "page_size": 20,
+    "samples": [
+      {
+        "sample_id": "sample_123",
+        "file_name": "invoice_sample_01.pdf"
+      },
+      {
+        "sample_id": "sample_456",
+        "file_name": "invoice_sample_02.pdf"
+      }
+    ]
+  }
+}
+```
+
+## Download Sample
+
+Download a specified sample file:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -o "sample.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/download?workspace_id=<your-workspace-id>&category_id=<category-id>&sample_id=<sample-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+sample_id = "<sample-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/download"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "sample_id": sample_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+if resp.status_code == 200:
+    # Save file
+    with open("sample_downloaded.pdf", "wb") as f:
+        f.write(resp.content)
+    print("Sample downloaded successfully")
+else:
+    print(f"Download failed: {resp.status_code}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `sample_id` (required): Sample ID
+
+**Response**: Returns file binary stream (`application/octet-stream`)
+
+## Delete Sample
+
+Delete specified sample file(s), supporting batch deletion:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "sample_ids": ["sample_123", "sample_456"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "sample_ids": ["sample_123", "sample_456"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Sample deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `sample_ids` (required): Array of sample IDs to delete
+
+<Warning>
+  Sample deletion is irreversible. Please proceed with caution. Each file category must have at least one sample file.
+</Warning>
+
+## Sample Management Best Practices
+
+### Sample Selection
+
+Choosing appropriate sample files is crucial for improving classification and extraction accuracy:
+
+1. **Representativeness**: Select typical representative documents of the category
+2. **Diversity**: Cover different formats and layouts that may appear in the category
+3. **Quality**: Ensure sample files are clear, complete, and undamaged
+4. **Quantity**: Recommended to upload 3-5 sample files
+
+### Sample Quantity Guidelines
+
+- **Minimum**: At least 1 sample per category (required when creating category)
+- **Recommended**: 3-5 samples provide good classification results
+- **Maximum**: A maximum of 10 samples per category
+
+### Sample Update Strategy
+
+When classification or extraction results are unsatisfactory, consider:
+
+1. **Adding new samples**: Upload more typical samples
+2. **Replacing samples**: Delete atypical samples and upload better ones
+3. **Sample diversification**: Ensure samples cover various possible document formats
+
+### Example: Batch Upload Samples
+
+```python Python icon=python expandable
+import requests
+import os
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/upload"
+
+# Sample files directory
+sample_dir = "/path/to/samples"
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.pdf')]
+
+print(f"Preparing to upload {len(sample_files)} sample files")
+
+for filename in sample_files:
+    file_path = os.path.join(sample_dir, filename)
+
+    with open(file_path, 'rb') as f:
+        files = {'file': f}
+        data = {
+            'workspace_id': workspace_id,
+            'category_id': category_id
+        }
+
+        resp = requests.post(
+            url=f"{host}{url}",
+            data=data,
+            files=files,
+            headers={
+                "x-ti-app-id": ti_app_id,
+                "x-ti-secret-code": ti_secret_code,
+            },
+            timeout=60,
+        )
+
+        result = resp.json()
+        if result.get("code") == 200:
+            sample_id = result.get("result", {}).get("sample_id")
+            print(f"✓ {filename} uploaded successfully, ID: {sample_id}")
+        else:
+            print(f"✗ {filename} upload failed: {result.get('msg')}")
+
+print("Sample upload completed")
+```
+
+## Next Steps
+
+- Learn [Fields Management](./fields_management) - Configure fields for file categories
+- Learn [Tables Management](./tables_management) - Configure tables for file categories
+- Return to [Category Quickstart](./quickstart) - View basic file category operations

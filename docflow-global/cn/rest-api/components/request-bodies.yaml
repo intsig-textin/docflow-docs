@@ -1,0 +1,27 @@
+FileUploadRequestBody:
+  required: true
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          file:
+            type: string
+            format: binary
+    application/json:
+      schema:
+        type: object
+        properties:
+          urls:
+            description: |
+              文件URL列表
+              一次最多支持上传10个文件URL，每个文件最大不超过100MB
+            type: array
+            items:
+              type: string
+              description: 文件URL
+              example: 'https://example.com/file.pdf'
+              pattern: '^https?://.*$'
+            maxItems: 10
+        required:
+          - urls

@@ -1,0 +1,224 @@
+---
+title: "Amend File Category"
+description: "For normal tasks, use the amend category API to modify file categories"
+---
+
+## Overview
+
+For completed normal tasks, if the file category is incorrect, you can use the **amend category** API to modify the file category. After modification, the system will reprocess the data using the new category.
+
+<Tip>
+Only normal tasks support category modification. File split tasks and multi-image crop tasks require using corresponding parameters for modification.
+</Tip>
+<Tip>
+After modifying the file category, the system will automatically re-extract using the fields configured for the new category, and the extraction results will change.
+</Tip>
+
+## Use Cases
+
+1. **Category Error Correction**: Automatic classification results are incorrect and need manual correction
+2. **Category Adjustment**: Business requirements change and files need to be reclassified
+
+## API Endpoint
+
+**Endpoint**: `POST /api/app-api/sip/platform/v2/file/amend_category`
+
+## Request Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workspace_id` | string | Yes | Workspace ID |
+| `task_id` | string | Yes | Task ID |
+| `category` | string | Yes | New file category |
+
+### Parameter Description
+
+- `task_id`: Can be obtained through the `file/fetch` API
+- `category`: New file category name, must be a file category already configured in the DocFlow workspace
+
+## Example Code
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "1234567890",
+    "task_id": "1234567890",
+    "category": "Electronic Invoice (Regular)"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def amend_category(workspace_id, task_id, category, app_id, secret_code):
+    """
+    Amend file category for normal tasks
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "category": category
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+if __name__ == "__main__":
+    WORKSPACE_ID = "1234567890"
+    TASK_ID = "1234567890"
+    CATEGORY = "Electronic Invoice (Regular)"
+    APP_ID = "<your-app-id>"
+    SECRET_CODE = "<your-secret-code>"
+    
+    result = amend_category(WORKSPACE_ID, TASK_ID, CATEGORY, APP_ID, SECRET_CODE)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## Get Task ID
+
+Before modifying the file category, you need to obtain the task's `task_id`. You can query it through the `file/fetch` API:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable
+import requests
+
+def get_task_id(workspace_id, file_id, app_id, secret_code):
+    """
+    Get the task ID for a file
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    
+    params = {
+        "workspace_id": workspace_id,
+        "file_id": file_id
+    }
+    
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+    
+    # Extract task_id from the response
+    files = data.get("result", {}).get("files", [])
+    if files:
+        return files[0].get("task_id")
+    return None
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+task_id = get_task_id(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+print(f"Task ID: {task_id}")
+```
+
+</CodeGroup>
+
+## Response
+
+After successfully modifying the file category, the API returns a success response:
+
+```json expandable
+{
+  "code": 200,
+  "message": "success"
+}
+```
+
+## Complete Example
+
+The following is a complete example showing how to query file information, get the task ID, and then modify the file category:
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_file_info(workspace_id, file_id, app_id, secret_code):
+    """Get file information"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    params = {"workspace_id": workspace_id, "file_id": file_id}
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+def amend_category(workspace_id, task_id, category, app_id, secret_code):
+    """Amend file category"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "category": category
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+NEW_CATEGORY = "Electronic Invoice (Regular)"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+# 1. Get file information and task ID
+file_info = get_file_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+files = file_info.get("result", {}).get("files", [])
+if files:
+    file_data = files[0]
+    task_id = file_data.get("task_id")
+    current_category = file_data.get("category")
+    
+    print(f"Current file category: {current_category}")
+    print(f"Task ID: {task_id}")
+    
+    # 2. Amend file category
+    result = amend_category(WORKSPACE_ID, task_id, NEW_CATEGORY, APP_ID, SECRET_CODE)
+    print(f"Amendment result: {json.dumps(result, indent=2, ensure_ascii=False)}")
+```
+
+## Notes
+
+1. **Task Type Restriction**: Only normal tasks (non-split tasks, non-multi-image crop tasks) support category modification through the `category` parameter
+2. **Category Must Exist**: The specified `category` must already be configured in the DocFlow workspace, otherwise an error will be returned
+3. **Category Name Matching**: Category names must exactly match the configuration (case-sensitive)
+4. **Chinese Category Handling**: If using Chinese category names, ensure the request body uses UTF-8 encoding
+5. **Reprocessing After Modification**: After modifying the file category, the system will reprocess the data according to the new category
+

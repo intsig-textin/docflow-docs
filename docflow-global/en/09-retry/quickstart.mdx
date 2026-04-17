@@ -1,0 +1,112 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate document retry functionality with API"
+---
+
+<Tip>
+  This document demonstrates how to retry file tasks in DocFlow through REST API. When file processing fails or needs to be reprocessed, you can use the retry interface.
+</Tip>
+
+DocFlow provides a file retry interface that supports reprocessing specified tasks. The retry operation will re-execute the complete processing flow including parsing, classification, splitting, extraction, etc.
+
+<Warning>
+**Important Restriction**: Only tasks that have extraction succeeded or failed, and are main tasks or parent tasks, can be retried. Child tasks do not support retry operations.
+</Warning>
+
+## Retry File Processing
+
+Reprocess files corresponding to specified task IDs:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "1978297791713619968"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "1978297791713619968"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/retry"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    print("File retry successful")
+else:
+    print(f"Retry failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+## Parameter Description
+
+### Required Parameters
+
+- `workspace_id`: Workspace ID. Please refer to the [Get Workspace ID](../100-faq/get_workspace_id) documentation.
+- `task_id`: Task ID. Can be obtained from the file upload interface response or through query interfaces.
+
+### Response Description
+
+After successful retry, the interface returns a standard response:
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+- `code`: Response status code, 200 indicates success
+- `msg`: Response message
+
+## Use Cases
+
+The retry interface is suitable for the following scenarios:
+
+1. **Failed Processing Retry**: When file processing fails, you can call the retry interface to reprocess
+2. **Retry After Configuration Update**: After updating classification, extraction, and other configurations, you can reprocess already processed files to apply new configurations
+
+## Important Notes
+
+<Warning>
+**Retry Restrictions**: Only tasks that have extraction succeeded or failed, and are main tasks or parent tasks, can be retried. Child tasks do not support retry operations.
+</Warning>
+
+1. **Task Status**: The retry operation will reprocess files, and existing processing results may be overwritten
+2. **Processing Time**: The retry operation needs to re-execute the processing flow, which may take some time. It is recommended to check the task status through query interfaces
+3. **Task Type Restriction**: Only main tasks or parent tasks can be retried. Child tasks do not support retry
+4. **Extraction Status Restriction**: Only tasks with extraction succeeded or failed status can be retried
+

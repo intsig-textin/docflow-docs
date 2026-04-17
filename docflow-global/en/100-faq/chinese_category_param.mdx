@@ -1,0 +1,42 @@
+---
+title: "Chinese Category Parameter Passing Issues"
+description: "Solving issues with Chinese or other non-English category names in API parameter passing"
+---
+
+When using the DocFlow API, if the file category name contains Chinese or other non-English characters, passing the raw category name may cause the following issues:
+
+1. **Category matching failure**: API cannot correctly recognize Chinese category names
+2. **Processing errors**: Returns error messages that the category does not exist
+3. **Encoding issues**: URL parameters containing non-ASCII characters cause request failures
+
+## Solution
+
+### 1. URL Encoding Processing
+
+Chinese category names must be UTF-8 URL encoded before being passed as API parameters.
+
+#### Python Example
+
+```python
+import urllib.parse
+
+# Original Chinese category name
+category = "发票"
+
+# URL encoding
+encoded_category = urllib.parse.quote(category)
+print(f"After encoding: {encoded_category}")
+# Output: %E5%8F%91%E7%A5%A8
+```
+
+#### JavaScript Example
+
+```javascript
+// Original Chinese category name
+const category = "发票";
+
+// URL encoding
+const encodedCategory = encodeURIComponent(category);
+console.log(`After encoding: ${encodedCategory}`);
+// Output: %E5%8F%91%E7%A5%A8
+```

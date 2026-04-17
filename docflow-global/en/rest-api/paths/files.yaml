@@ -1,0 +1,527 @@
+/api/app-api/sip/platform/v2/file/upload:
+  post:
+    summary: Upload File
+    description: ""
+    operationId: uploadFile
+    parameters:
+      - $ref: '../components/parameters.yaml#/WorkspaceId'
+      - $ref: '../components/parameters.yaml#/Category'
+      - $ref: '../components/parameters.yaml#/BatchNumber'
+      - $ref: '../components/parameters.yaml#/SplitFlag'
+      - $ref: '../components/parameters.yaml#/CropFlag'
+      - $ref: '../components/parameters.yaml#/TargetProcess'
+      - $ref: '../components/parameters.yaml#/ParserRemoveWatermark'
+      - $ref: '../components/parameters.yaml#/ParserCropDewarp'
+      - $ref: '../components/parameters.yaml#/ParserApplyMerge'
+      - $ref: '../components/parameters.yaml#/ParserFormulaLevel'
+      - $ref: '../components/parameters.yaml#/ParserTableTextSplitMode'
+      - $ref: '../components/parameters.yaml#/ParserDpi'
+    requestBody:
+      $ref: '../components/request-bodies.yaml#/FileUploadRequestBody'
+    responses:
+      '200':
+        description: File upload successful
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      batch_number:
+                        type: string
+                        description: Batch Number
+                        example: 202412190001
+                      files:
+                        type: array                          
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: File ID
+                              example: 202412190001
+                            task_id:
+                              type: string
+                              description: Task ID
+                              example: 1981692246135111680
+                            name:
+                              type: string
+                              description: File Name
+                              example: invoice.pdf
+                            format:
+                              type: string
+                              description: File Format
+                              example: pdf
+                          required:
+                          - id
+                          - name
+                          - format
+                    required:
+                    - batch_number
+                    - files
+
+/api/app-api/sip/platform/v2/file/upload/sync:
+  post:
+    summary: Upload File Synchronously
+    description: Upload file and wait for processing to complete, returning processing results directly
+    operationId: uploadFileSync
+    parameters:
+      - $ref: '../components/parameters.yaml#/WorkspaceId'
+      - $ref: '../components/parameters.yaml#/Category'
+      - $ref: '../components/parameters.yaml#/BatchNumber'
+      - $ref: '../components/parameters.yaml#/SplitFlag'
+      - $ref: '../components/parameters.yaml#/CropFlag'
+      - $ref: '../components/parameters.yaml#/TargetProcess'
+      - $ref: '../components/parameters.yaml#/ParserRemoveWatermark'
+      - $ref: '../components/parameters.yaml#/ParserCropDewarp'
+      - $ref: '../components/parameters.yaml#/ParserApplyMerge'
+      - $ref: '../components/parameters.yaml#/ParserFormulaLevel'
+      - $ref: '../components/parameters.yaml#/ParserTableTextSplitMode'
+      - $ref: '../components/parameters.yaml#/ParserDpi'
+      - $ref: '../components/parameters.yaml#/WithTaskDetailUrl'
+    requestBody:
+      $ref: '../components/request-bodies.yaml#/FileUploadRequestBody'
+    responses:
+      '200':
+        description: File uploaded and processed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - $ref: '../components/schemas/files.yaml#/TaskProcessResult'
+
+/api/app-api/sip/platform/v2/file/fetch:
+  get:
+    summary: Get File Processing Result List
+    description: ""
+    operationId: getFiles
+    parameters:
+      - name: page
+        in: query
+        description: Page number, default 1
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: Number of items per page, default 1000
+        required: false
+        schema:
+          type: integer
+          default: 1000
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+      - name: batch_number
+        in: query
+        description: Batch Number
+        required: false
+        schema:
+          type: string
+      - name: file_id
+        in: query
+        description: File ID
+        required: false
+        schema:
+          type: string
+      - name: category
+        in: query
+        description: File Category
+        required: false
+        schema:
+          type: string
+      - name: recognition_status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas/common.yaml#/RecognitionStatus'
+      - name: verification_status
+        in: query
+        description: "File verification status 0: Pending verification 2: Confirmed 3: Rejected 4: Deleted 5: Deferred processing"
+        required: false
+        schema:
+          $ref: '../components/schemas/common.yaml#/VerificationStatus'
+      - name: start_time
+        in: query
+        description: Start time for search by update time, RFC3339 format (YYYY-MM-DDTHH:MM:SSZ)
+        required: false
+        schema:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00Z
+      - name: end_time
+        in: query
+        description: End time for search by update time, RFC3339 format (YYYY-MM-DDTHH:MM:SSZ)
+        required: false
+        schema:
+          type: string
+          format: date-time
+          example: 2024-01-01T10:00:00Z
+      - name: with_document
+        in: query
+        description: Whether to return the complete text recognition result of the document
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: with_task_detail_url
+        in: query
+        description: Whether to return the task details page URL
+        required: false
+        schema:
+          type: boolean
+          default: false
+    responses:
+      '200':
+        description: Successfully retrieved file list
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - $ref: '../components/schemas/files.yaml#/TaskProcessResult'
+
+/api/app-api/sip/platform/v2/file/delete:
+  post:
+    summary: Delete Tasks
+    description: Delete files by conditions. Files matching any condition will be deleted.
+    operationId: deleteFile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: 1234567890
+              batch_number:
+                type: array
+                items:
+                  type: string
+                description: Batch number list
+                example: ["202412190001", "202412190002"]
+              task_id:
+                type: array
+                items:
+                  type: string
+                description: Task ID list
+                example: ["1978297791713619968", "1978297791713619969"]
+              file_id:
+                type: array
+                items:
+                  type: string
+                description: File ID list
+                example: ["1978297792124661760", "1978297792124661761"]
+              start_time:
+                type: integer
+                description: "Start time (epoch timestamp, unit: seconds)"
+                example: 1760523600
+              end_time:
+                type: integer
+                description: "End time (epoch timestamp, unit: seconds)"
+                example: 1760523600
+            required:
+              - workspace_id
+    responses:
+      '200':
+        description: Successfully deleted tasks
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        deleted_count:
+                          type: integer
+                          description: Number of deleted files
+                          example: 1
+
+/api/app-api/sip/platform/v2/file/update:
+  post:
+    summary: Update File Processing Result
+    description: Update file processing result. Usually used after manual review and proofreading to upload modified key-value pairs, overriding automatically recognized results.
+    operationId: updateFile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: Workspace ID
+                  example: 1234567890
+                file_id:
+                  type: string
+                  description: File ID
+                  example: 202412190001
+                data:
+                  description: |
+                    Full field update.
+                    Note: Even if only updating partial fields, all fields must be included.
+                    If the incoming fields are more than the original fields, the additional fields will be added.
+                    If the incoming fields are fewer than the original fields, the missing fields will be deleted.
+                    If the incoming field values differ from the original field values, the field values will be updated.
+                    If the incoming fields are identical to the original fields, the fields will be preserved.
+                  type: object
+                  properties:
+                    fields:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/files.yaml#/KeyValue'
+                      example:
+                      - key: Invoice Code
+                        value: "3100231130"
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - key: Invoice Number
+                        value: "28737000"
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                    items:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          $ref: '../components/schemas/files.yaml#/KeyValue'
+                      example:
+                      - - key: Goods and Services Name
+                          value: ＊Electronic Computer＊Microcomputer Host
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - key: Specification Model
+                          value: DMS-SC68
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - - key: Goods and Services Name
+                          value: ＊Mechanical Computer＊Supercomputer Host
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - key: Specification Model
+                          value: AN/FSQ-7
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+              required:
+              - workspace_id
+              - file_id
+              - data
+    responses:
+      '200':
+        description: Successfully updated file processing result
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      files:
+                        description: Updated file list
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            workspace_id:
+                              type: string
+                              description: Workspace ID
+                              example: 1234567890
+                            id:
+                              type: string
+                              description: File ID
+                              example: 202412190001
+
+/api/app-api/sip/platform/v2/file/amend_category:
+  post:
+    summary: Amend File Category
+    description: |
+      - For regular tasks, modify the file category of the regular task
+      - For document splitting tasks, modify the file type and page numbers of the split files
+      - For multi-image cropping tasks, modify the file type of the cropped files
+    operationId: amendCategory
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: 1234567890
+              task_id:
+                type: string
+                description: Task ID
+                example: 1234567890
+              category:
+                type: string
+                description: |
+                  New file category.
+                  Only supported when the task type is a regular task.
+                example: Electronic Invoice (Ordinary Invoice)
+              split_tasks:
+                description: Document splitting task list
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category:
+                      type: string
+                      description: Subtask file category
+                      example: Electronic Invoice (Ordinary Invoice)
+                    pages:
+                      type: array
+                      items:
+                        type: integer
+                        description: Subfile page numbers, starting from 0
+                      example: [0, 1]
+              crop_tasks:
+                description: Multi-image cropping task list
+                type: array
+                items:
+                  type: object
+                  properties:
+                    crop_child_task_id:
+                      type: string
+                      description: Multi-image cropping subtask ID
+                      example: 1234567890
+                    category:
+                      type: string
+                      description: Subtask file category
+                      example: Electronic Invoice (Ordinary Invoice)
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: Successfully updated file category
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/file/retry:
+  post:
+    summary: Retry File Processing
+    description: Retry processing a file.
+    operationId: retryFile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: 1234567890
+              task_id:
+                type: string
+                description: Task ID
+                example: 1234567890
+              parser_params:
+                $ref: '../components/schemas/files.yaml#/DocumentParserParam'
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: Successfully retried file processing
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/file/extract_fields:
+  post:
+    summary: Extract Specific Fields
+    description: |
+      For tasks that have completed extraction, extract additional fields for the task, or re-extract individual existing fields.
+      Returns the complete extraction result of all fields. The return structure is the same as `/api/app-api/sip/platform/v2/file/fetch`.
+    operationId: extractFields
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: 1234567890
+              task_id:
+                type: string
+                description: Task ID
+                example: 1234567890
+              fields:
+                type: array
+                items:
+                  $ref: '../components/schemas/files.yaml#/ExtractFieldReqVO'
+              tables:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Table name
+                      example: Table1
+                    extract_model:
+                      type: string
+                      description: |
+                        Table-level extraction model, defaults to Model 1 if not specified. All fields within the table use this model
+                        - Model 1: Fast speed with stable extraction results
+                        - Model 2: Suitable for complex document understanding
+                        - Model 3: VLM, suitable for simple extraction
+                      example: "Model 1"
+                      enum:
+                        - Model 1
+                        - Model 2
+                        - Model 3
+                    fields:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/files.yaml#/ExtractFieldReqVO'
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: Successfully extracted fields
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - $ref: '../components/schemas/files.yaml#/TaskProcessResult'

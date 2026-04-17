@@ -1,0 +1,376 @@
+---
+title: "样本管理"
+description: "管理文件类别的样本文件"
+---
+
+<Tip>
+  样本文件是文件类别的示例文档，用于训练和优化文档分类与抽取模型。每个文件类别至少需要一个样本文件，最多十个样本文件。本文介绍如何通过 API 管理文件类别的样本文件。
+</Tip>
+
+## 上传样本
+
+为指定文件类别上传样本文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "workspace_id=<your-workspace-id>" \
+  -F "category_id=<category-id>" \
+  -F "file=@/path/to/sample.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/upload"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/upload"
+
+# 准备样本文件
+files = {
+    'file': open('/path/to/sample.pdf', 'rb')
+}
+
+# 准备表单数据
+data = {
+    'workspace_id': workspace_id,
+    'category_id': category_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    sample_id = result.get("result", {}).get("sample_id")
+    print(f"样本上传成功，ID: {sample_id}")
+else:
+    print(f"上传失败: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**请求参数：**
+- `workspace_id` (必填): 工作空间 ID
+- `category_id` (必填): 文件类别 ID
+- `file` (必填): 样本文件
+
+**响应示例：**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "sample_id": "sample_123"
+  }
+}
+```
+
+<Note>
+  **样本文件要求**：
+  - 样本文件应该是该类别的典型代表文档
+  - 建议上传 3-5 个样本文件以提高分类准确度
+  - 支持的文件格式参考文档上传支持的格式
+</Note>
+
+## 获取样本列表
+
+获取指定文件类别的样本列表：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/list?workspace_id=<your-workspace-id>&category_id=<category-id>&page=1&page_size=20"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "page": 1,
+        "page_size": 20
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    samples = result.get("result", {}).get("samples", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"共找到 {total} 个样本")
+    for sample in samples:
+        print(f"样本ID: {sample.get('sample_id')}, 文件名: {sample.get('file_name')}")
+else:
+    print(f"获取失败: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**请求参数：**
+- `workspace_id` (必填): 工作空间 ID
+- `category_id` (必填): 文件类别 ID
+- `page` (选填): 页码，默认为 1
+- `page_size` (选填): 每页数量，默认为 20，最大为100
+
+**响应示例：**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 5,
+    "page": 1,
+    "page_size": 20,
+    "samples": [
+      {
+        "sample_id": "sample_123",
+        "file_name": "invoice_sample_01.pdf"
+      },
+      {
+        "sample_id": "sample_456",
+        "file_name": "invoice_sample_02.pdf"
+      }
+    ]
+  }
+}
+```
+
+## 下载样本
+
+下载指定的样本文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -o "sample.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/download?workspace_id=<your-workspace-id>&category_id=<category-id>&sample_id=<sample-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+sample_id = "<sample-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/download"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "sample_id": sample_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+if resp.status_code == 200:
+    # 保存文件
+    with open("sample_downloaded.pdf", "wb") as f:
+        f.write(resp.content)
+    print("样本下载成功")
+else:
+    print(f"下载失败: {resp.status_code}")
+```
+
+</CodeGroup>
+
+**请求参数：**
+- `workspace_id` (必填): 工作空间 ID
+- `category_id` (必填): 文件类别 ID
+- `sample_id` (必填): 样本 ID
+
+**响应**：返回文件二进制流（`application/octet-stream`）
+
+## 删除样本
+
+删除指定的样本文件，支持批量删除：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "sample_ids": ["sample_123", "sample_456"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "sample_ids": ["sample_123", "sample_456"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("样本删除成功")
+else:
+    print(f"删除失败: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**请求参数：**
+- `workspace_id` (必填): 工作空间 ID
+- `category_id` (必填): 文件类别 ID
+- `sample_ids` (必填): 要删除的样本 ID 数组
+
+<Warning>
+  删除样本后无法恢复，请谨慎操作。每个文件类别至少需要保留一个样本文件。
+</Warning>
+
+## 样本管理最佳实践
+
+### 样本选择
+
+选择合适的样本文件对提高分类和抽取准确度至关重要：
+
+1. **典型性**：选择该类别的典型代表文档
+2. **多样性**：覆盖该类别可能出现的不同格式和版式
+3. **质量**：确保样本文件清晰、完整、无损坏
+4. **数量**：建议上传 3-5 个样本文件
+
+### 样本数量建议
+
+- **最少数量**：每个类别至少 1 个样本（创建类别时必需）
+- **推荐数量**：3-5 个样本可以提供较好的分类效果
+- **最多数量**：每个类别最多 10 个样本
+
+### 样本更新策略
+
+当发现分类或抽取效果不理想时，可以考虑：
+
+1. **添加新样本**：上传更多典型样本
+2. **替换样本**：删除不典型的样本，上传更好的样本
+3. **样本多样化**：确保样本覆盖各种可能的文档格式
+
+### 示例：批量上传样本
+
+```python Python icon=python expandable
+import requests
+import os
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/upload"
+
+# 样本文件目录
+sample_dir = "/path/to/samples"
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.pdf')]
+
+print(f"准备上传 {len(sample_files)} 个样本文件")
+
+for filename in sample_files:
+    file_path = os.path.join(sample_dir, filename)
+
+    with open(file_path, 'rb') as f:
+        files = {'file': f}
+        data = {
+            'workspace_id': workspace_id,
+            'category_id': category_id
+        }
+
+        resp = requests.post(
+            url=f"{host}{url}",
+            data=data,
+            files=files,
+            headers={
+                "x-ti-app-id": ti_app_id,
+                "x-ti-secret-code": ti_secret_code,
+            },
+            timeout=60,
+        )
+
+        result = resp.json()
+        if result.get("code") == 200:
+            sample_id = result.get("result", {}).get("sample_id")
+            print(f"✓ {filename} 上传成功，ID: {sample_id}")
+        else:
+            print(f"✗ {filename} 上传失败: {result.get('msg')}")
+
+print("样本上传完成")
+```
+
+## 下一步
+
+- 学习[字段管理](./fields_management) - 配置文件类别的字段
+- 学习[表格管理](./tables_management) - 配置文件类别的表格
+- 返回[文件类别快速启动](./quickstart) - 查看文件类别基础操作

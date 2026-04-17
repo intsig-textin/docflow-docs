@@ -1,0 +1,49 @@
+RecognitionStatus:
+  type: integer
+  description: |
+    File recognition status: 
+    - 0: Pending recognition
+    - 1: Recognition successful
+    - 2: Recognition failed
+    - 3: Classifying
+    - 4: Extracting
+    - 5: Preparing
+    - 6: File splitting
+    - 7: Image cropping
+    - 10: Classification completed (only available when upload interface target_process is classify)
+    - 20: Parsing
+  enum:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 10
+  - 20
+
+VerificationStatus:
+  type: integer
+  description: "File verification status 0: Pending verification 2: Confirmed 3: Rejected 4: Deleted 5: Deferred processing"
+  enum:
+    - 0
+    - 2
+    - 3
+    - 4
+    - 5
+
+CodeMessage:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: Status code
+      example: 200
+    msg:
+      type: string
+      description: Status description
+  required:
+  - code
+  - msg

@@ -1,0 +1,345 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档删除功能"
+---
+
+<Tip>
+  本文演示如何通过 REST API 删除 DocFlow 中的文件任务。删除操作支持多种条件组合，满足任一条件即可删除对应的文件。
+</Tip>
+
+DocFlow 提供灵活的删除接口，支持按批次编号、任务ID、文件ID或时间范围等条件删除文件。删除操作是**不可逆**的，请谨慎操作。
+
+## 按批次编号删除
+
+删除指定批次下的所有文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "batch_number": ["202412190001", "202412190002"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_numbers = ["202412190001", "202412190002"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "batch_number": batch_numbers
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"删除了 {result['result']['deleted_count']} 个文件")
+```
+
+</CodeGroup>
+
+## 按任务ID删除
+
+删除指定任务ID对应的文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": ["1978297791713619968", "1978297791713619969"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_ids = ["1978297791713619968", "1978297791713619969"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_ids
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"删除了 {result['result']['deleted_count']} 个文件")
+```
+
+</CodeGroup>
+
+## 按文件ID删除
+
+删除指定文件ID对应的文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "file_id": ["1978297792124661760", "1978297792124661761"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_ids = ["1978297792124661760", "1978297792124661761"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "file_id": file_ids
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"删除了 {result['result']['deleted_count']} 个文件")
+```
+
+</CodeGroup>
+
+## 按时间范围删除
+
+删除指定时间范围内创建的文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "start_time": 1760523600,
+    "end_time": 1760527200
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+from datetime import datetime
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+# 时间范围：2025-12-19 00:00:00 到 2025-12-19 01:00:00
+start_time = int(datetime(2025, 12, 19, 0, 0, 0).timestamp())
+end_time = int(datetime(2025, 12, 19, 1, 0, 0).timestamp())
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "start_time": start_time,
+    "end_time": end_time
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"删除了 {result['result']['deleted_count']} 个文件")
+```
+
+</CodeGroup>
+
+## 组合条件删除
+
+可以同时使用多个条件进行删除，满足任一条件即可删除：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "batch_number": ["202412190001"],
+    "file_id": ["1978297792124661760"],
+    "start_time": 1760523600,
+    "end_time": 1760527200
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+from datetime import datetime
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+# 组合条件：批次编号 + 文件ID + 时间范围
+start_time = int(datetime(2025, 12, 19, 0, 0, 0).timestamp())
+end_time = int(datetime(2025, 12, 19, 1, 0, 0).timestamp())
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "batch_number": ["202412190001"],
+    "file_id": ["1978297792124661760"],
+    "start_time": start_time,
+    "end_time": end_time
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"删除了 {result['result']['deleted_count']} 个文件")
+```
+
+</CodeGroup>
+
+## 参数说明
+
+### 必填参数
+
+- `workspace_id`: 空间ID。可以参考[获取工作空间ID](../100-faq/get_workspace_id)文档。
+
+### 选填参数
+
+删除条件支持以下参数，**满足任一条件即可删除**：
+
+- `batch_number`: 批次编号列表，删除指定批次下的所有文件
+- `task_id`: 任务ID列表，删除指定任务对应的文件
+- `file_id`: 文件ID列表，删除指定文件
+- `start_time`: 开始时间（epoch时间戳，单位：秒）
+- `end_time`: 结束时间（epoch时间戳，单位：秒）
+
+### 响应说明
+
+成功删除后，接口返回删除的文件数量：
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "deleted_count": 5
+  }
+}
+```
+
+- `deleted_count`: 实际删除的文件数量
+
+## 注意事项
+
+<Warning>
+删除操作是**不可逆**的，一旦删除将无法恢复。请确保在删除前已备份重要数据。
+</Warning>
+
+1. **删除条件**: 删除接口支持多个条件组合，满足任一条件即可删除对应文件
+2. **权限控制**: 只能删除属于指定工作空间的文件
+3. **批量操作**: 支持批量删除，可以一次删除多个文件
+4. **时间格式**: 时间参数使用 epoch 时间戳（秒级）
+5. **删除范围**: 删除操作会同时删除文件及其相关的处理结果、审核记录等数据

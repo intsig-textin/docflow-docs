@@ -1,0 +1,329 @@
+RecognitionStatus:
+  type: integer
+  description: |
+    文件识别状态:
+    - 0: 待识别
+    - 1: 识别成功
+    - 2: 识别失败
+    - 3: 分类中
+    - 4: 抽取中
+    - 5: 准备中
+    - 6: 文件拆分中
+    - 7: 切图中
+    - 10: 分类完成(当upload接口的target_process为classify时才有此状态)
+    - 20: 解析中
+  enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 10
+    - 20
+
+VerificationStatus:
+  type: integer
+  description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
+  enum:
+    - 0
+    - 2
+    - 3
+    - 4
+    - 5
+
+CodeMessage:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    msg:
+      type: string
+      description: 状态描述
+  required:
+  - code
+  - msg
+
+KeyValue:
+  type: object
+  properties:
+    key:
+      type: string
+      description: 字段名
+    value:
+      type: string
+      description: 字段值
+    position:
+      description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: integer
+            description: 字段所在页。是`pages`数组的索引
+          vertices:
+            type: array
+            description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+            items:
+              type: integer
+            minItems: 8
+            maxItems: 8
+
+StampValue:
+  type: object
+  properties:
+    angel:
+      type: integer
+      description: 角度
+    page:
+      type: integer
+      description: 页码
+    text:
+      type: string
+      description: 印章文本内容
+    type:
+      type: string
+      description: 印章类型
+    color:
+      type: string
+      description: 印章颜色
+    shape:
+      type: string
+      description: 印章形状
+    position:
+      type: array
+      description: 位置信息
+      items:
+        type: integer
+        example: 1
+
+HandWritingValue:
+  type: object
+  properties:
+    angel:
+      type: integer
+      description: 角度
+    page:
+      type: integer
+      description: 页码
+    text:
+      type: string
+      description: 印章文本内容
+    position:
+      description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: integer
+            description: 字段所在页。是`pages`数组的索引
+          vertices:
+            type: array
+            description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
+            items:
+              type: integer
+            minItems: 8
+            maxItems: 8
+
+Document:
+  type: object
+  properties:
+    pages:
+      type: array
+      items:
+        type: object
+        properties:
+          angle:
+            type: integer
+            description: 页面的旋转角度
+          width:
+            type: integer
+            description: 页面的宽度
+          height:
+            type: integer
+            description: 页面的高度
+          lines:
+            description: 页面的文本行数组
+            type: array
+            items:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: 行文本
+                position:
+                  type: array
+                  items:
+                    type: integer
+                    minItems: 8
+                    maxItems: 8
+                char_positions:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: integer
+                      minItems: 8
+                      maxItems: 8
+
+CommonFieldDetailRespVO:
+  type: object
+  properties:
+    key:
+      type: string
+      description: 字段key
+    identifier:
+      type: string
+      description: 导出字段名
+    value:
+      type: string
+      description: 字段值
+    textInLines:
+      deprecated: true
+      type: array
+      description: |
+        **已废弃**，请使用position字段替代
+        字段坐标
+      items:
+        $ref: './common.yaml#/TextInLines'
+    position:
+      $ref: './common.yaml#/KeyValuePosition'
+    index:
+      type: integer
+      description: 索引
+    confidence:
+      type: number
+      format: float
+      description: 置信度分值，取值范围 0~1
+      example: 0.95
+
+TextInLines:
+  type: object
+  properties:
+    angle:
+      type: string
+      description: 角度
+      example: 0
+    pos:
+      type: array
+      description: 坐标
+      items:
+        type: integer
+        description: 坐标
+        example: 1
+    page:
+      type: integer
+      description: 页码
+      example: 1
+    text:
+      type: string
+      description: 文本
+      example: 文本内容
+    char_pos:
+      type: array
+      description: 字符坐标
+      items:
+        type: array
+        description: 字符坐标
+        items:
+          type: integer
+          description: 字符坐标
+          example: 1
+  description: 字段坐标
+
+KeyValuePosition:
+  description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+  type: array
+  items:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: 字段所在页。是`pages`数组的索引
+      vertices:
+        type: array
+        description: >-
+          字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y,
+          左下角x, 左下角y]
+        items:
+          type: integer
+        minItems: 8
+        maxItems: 8
+
+FieldRespKeyValue:
+  type: object
+  properties:
+    key:
+      type: string
+      description: 字段名
+    identifier:
+      type: string
+      description: 导出字段名
+    value:
+      type: string
+      description: 字段值
+    position:
+      $ref: './common.yaml#/KeyValuePosition'
+    confidence:
+      type: number
+      format: float
+      description: 置信度分值，取值范围 0~1
+      example: 0.95
+    extract_model:
+      type: string
+      description: 实际使用的抽取模型
+
+PagesInfo:
+  type: array
+  description: |
+    文件每页用于渲染的数据。
+    配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+  items:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: '页码,从0开始'
+        example: 1
+      angle:
+        type: integer
+        description: 旋转角度
+        enum:
+          - 0
+          - 90
+          - 180
+          - 270
+      width:
+        type: integer
+        description: 转正后的页宽
+        example: 1024
+      height:
+        type: integer
+        description: 转正后的页高
+        example: 1024
+      dpi:
+        type: integer
+        description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+        example: 144
+
+TaskType:
+  type: integer
+  description: >
+    任务类型
+
+    - `0`:
+    **文件拆分子任务**：打开"文件拆分"开关的文件任务执行成功后，该文件批次任务中因文件拆分操作产生的子任务即为拆分子任务，按照文件类别下实际文件套数区分子任务
+
+    - `1`: **普通任务**：未打开"文件拆分"和"多图切分"开关的文件任务
+
+    - `2`: **父任务**：打开"文件拆分"或"多图切分"开关的文件任务执行后，该文件批次任务中的每份文件即为父任务
+
+    - `3`:
+    **切图子任务**：打开"多图切分"开关的文件任务执行成功后，该文件批次任务中因多图切分操作产生的子任务即为切分子任务，按照文件类别下实际切图结果数量区分子任务
+  example: 1

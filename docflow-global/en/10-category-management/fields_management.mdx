@@ -1,0 +1,509 @@
+---
+title: "Fields Management"
+description: "Manage regular fields and table fields under file categories"
+---
+
+<Tip>
+  Fields are the core configuration for defining extraction content in file categories. DocFlow supports two types of fields: regular fields (in result.fields) and table fields (in result.tables[].fields). This guide introduces how to manage these fields via API.
+</Tip>
+
+## List Fields
+
+Get all fields under a specified file category, including both regular fields and table fields:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/list?workspace_id=<your-workspace-id>&category_id=<category-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    fields = result.get("result", {}).get("fields", [])
+    tables = result.get("result", {}).get("tables", [])
+
+    print("Regular fields:")
+    for field in fields:
+        print(f"  Field ID: {field.get('id')}, Name: {field.get('name')}")
+
+    print("\nTable fields:")
+    for table in tables:
+        print(f"  Table: {table.get('name')} (ID: {table.get('id')})")
+        for field in table.get("fields", []):
+            print(f"    Field ID: {field.get('id')}, Name: {field.get('name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "fields": [
+      {
+        "id": "field_123",
+        "name": "Invoice Code",
+        "description": "Invoice code description",
+        "prompt": "Please extract the invoice code"
+      },
+      {
+        "id": "field_456",
+        "name": "Invoice Amount",
+        "description": "Invoice amount description"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table_789",
+        "name": "Item Details",
+        "description": "Invoice item details table",
+        "fields": [
+          {
+            "id": "field_101",
+            "name": "Item Name",
+            "description": "Item name description"
+          },
+          {
+            "id": "field_102",
+            "name": "Quantity",
+            "description": "Item quantity"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Add Field
+
+Add a field under a specified file category, supporting both regular fields and table fields:
+
+### Add Regular Field
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "name": "Invoice Number",
+    "description": "Invoice number description",
+    "prompt": "Please extract the invoice number",
+    "use_prompt": true,
+    "alias": ["Invoice No", "Number"],
+    "identity": "invoice_number",
+    "multi_value": false
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/add"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/add"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "name": "Invoice Number",
+    "description": "Invoice number description",
+    "prompt": "Please extract the invoice number",
+    "use_prompt": True,
+    "alias": ["Invoice No", "Number"],
+    "identity": "invoice_number",
+    "multi_value": False
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    field_id = result.get("result", {}).get("field_id")
+    print(f"Field created successfully, ID: {field_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+### Add Table Field
+
+To add a field under a table, pass the `table_id` parameter:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "table_id": "<table-id>",
+    "name": "Unit Price",
+    "description": "Item unit price"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/add"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+table_id = "<table-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/add"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "table_id": table_id,  # Specify table ID to create table field
+    "name": "Unit Price",
+    "description": "Item unit price"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    field_id = result.get("result", {}).get("field_id")
+    print(f"Table field created successfully, ID: {field_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `table_id` (optional): Table ID. Not provided or empty: create regular field; Provided: create table field
+- `name` (required): Field name
+- `description` (optional): Field description
+- `prompt` (optional): Semantic extraction prompt
+- `use_prompt` (optional): Whether to use semantic prompt
+- `alias` (optional): Array of field aliases
+- `identity` (optional): Export field name
+- `multi_value` (optional): Whether to extract multiple values
+- `duplicate_value_distinct` (optional): Whether to deduplicate values (only effective when multi_value is true)
+- `transform_settings` (optional): Transformation configuration
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "field_id": "field_new_123"
+  }
+}
+```
+
+## Update Field
+
+Update information for a specified field, supporting both regular fields and table fields:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "field_id": "<field-id>",
+    "name": "Updated Field Name",
+    "description": "Updated description",
+    "prompt": "Updated prompt"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/update"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+field_id = "<field-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "field_id": field_id,
+    "name": "Updated Field Name",
+    "description": "Updated description",
+    "prompt": "Updated prompt"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Field updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `field_id` (required): Field ID
+- `table_id` (optional): Table ID. Can be omitted for regular fields; required for table fields to specify which table it belongs to
+- Other parameters same as field creation
+
+<Note>
+  When updating table fields, pass the `table_id` parameter to specify which table the field belongs to.
+</Note>
+
+## Delete Field
+
+Delete specified field(s), supporting batch deletion of both regular fields and table fields:
+
+### Delete Regular Fields
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "field_ids": ["field_123", "field_456"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "field_ids": ["field_123", "field_456"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Regular fields deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+### Delete Table Fields
+
+To delete table fields, pass the `table_id` parameter:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "table_id": "<table-id>",
+    "field_ids": ["field_101", "field_102"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+table_id = "<table-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "table_id": table_id,  # Specify table ID to delete table fields
+    "field_ids": ["field_101", "field_102"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Table fields deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `field_ids` (required): Array of field IDs to delete
+- `table_id` (optional): Table ID. Not provided: delete regular fields; Provided: delete table fields
+
+<Warning>
+  Field deletion is irreversible. Please proceed with caution.
+</Warning>
+
+## Field Configuration
+
+### Field Types
+
+- **Regular Field**: Key-value fields stored in `result.fields`
+- **Table Field**: Table column fields stored in `result.tables[].fields`
+
+### Field Properties
+
+- **name**: Field name, required
+- **description**: Field description, optional
+- **prompt**: Semantic extraction prompt to guide AI in field extraction
+- **use_prompt**: Whether to use semantic prompt
+- **alias**: Array of field aliases for field recognition
+- **identity**: Export field name used as field identifier during result export
+- **multi_value**: Whether to extract multiple values, supports extracting multiple values for a single field
+- **duplicate_value_distinct**: Deduplicate values, only effective when multi_value is true
+- **transform_settings**: Transformation configuration, supports datetime, enum, regex, and other transformations
+
+### Transform Configuration Example
+
+```json
+{
+  "transform_settings": {
+    "type": "datetime",
+    "datetime_settings": {
+      "format": "yyyy-MM-dd HH:mm:ss"
+    },
+    "mismatch_action": {
+      "mode": "warning",
+      "default_value": ""
+    }
+  }
+}
+```
+
+## Next Steps
+
+- Learn [Tables Management](./tables_management) - Manage tables under file categories
+- Learn [Samples Management](./samples_management) - Manage sample files for file categories
+- Return to [Category Quickstart](./quickstart) - View basic file category operations

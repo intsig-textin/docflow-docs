@@ -1,0 +1,157 @@
+/api/app-api/sip/platform/v2/workspace/create:
+  post:
+    summary: 创建工作空间
+    description: 创建工作空间
+    operationId: createWorkspace
+    tags:
+      - 工作空间
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: 工作空间名称
+                example: 我的工作空间
+              description:
+                type: string
+                description: 工作空间描述
+                example: 我的工作空间描述
+    responses:
+      '200':
+        description: 成功创建空间
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+/api/app-api/sip/platform/v2/workspace/list:
+  get:
+    summary: 获取工作空间列表
+    description: 获取工作空间列表
+    operationId: listWorkspaces
+    tags:
+      - 工作空间
+    parameters:
+      - name: page
+        in: query
+        description: 页码，默认1
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: 每页数量，默认1000
+        required: false
+        schema:
+          type: integer
+          default: 1000
+    responses:
+      '200':
+        description: 成功获取工作空间列表
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: 工作空间总数
+                        example: 100
+                      page:
+                        type: integer
+                        description: 当前页码
+                        example: 1
+                      page_size:
+                        type: integer
+                        description: 每页数量
+                        example: 20
+                      workspaces:
+                        type: array
+                        items:
+                          $ref: '../components/schemas/workspaces.yaml#/WorkspaceItem'
+/api/app-api/sip/platform/v2/workspace/delete:
+  delete:
+    summary: 删除工作空间
+    description: 删除工作空间
+    operationId: deleteWorkspace
+    tags:
+      - 工作空间
+    parameters:
+      - name: id
+        in: query
+        description: 空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+    responses:
+      '200':
+        description: 成功删除工作空间
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/workspace/update:
+  post:
+    summary: 更新工作空间
+    description: 更新工作空间
+    operationId: updateWorkspace
+    tags:
+      - 工作空间
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/workspaces.yaml#/WorkspaceItem'
+    responses:
+      '200':
+        description: 成功更新工作空间
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/workspace/get:
+  get:
+    summary: 获取工作空间
+    description: 获取工作空间
+    operationId: getWorkspace
+    tags:
+      - 工作空间
+    parameters:
+      - name: id
+        in: query
+        description: 空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+    responses:
+      '200':
+        description: 成功获取工作空间
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    $ref: '../components/schemas/workspaces.yaml#/WorkspaceItem'

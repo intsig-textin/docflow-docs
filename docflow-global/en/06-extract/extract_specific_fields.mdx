@@ -1,0 +1,406 @@
+---
+title: "Extract Specific Fields"
+description: "Extract additional fields or re-extract existing fields for tasks that have completed extraction"
+---
+
+For tasks that have completed extraction, you can use the extract specific fields API to extract additional fields or re-extract individual existing fields for the task. This API returns the complete extraction results of all fields.
+
+## Features
+
+- **Extract Additional Fields**: Add new field extraction for tasks that have completed extraction
+- **Re-extract Fields**: Re-extract existing fields, which can be used to correct or optimize extraction results
+- **Support Table Fields**: Can extract specific fields from tables
+- **Return Complete Results**: Returns complete extraction results of all fields, with the same structure as `/api/app-api/sip/platform/v2/file/fetch`
+
+## Field Extraction Rules
+
+The API adopts different extraction strategies based on whether the field exists in the original classification configuration:
+
+### Additional Fields (Fields Not in Original Results)
+
+For fields that **do not exist** in the original extraction results (additional fields), the system will use the `prompt` provided in the request for extraction:
+
+- If a `prompt` is provided in the request, it will be used to guide field extraction
+- If no `prompt` is provided in the request, the default extraction logic will be used
+
+**Use Case**: When you need to extract new fields for documents that are not defined in the classification configuration.
+
+### Configured Fields (Fields Already in Original Classification)
+
+For fields that **already exist** in the original classification configuration, the system will prioritize using the settings from the classification configuration for extraction:
+
+- Use the `prompt` from the classification configuration (if configured)
+- Apply post-processing rules from the classification configuration
+- **Ignore** the `prompt` parameter passed in the request
+
+**Use Case**: Re-extracting existing fields to ensure unified classification configuration rules are used, maintaining consistency in extraction results.
+
+### Usage Recommendations
+
+- **Extract New Fields**: Provide a `prompt` in the request, and the system will use that `prompt` for extraction
+- **Re-extract Existing Fields**: Simply specify the `key`, and the system will automatically use the rules from the classification configuration; no need to provide a `prompt` in the request
+
+## API Endpoint
+
+**Endpoint**: `POST /api/app-api/sip/platform/v2/file/extract_fields`
+
+**Request Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| workspace_id | string | Yes | Workspace ID |
+| task_id | string | Yes | Task ID |
+| fields | array | No | List of fields to extract, each field contains `key` (field name) and `prompt` (field hint, optional) |
+| tables | array | No | List of table fields to extract, each table contains `name` (table name) and `fields` (field list) |
+
+### Field Structure
+
+**ExtractFieldReqVO**:
+
+```json
+{
+  "key": "Invoice Code",        // Field name
+  "prompt": "Keep only the year part"  // Field hint (optional)
+}
+```
+
+**Table Structure**:
+
+```json
+{
+  "name": "Table1",        // Table name
+  "fields": [              // Field list
+    {
+      "key": "Goods Name",
+      "prompt": "Extract full product name"
+    }
+  ]
+}
+```
+
+## Example Code
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_specific_fields(workspace_id, task_id, app_id, secret_code):
+    """Extract specific fields"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/extract_fields"
+    
+    # Request body
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "fields": [
+            {
+                "key": "Invoice Code",
+                "prompt": "Extract complete invoice code"
+            },
+            {
+                "key": "Invoice Date",
+                "prompt": "Keep only the year part"
+            }
+        ],
+        "tables": [
+            {
+                "name": "Table1",
+                "fields": [
+                    {
+                        "key": "Goods Name",
+                        "prompt": "Extract full product name"
+                    },
+                    {
+                        "key": "Unit Price"
+                    }
+                ]
+            }
+        ]
+    }
+    
+    resp = requests.post(
+        f"{host}{url}",
+        json=payload,
+        headers={
+            "x-ti-app-id": app_id,
+            "x-ti-secret-code": secret_code,
+            "Content-Type": "application/json"
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        print(f"Error message: {resp.text}")
+        return None
+    
+    data = resp.json()
+    
+    if data.get("code") != 200:
+        print(f"API returned error: {data.get('message')}")
+        return None
+    
+    # Process returned results
+    result = data.get("result", {})
+    files = result.get("files", [])
+    
+    for file in files:
+        print(f"File name: {file.get('name')}")
+        print(f"Task ID: {file.get('task_id')}")
+        
+        # Extract field information
+        file_data = file.get("data", {})
+        fields = file_data.get("fields", [])
+        
+        if fields:
+            print("\n=== Field Information ===")
+            for field in fields:
+                key = field.get("key", "")
+                value = field.get("value", "")
+                positions = field.get("position", [])
+                
+                print(f"Field: {key}")
+                print(f"Value: {value}")
+                
+                # Display position information
+                for i, pos in enumerate(positions):
+                    page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  Position {i+1} (Page {page+1}): {vertices}")
+                print("-" * 30)
+        
+        # Extract table information
+        tables = file_data.get("tables", [])
+        if tables:
+            print("\n=== Table Information ===")
+            for table in tables:
+                table_name = table.get("tableName", "")
+                print(f"Table name: {table_name}")
+                items = table.get("items", [])
+                for row_idx, row in enumerate(items):
+                    print(f"  Row {row_idx + 1}:")
+                    for cell in row:
+                        print(f"    {cell.get('key')}: {cell.get('value')}")
+    
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    task_id = "<your-task-id>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_specific_fields(workspace_id, task_id, app_id, secret_code)
+```
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "<your-task-id>",
+    "fields": [
+      {
+        "key": "Invoice Code",
+        "prompt": "Extract complete invoice code"
+      },
+      {
+        "key": "Invoice Date",
+        "prompt": "Keep only the year part"
+      }
+    ],
+    "tables": [
+      {
+        "name": "Table1",
+        "fields": [
+          {
+            "key": "Goods Name",
+            "prompt": "Extract full product name"
+          },
+          {
+            "key": "Unit Price"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/extract_fields"
+```
+
+</CodeGroup>
+
+## Request Examples
+
+### Extract Basic Fields Only
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "fields": [
+    {
+      "key": "Invoice Code"
+    },
+    {
+      "key": "Invoice Date",
+      "prompt": "Keep only the year part"
+    }
+  ]
+}
+```
+
+### Extract Table Fields Only
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "tables": [
+    {
+      "name": "Table1",
+      "fields": [
+        {
+          "key": "Goods Name"
+        },
+        {
+          "key": "Unit Price"
+        },
+        {
+          "key": "Quantity"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Extract Both Basic Fields and Table Fields
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "fields": [
+    {
+      "key": "Invoice Code"
+    },
+    {
+      "key": "Invoice Date"
+    }
+  ],
+  "tables": [
+    {
+      "name": "Table1",
+      "fields": [
+        {
+          "key": "Goods Name",
+          "prompt": "Extract full product name"
+        },
+        {
+          "key": "Unit Price"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Return Data Example
+
+```json expandable
+{
+  "code": 200,
+  "message": "success",
+  "result": {
+    "total": 1,
+    "page": 1,
+    "page_size": 20,
+    "files": [
+      {
+        "id": "202412190001",
+        "task_id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "fields": [
+            {
+              "key": "Invoice Code",
+              "value": "3100231130",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 150, 200, 150, 200, 180, 100, 180]
+                }
+              ]
+            },
+            {
+              "key": "Invoice Date",
+              "value": "2024",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [400, 150, 500, 150, 500, 180, 400, 180]
+                }
+              ]
+            }
+          ],
+          "tables": [
+            {
+              "tableName": "Table1",
+              "tableType": "0",
+              "items": [
+                [
+                  {
+                    "key": "Goods Name",
+                    "value": "Electronic Computer Microcomputer Host",
+                    "position": [
+                      {
+                        "page": 0,
+                        "vertices": [100, 300, 400, 300, 400, 330, 100, 330]
+                      }
+                    ]
+                  },
+                  {
+                    "key": "Unit Price",
+                    "value": "5000.00",
+                    "position": [
+                      {
+                        "page": 0,
+                        "vertices": [500, 300, 600, 300, 600, 330, 500, 330]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## Notes
+
+1. **Task Status**: This API is only applicable to tasks that have completed extraction (`recognition_status` is 1 or 2)
+2. **Field Name**: The `key` field name needs to match the field name in the configured field template (for configured fields) or use a custom name (for additional fields)
+3. **Field Hint (prompt)**:
+   - For **additional fields** (not in original results), `prompt` will take effect and can be used to guide extraction logic
+   - For **configured fields** (already in original classification), `prompt` will be ignored, and the system will use rules from the classification configuration
+4. **Return Results**: The API returns complete extraction results of all fields, including previously extracted fields and newly extracted fields
+5. **Table Name**: The `name` in `tables` needs to match the actual table name in the document
+
+## Related Pages
+
+- [Quick Start](./quickstart) - Quick start guide for document extraction functionality
+- [Basic Field Information](./fields) - Basic field information structure and processing methods
+- [Table Field Information](./tables) - Table field information structure and processing methods
+

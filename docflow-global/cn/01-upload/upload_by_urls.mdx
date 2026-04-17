@@ -1,0 +1,248 @@
+---
+title: "通过URL上传"
+description: "通过文件URL链接上传文档到DocFlow"
+---
+
+<Tip>
+  本文演示如何通过 REST API 使用文件URL上传文档到 DocFlow。  
+  相比直接上传文件，URL上传方式更适合处理远程文件或批量处理场景。
+</Tip>
+
+DocFlow 支持通过文件URL的方式上传文档，无需本地存储文件即可进行文档处理。该方式特别适用于：
+
+- 处理远程服务器上的文件
+- 批量处理多个文件URL
+- 减少本地存储和网络传输开销
+
+## 01 单个文件URL上传
+
+通过 `application/json` 格式提交文件URL列表：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com/document.pdf"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_url = "https://example.com/document.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+payload = {
+    "urls": [file_url]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 02 批量URL上传
+
+一次请求可以上传多个文件URL，最多支持**10个文件**：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": [
+      "https://example.com/invoice1.pdf",
+      "https://example.com/invoice2.pdf",
+      "https://example.com/contract.docx"
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&batch_number=202412190001"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+# 批量上传多个文件URL
+file_urls = [
+    "https://example.com/invoice1.pdf",
+    "https://example.com/invoice2.pdf", 
+    "https://example.com/contract.docx"
+]
+
+payload = {
+    "urls": file_urls
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "202412190001",
+        "category": "invoice"
+    },
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"批次号: {result['result']['batch_number']}")
+for file_info in result['result']['files']:
+    print(f"文件ID: {file_info['id']}, 文件名: {file_info['name']}")
+```
+
+</CodeGroup>
+
+## 03 参数说明
+
+### 必填参数
+
+- `workspace_id`: 空间ID。可以参考[获取工作空间ID](../100-faq/get_workspace_id)文档。
+
+### 请求体参数
+
+- `urls`: 文件URL列表
+  - 类型：字符串数组
+  - 限制：一次最多10个URL
+  - 格式：必须是 `http://` 或 `https://` 开头的有效URL
+  - 文件大小：每个文件最大不超过100MB
+
+### 选填参数
+
+可在 URL 查询参数中按需添加：
+
+- `category`: 文件类别（例如：invoice）
+- `batch_number`: 批次编号，未提供时系统自动生成
+- `split_flag`: 是否进行文件拆分，默认 false（详见[文件拆分](../05-split/split)章节）
+- `crop_flag`: 是否进行多图切分，默认 false（详见[多图切分](../05-split/crop)章节）
+- `target_process`: 目标处理类型，可选 `classify` 或 `extract`
+
+## 04 URL要求
+
+### 支持的URL格式
+
+- 必须以 `http://` 或 `https://` 开头
+- URL必须可公开访问（无需认证）
+- 服务器必须支持HTTP GET请求
+
+### 文件要求
+
+- 文件格式：支持[文件格式支持](./support_format)中列出的所有格式
+- 文件大小：单个文件不超过100MB
+- 文件页数：多页文档不超过1000页
+
+### 示例URL
+
+```bash
+# 有效的URL示例
+https://example.com/document.pdf
+https://cdn.example.com/files/invoice.pdf
+http://192.168.1.100/shared/contract.docx
+
+# 无效的URL示例
+ftp://example.com/file.pdf          # 不支持FTP协议
+file:///local/path/document.pdf      # 不支持本地文件路径
+https://example.com/protected.pdf   # 需要认证的URL
+```
+
+## 05 响应格式
+
+URL上传成功后的响应格式与普通文件上传相同：
+
+```json expandable
+{
+   "code": 200,
+   "msg": "成功",
+   "result": {
+      "batch_number": "202412190001",
+      "files": [
+         {
+            "id": "1955840505753140508",
+            "name": "document.pdf",
+            "format": "pdf"
+         },
+         {
+            "id": "1955840505753140509", 
+            "name": "invoice.pdf",
+            "format": "pdf"
+         }
+      ]
+   }
+}
+```
+
+## 06 查询处理结果
+
+上传完成后，使用返回的 `batch_number` 查询处理结果：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"文件ID: {f['id']}, 文件名: {f.get('name')}, 状态: {f.get('recognition_status')}")
+```
+
+</CodeGroup>

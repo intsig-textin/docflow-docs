@@ -1,0 +1,334 @@
+---
+title: "同步上传"
+description: "同步上传文件并等待处理完成，直接返回处理结果"
+---
+
+<Tip>
+  本文演示如何通过 REST API 使用同步上传接口上传文件到 DocFlow。  
+  同步上传接口会等待文件处理完成后再返回结果，适合需要立即获取处理结果的场景。
+</Tip>
+
+DocFlow 提供同步上传接口 `/api/app-api/sip/platform/v2/file/upload/sync`，该接口与普通上传接口 `/api/app-api/sip/platform/v2/file/upload` 的区别在于：
+
+- **普通上传接口**：上传文件后立即返回，需要后续通过 `/file/fetch` 接口查询处理结果
+- **同步上传接口**：上传文件后等待处理完成，直接返回完整的处理结果，无需额外查询
+
+<Warning>
+  同步上传接口会等待文件处理完成，处理时间取决于文件大小和复杂度。  
+  对于大文件或复杂文档，可能需要较长的等待时间。建议设置合适的超时时间。
+</Warning>
+
+## 01 同步上传单个文件
+
+通过 `multipart/form-data` 格式上传文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,  # 同步接口需要更长的超时时间
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    for f in files:
+        print(f"文件ID: {f['id']}, 文件名: {f.get('name')}, 状态: {f.get('recognition_status')}")
+        # 可以直接访问处理结果
+        if f.get("data"):
+            print(f"抽取字段: {f['data'].get('fields', [])}")
+```
+
+</CodeGroup>
+
+## 02 同步上传多个文件
+
+一次请求可以上传多个文件，系统会等待所有文件处理完成后再返回：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/1.pdf" \
+  -F "file=@/path/to/2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>&batch_number=202412190001"
+```
+
+```python Python expandable icon=python lines
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepaths = ["/path/to/file1.pdf", "/path/to/file2.pdf"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+fields = []
+for filepath in filepaths:
+    mime_type = "application/pdf"
+    if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+        mime_type = "image/jpeg"
+    fields.append(("file", (os.path.basename(filepath), open(filepath, "rb"), mime_type)))
+
+payload = MultipartEncoder(fields=fields)
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "202412190001",
+        "category": "invoice"
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    print(f"处理完成，共 {len(files)} 个文件")
+    for f in files:
+        print(f"文件: {f.get('name')}, 状态: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## 03 通过URL同步上传
+
+同步上传接口也支持通过文件URL上传：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com/document.pdf"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_url = "https://example.com/document.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+payload = {
+    "urls": [file_url]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    for f in files:
+        print(f"文件ID: {f['id']}, 处理状态: {f.get('recognition_status')}")
+        # 直接访问处理结果
+        if f.get("data") and f.get("data").get("fields"):
+            for field in f["data"]["fields"]:
+                print(f"  {field.get('key')}: {field.get('value')}")
+```
+
+</CodeGroup>
+
+## 04 参数说明
+
+同步上传接口的参数与普通上传接口完全相同：
+
+### 必填参数
+
+- `workspace_id`: 空间ID。可以参考[获取工作空间ID](../100-faq/get_workspace_id)文档。
+
+### 选填参数
+
+可在 URL 查询参数中按需添加：
+
+- `category`: 文件类别（例如：invoice）
+- `batch_number`: 批次编号，未提供时系统自动生成
+- `split_flag`: 是否进行文件拆分，默认 false（详见[文件拆分](../05-split/split)章节）
+- `crop_flag`: 是否进行多图切分，默认 false（详见[多图切分](../05-split/crop)章节）
+- `target_process`: 目标处理类型，可选 `classify` 或 `extract`。\
+  Docflow 会默认会进行 解析->分类->抽取 完整流程。当`target_process`为`classify`时，流程执行至分类即结束
+
+### 请求体参数
+
+支持两种方式：
+
+1. **文件上传**：使用 `multipart/form-data` 格式，字段名为 `file`（可重复多个）
+2. **URL上传**：使用 `application/json` 格式，包含 `urls` 数组（最多10个URL）
+
+## 05 响应格式
+
+同步上传接口返回的响应格式与 `/file/fetch` 接口相同，包含完整的处理结果：
+
+```json expandable
+{
+   "code": 200,
+   "msg": "成功",
+   "result": {
+      "total": 1,
+      "page": 1,
+      "page_size": 20,
+      "files": [
+         {
+            "id": "1955840505753140508",
+            "task_id": "1955840505753140509",
+            "task_type": 1,
+            "batch_number": "202412190001",
+            "name": "invoice.pdf",
+            "format": "pdf",
+            "recognition_status": 1,
+            "verification_status": 0,
+            "category": "invoice",
+            "pages": [
+               {
+                  "page": 0,
+                  "angle": 0,
+                  "width": 1024,
+                  "height": 1448,
+                  "dpi": 144
+               }
+            ],
+            "data": {
+               "fields": [
+                  {
+                     "key": "发票代码",
+                     "identifier": "发票代码标识",
+                     "value": "3100231130",
+                     "position": [
+                        {
+                           "page": 0,
+                           "vertices": [100, 200, 300, 200, 300, 250, 100, 250]
+                        }
+                     ]
+                  },
+                  {
+                     "key": "发票号码",
+                     "identifier": "发票号码标识",
+                     "value": "28737000",
+                     "position": [
+                        {
+                           "page": 0,
+                           "vertices": [350, 200, 500, 200, 500, 250, 350, 250]
+                        }
+                     ]
+                  }
+               ],
+               "items": [],
+               "tables": [],
+               "stamps": [],
+               "handwritings": []
+            },
+            "duration_ms": 5000
+         }
+      ]
+   }
+}
+```
+
+响应中的关键字段：
+
+- `result.files[]`: 文件列表，每个文件包含完整的处理结果
+- `result.files[].data.fields[]`: 抽取的字段列表
+- `result.files[].data.items[]`: 表格数据列表
+- `result.files[].data.tables[]`: 全部表格数据列表
+- `result.files[].data.stamps[]`: 印章信息
+- `result.files[].data.handwritings[]`: 手写体信息
+- `result.files[].recognition_status`: 识别状态（1表示成功）
+- `result.files[].duration_ms`: 处理耗时（毫秒）
+
+## 06 使用场景
+
+### 适合使用同步上传的场景
+
+- 需要立即获取处理结果的场景
+- 单文件或少量文件处理
+- 文件处理时间较短（通常几秒到几十秒）
+- 简化代码逻辑，避免轮询查询
+
+### 不适合使用同步上传的场景
+
+- 批量处理大量文件
+- 文件处理时间较长（超过1分钟）
+- 需要异步处理的场景
+- 网络不稳定或需要断点续传的场景
+
+<Info>
+  对于不适合同步上传的场景，建议使用普通上传接口 `/file/upload` 配合 `/file/fetch` 查询接口，实现异步处理流程。
+</Info>
+
+## 07 注意事项
+
+1. **超时设置**：同步上传接口需要等待处理完成，建议设置较长的超时时间（至少300秒）
+2. **处理时间**：处理时间取决于文件大小、页数和复杂度，大文件可能需要较长时间
+3. **错误处理**：如果处理失败，响应中会包含错误信息，`recognition_status` 为 2 表示失败
+4. **批量处理**：一次上传多个文件时，会等待所有文件处理完成，总耗时可能较长
+5. **网络稳定性**：由于需要长时间保持连接，确保网络连接稳定
+

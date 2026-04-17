@@ -1,0 +1,519 @@
+---
+title: "Get Review Results"
+description: "Get review task results via REST API and use review results"
+---
+
+<Tip>
+  This document introduces how to get review task results via REST API. Review tasks are executed asynchronously. After creating a task, you need to periodically query the review status until the review is completed, then get detailed review results.
+</Tip>
+
+Review tasks are executed asynchronously. After creating a task, you need to query review status and results via the interface. This document introduces how to get review results and use them.
+
+## Get Review Task Results
+
+Get detailed results of a review task:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/result"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    review_result = result.get("result", {})
+    print(f"Task Name: {review_result.get('task_name')}")
+    print(f"Task Status: {review_result.get('status')}")
+    # Process review results...
+else:
+    print(f"Failed to get: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `task_id` (required): Review task ID
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "task_id": "31415926",
+    "task_name": "Review Task 1",
+    "status": 1,
+    "rule_repo": {
+      "repo_id": "31415926",
+      "name": "Review Rule Repository 1"
+    },
+    "extract_task_ids": ["1234567890", "1234567891"],
+    "statistics": {
+      "pass_count": 100,
+      "failure_count": 10,
+      "error_count": 0
+    },
+    "groups": [
+      {
+        "group_id": "31415926",
+        "group_name": "Review Rule Group 1",
+        "review_tasks": [
+          {
+            "rule_task_id": "31415926",
+            "rule_id": "31415926",
+            "rule_name": "Review Rule 1",
+            "risk_level": 10,
+            "prompt": "Review rule prompt",
+            "review_result": 1,
+            "reasoning": "Review reasoning",
+            "anchors": [
+              {
+                "start_pos": 0,
+                "end_pos": 10,
+                "text": "Original text",
+                "vertices": [0, 0, 100, 0, 100, 100, 0, 100],
+                "file_id": "file_id"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Response Structure Description
+
+### Basic Task Information
+
+- `task_id`: Review task ID
+- `task_name`: Task name
+- `status`: Task status (see status description below)
+- `rule_repo`: Rule repository information used
+- `extract_task_ids`: List of extraction task IDs being reviewed
+
+### Task Status (status)
+
+Task status represents the overall execution status of the review task:
+
+- `0`: Pending
+- `1`: Approved
+- `2`: Review failed
+- `3`: Reviewing
+- `4`: Rejected
+- `5`: Recognizing
+- `6`: In Queue
+- `7`: Recognition Failed
+
+### Statistics
+
+- `pass_count`: Number of rules that passed review
+- `failure_count`: Number of rules that failed review
+- `error_count`: Number of task execution errors
+
+### Rule Group Results (groups)
+
+Review results are organized by rule groups. Each rule group contains review results for multiple rules:
+
+- `group_id`: Rule group ID
+- `group_name`: Rule group name
+- `review_tasks`: List of rule review results
+
+### Rule Review Results (review_tasks)
+
+Each rule's review result contains:
+
+- `rule_task_id`: Review subtask ID
+- `rule_id`: Review rule ID
+- `rule_name`: Review rule name
+- `risk_level`: Risk level (10: high risk, 20: medium risk, 30: low risk)
+- `prompt`: Review rule prompt
+- `review_result`: Review result (see review result description below)
+- `reasoning`: Review reasoning, the review reason given by AI
+- `anchors`: Position anchor information, used to locate the position of review reasoning in the original text
+
+### Review Result (review_result)
+
+Review result represents the review status of a single rule:
+
+- `0`: Pending
+- `1`: Approved
+- `2`: Review failed
+- `3`: Reviewing
+- `4`: Rejected
+- `5`: Recognizing
+- `6`: In Queue
+- `7`: Recognition Failed
+
+### Position Anchors (anchors)
+
+Position anchor information is used to locate the position of review reasoning in the original text:
+
+- `start_pos`: Starting character position in `reasoning`
+- `end_pos`: Ending character position in `reasoning`
+- `text`: Original text content
+- `vertices`: Bounding quadrilateral coordinates of original text `[x1, y1, x2, y2, x3, y3, x4, y4]`
+- `file_id`: File ID
+
+## Poll Review Status
+
+Since review tasks are executed asynchronously, you need to periodically query the review status until the review is completed:
+
+```python Python icon=python expandable
+import requests
+import time
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+def poll_review_result(max_wait_time=300, poll_interval=5):
+    """Poll review results until review is completed or timeout"""
+    start_time = time.time()
+    
+    while True:
+        payload = {
+            "workspace_id": workspace_id,
+            "task_id": task_id
+        }
+        
+        resp = requests.post(
+            url=f"{host}{url}",
+            json=payload,
+            headers={
+                "x-ti-app-id": ti_app_id,
+                "x-ti-secret-code": ti_secret_code,
+            },
+            timeout=60,
+        )
+        
+        result = resp.json()
+        if result.get("code") != 200:
+            print(f"Query failed: {result.get('msg')}")
+            return None
+        
+        review_result = result.get("result", {})
+        status = review_result.get("status")
+        
+        # Completed statuses: 1(Approved), 2(Review failed), 7(Recognition Failed)
+        if status in [1, 2, 7]:
+            print(f"Review completed, status: {status}")
+            return review_result
+        
+        # In-progress statuses: 0(Pending), 3(Reviewing), 4(Rejected), 5(Recognizing), 6(In Queue)
+        if status in [0, 3, 4, 5, 6]:
+            elapsed = time.time() - start_time
+            if elapsed >= max_wait_time:
+                print(f"Wait timeout, current status: {status}")
+                return review_result
+            
+            print(f"Review in progress, status: {status}, waiting {poll_interval} seconds before retry...")
+            time.sleep(poll_interval)
+            continue
+        
+        # Unknown status
+        print(f"Unknown status: {status}")
+        return review_result
+
+# Poll review results
+review_result = poll_review_result(max_wait_time=300, poll_interval=5)
+if review_result:
+    print(f"Task Name: {review_result.get('task_name')}")
+    print(f"Task Status: {review_result.get('status')}")
+    print(f"Statistics: {review_result.get('statistics')}")
+```
+
+## Process Review Results
+
+Example of parsing and processing review results:
+
+```python Python icon=python expandable
+import requests
+
+def process_review_result(review_result):
+    """Process review results"""
+    task_name = review_result.get("task_name")
+    status = review_result.get("status")
+    statistics = review_result.get("statistics", {})
+    groups = review_result.get("groups", [])
+    
+    print(f"Task Name: {task_name}")
+    print(f"Task Status: {status}")
+    print(f"Pass Count: {statistics.get('pass_count', 0)}")
+    print(f"Failure Count: {statistics.get('failure_count', 0)}")
+    print(f"Error Count: {statistics.get('error_count', 0)}")
+    print()
+    
+    # Iterate through rule groups
+    for group in groups:
+        group_name = group.get("group_name")
+        review_tasks = group.get("review_tasks", [])
+        
+        print(f"Rule Group: {group_name}")
+        print(f"  Rule Count: {len(review_tasks)}")
+        
+        # Iterate through rule review results
+        for review_task in review_tasks:
+            rule_name = review_task.get("rule_name")
+            review_result_status = review_task.get("review_result")
+            reasoning = review_task.get("reasoning", "")
+            risk_level = review_task.get("risk_level")
+            
+            # Review result status mapping
+            result_map = {
+                0: "Pending",
+                1: "Approved",
+                2: "Review failed",
+                3: "Reviewing",
+                4: "Rejected",
+                5: "Recognizing",
+                6: "In Queue",
+                7: "Recognition Failed"
+            }
+            
+            result_text = result_map.get(review_result_status, "Unknown")
+            
+            # Risk level mapping
+            risk_map = {
+                10: "High Risk",
+                20: "Medium Risk",
+                30: "Low Risk"
+            }
+            risk_text = risk_map.get(risk_level, "Unknown")
+            
+            print(f"  Rule: {rule_name}")
+            print(f"    Risk Level: {risk_text}")
+            print(f"    Review Result: {result_text}")
+            print(f"    Review Reasoning: {reasoning}")
+            
+            # Process position anchors
+            anchors = review_task.get("anchors", [])
+            if anchors:
+                print(f"    Position Anchors: {len(anchors)} locations")
+                for i, anchor in enumerate(anchors, 1):
+                    text = anchor.get("text", "")
+                    vertices = anchor.get("vertices", [])
+                    file_id = anchor.get("file_id", "")
+                    print(f"      [{i}] File: {file_id}, Text: {text[:50]}..., Coordinates: {vertices}")
+            
+            print()
+
+# Get review results
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    review_result = result.get("result", {})
+    process_review_result(review_result)
+else:
+    print(f"Failed to get: {result.get('msg')}")
+```
+
+## Visualize Using Position Anchors
+
+Position anchor information can be used to highlight the position of review reasoning in the document:
+
+```python Python icon=python expandable
+def visualize_anchors(review_result):
+    """Visualize using position anchor information"""
+    groups = review_result.get("groups", [])
+    
+    for group in groups:
+        review_tasks = group.get("review_tasks", [])
+        
+        for review_task in review_tasks:
+            rule_name = review_task.get("rule_name")
+            review_result_status = review_task.get("review_result")
+            anchors = review_task.get("anchors", [])
+            
+            # Only process rules that did not pass
+            if review_result_status == 4:  # Review not passed
+                print(f"Rule: {rule_name} - Review Not Passed")
+                
+                # Group by file
+                file_anchors = {}
+                for anchor in anchors:
+                    file_id = anchor.get("file_id")
+                    if file_id not in file_anchors:
+                        file_anchors[file_id] = []
+                    file_anchors[file_id].append(anchor)
+                
+                # Draw highlight areas for each file
+                for file_id, anchors_list in file_anchors.items():
+                    print(f"  File ID: {file_id}")
+                    print(f"  Number of areas to highlight: {len(anchors_list)}")
+                    
+                    for anchor in anchors_list:
+                        vertices = anchor.get("vertices", [])
+                        text = anchor.get("text", "")
+                        
+                        # Draw rectangle (assuming using some drawing library)
+                        # This is just an example, actual implementation depends on your frontend framework
+                        print(f"    Text: {text[:30]}...")
+                        print(f"    Coordinates: {vertices}")
+                        # In actual applications, you can use these coordinates to draw highlight boxes on document images
+```
+
+## Complete Example
+
+Complete flow for getting and using review results:
+
+```python Python icon=python expandable
+import requests
+import time
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+def get_review_result():
+    """Get review results"""
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id
+    }
+    
+    resp = requests.post(
+        url=f"{host}{url}",
+        json=payload,
+        headers={
+            "x-ti-app-id": ti_app_id,
+            "x-ti-secret-code": ti_secret_code,
+        },
+        timeout=60,
+    )
+    
+    result = resp.json()
+    if result.get("code") == 200:
+        return result.get("result")
+    else:
+        print(f"Failed to get: {result.get('msg')}")
+        return None
+
+def wait_for_review_complete(max_wait_time=300, poll_interval=5):
+    """Wait for review to complete"""
+    start_time = time.time()
+    
+    while True:
+        review_result = get_review_result()
+        if not review_result:
+            return None
+        
+        status = review_result.get("status")
+        
+        # Review completed
+        if status in [1, 2, 7]:
+            return review_result
+        
+        # Review in progress
+        if status in [0, 3, 4, 5, 6]:
+            elapsed = time.time() - start_time
+            if elapsed >= max_wait_time:
+                print("Wait timeout")
+                return review_result
+            
+            print(f"Review in progress, status: {status}, waiting {poll_interval} seconds...")
+            time.sleep(poll_interval)
+            continue
+        
+        return review_result
+
+# Wait for review to complete
+review_result = wait_for_review_complete()
+
+if review_result:
+    # Process review results
+    statistics = review_result.get("statistics", {})
+    print(f"Pass Count: {statistics.get('pass_count', 0)}")
+    print(f"Failure Count: {statistics.get('failure_count', 0)}")
+    
+    # Find rules that did not pass
+    groups = review_result.get("groups", [])
+    for group in groups:
+        review_tasks = group.get("review_tasks", [])
+        for review_task in review_tasks:
+            if review_task.get("review_result") == 4:  # Review not passed
+                rule_name = review_task.get("rule_name")
+                reasoning = review_task.get("reasoning", "")
+                print(f"Rule Not Passed: {rule_name}")
+                print(f"Review Reasoning: {reasoning}")
+```
+
+## Notes
+
+1. **Asynchronous Execution**: Review tasks are executed asynchronously. After creating a task, you need to periodically query the review status
+2. **Status Judgment**: Use the `status` field to judge task status. `1` means Approved, `4` means Rejected
+3. **Position Anchors**: Use `anchors` information to highlight the position of review reasoning in the document
+
+## Related Pages
+
+- [Review Concepts](./quickstart) - Learn about core concepts of the review feature
+- [Rule Repository Management](./rule_management) - Learn how to manage review rule repositories
+- [Create Review Tasks](./create_task) - Learn how to create review tasks
+

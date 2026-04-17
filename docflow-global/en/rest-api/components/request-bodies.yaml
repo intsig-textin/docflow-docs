@@ -1,0 +1,28 @@
+FileUploadRequestBody:
+  description: File upload request body
+  required: true
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          file:
+            type: string
+            format: binary
+    application/json:
+      schema:
+        type: object
+        properties:
+          urls:
+            description: |
+              File URL list
+              Supports up to 10 file URLs per upload, each file maximum 100MB
+            type: array
+            items:
+              type: string
+              description: File URL
+              example: https://example.com/file.pdf
+              pattern: ^https?://.*$
+            maxItems: 10
+        required:
+        - urls

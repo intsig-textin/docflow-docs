@@ -1,0 +1,519 @@
+---
+title: "获取审核结果"
+description: "通过 REST API 获取审核任务结果并使用审核结果"
+---
+
+<Tip>
+  本文介绍如何通过 REST API 获取审核任务结果。审核任务是异步执行的，创建任务后需要定期查询审核状态，直到审核完成后再获取详细的审核结果。
+</Tip>
+
+审核任务是异步执行的，创建任务后需要通过接口查询审核状态和结果。本文介绍如何获取审核结果并使用审核结果。
+
+## 获取审核任务结果
+
+获取审核任务的详细结果：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/result"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    review_result = result.get("result", {})
+    print(f"任务名称: {review_result.get('task_name')}")
+    print(f"任务状态: {review_result.get('status')}")
+    # 处理审核结果...
+else:
+    print(f"获取失败: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**请求参数：**
+- `workspace_id` (必填): 工作空间ID
+- `task_id` (必填): 审核任务ID
+
+**响应示例：**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "task_id": "31415926",
+    "task_name": "审核任务1",
+    "status": 1,
+    "rule_repo": {
+      "repo_id": "31415926",
+      "name": "审核规则库1"
+    },
+    "extract_task_ids": ["1234567890", "1234567891"],
+    "statistics": {
+      "pass_count": 100,
+      "failure_count": 10,
+      "error_count": 0
+    },
+    "groups": [
+      {
+        "group_id": "31415926",
+        "group_name": "审核规则组1",
+        "review_tasks": [
+          {
+            "rule_task_id": "31415926",
+            "rule_id": "31415926",
+            "rule_name": "审核规则1",
+            "risk_level": 10,
+            "prompt": "审核规则提示词",
+            "review_result": 1,
+            "reasoning": "审核依据",
+            "anchors": [
+              {
+                "start_pos": 0,
+                "end_pos": 10,
+                "text": "原文内容",
+                "vertices": [0, 0, 100, 0, 100, 100, 0, 100],
+                "file_id": "file_id"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 响应结构说明
+
+### 任务基本信息
+
+- `task_id`: 审核任务ID
+- `task_name`: 任务名称
+- `status`: 任务状态（见下方状态说明）
+- `rule_repo`: 使用的规则库信息
+- `extract_task_ids`: 审核的抽取任务ID列表
+
+### 任务状态 (status)
+
+任务状态表示审核任务的整体执行状态：
+
+- `0`: 未审核
+- `1`: 审核通过
+- `2`: 审核失败
+- `3`: 审核中
+- `4`: 审核不通过
+- `5`: 识别中
+- `6`: 排队中
+- `7`: 识别失败
+
+### 统计信息 (statistics)
+
+- `pass_count`: 审核通过的规则数量
+- `failure_count`: 审核不通过的规则数量
+- `error_count`: 任务执行异常数
+
+### 规则组结果 (groups)
+
+审核结果按规则组组织，每个规则组包含多个规则的审核结果：
+
+- `group_id`: 规则组ID
+- `group_name`: 规则组名称
+- `review_tasks`: 规则审核结果列表
+
+### 规则审核结果 (review_tasks)
+
+每个规则的审核结果包含：
+
+- `rule_task_id`: 审核子任务ID
+- `rule_id`: 审核规则ID
+- `rule_name`: 审核规则名称
+- `risk_level`: 风险等级（10: 高风险, 20: 中风险, 30: 低风险）
+- `prompt`: 审核规则提示词
+- `review_result`: 审核结果（见下方审核结果说明）
+- `reasoning`: 审核依据，AI给出的审核理由
+- `anchors`: 位置回溯信息，用于定位审核依据在原文中的位置
+
+### 审核结果 (review_result)
+
+审核结果表示单个规则的审核状态：
+
+- `0`: 未审核
+- `1`: 审核通过
+- `2`: 审核失败
+- `3`: 审核中
+- `4`: 审核不通过
+- `5`: 识别中
+- `6`: 排队中
+- `7`: 识别失败
+
+### 位置回溯 (anchors)
+
+位置回溯信息用于定位审核依据在原文中的位置：
+
+- `start_pos`: 在 `reasoning` 中的起始字符位置
+- `end_pos`: 在 `reasoning` 中的结束字符位置
+- `text`: 原文内容
+- `vertices`: 原文内容的外接四边形坐标 `[x1, y1, x2, y2, x3, y3, x4, y4]`
+- `file_id`: 文件ID
+
+## 轮询审核状态
+
+由于审核任务是异步执行的，需要定期查询审核状态，直到审核完成：
+
+```python Python icon=python expandable
+import requests
+import time
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+def poll_review_result(max_wait_time=300, poll_interval=5):
+    """轮询审核结果，直到审核完成或超时"""
+    start_time = time.time()
+    
+    while True:
+        payload = {
+            "workspace_id": workspace_id,
+            "task_id": task_id
+        }
+        
+        resp = requests.post(
+            url=f"{host}{url}",
+            json=payload,
+            headers={
+                "x-ti-app-id": ti_app_id,
+                "x-ti-secret-code": ti_secret_code,
+            },
+            timeout=60,
+        )
+        
+        result = resp.json()
+        if result.get("code") != 200:
+            print(f"查询失败: {result.get('msg')}")
+            return None
+        
+        review_result = result.get("result", {})
+        status = review_result.get("status")
+        
+        # 审核完成的状态：1(审核通过), 2(审核失败), 7(识别失败)
+        if status in [1, 2, 7]:
+            print(f"审核完成，状态: {status}")
+            return review_result
+        
+        # 审核中的状态：0(未审核), 3(审核中), 4(审核不通过), 5(识别中), 6(排队中)
+        if status in [0, 3, 4, 5, 6]:
+            elapsed = time.time() - start_time
+            if elapsed >= max_wait_time:
+                print(f"等待超时，当前状态: {status}")
+                return review_result
+            
+            print(f"审核中，状态: {status}，等待 {poll_interval} 秒后重试...")
+            time.sleep(poll_interval)
+            continue
+        
+        # 未知状态
+        print(f"未知状态: {status}")
+        return review_result
+
+# 轮询审核结果
+review_result = poll_review_result(max_wait_time=300, poll_interval=5)
+if review_result:
+    print(f"任务名称: {review_result.get('task_name')}")
+    print(f"任务状态: {review_result.get('status')}")
+    print(f"统计信息: {review_result.get('statistics')}")
+```
+
+## 处理审核结果
+
+解析和处理审核结果的示例：
+
+```python Python icon=python expandable
+import requests
+
+def process_review_result(review_result):
+    """处理审核结果"""
+    task_name = review_result.get("task_name")
+    status = review_result.get("status")
+    statistics = review_result.get("statistics", {})
+    groups = review_result.get("groups", [])
+    
+    print(f"任务名称: {task_name}")
+    print(f"任务状态: {status}")
+    print(f"通过数: {statistics.get('pass_count', 0)}")
+    print(f"不通过数: {statistics.get('failure_count', 0)}")
+    print(f"异常数: {statistics.get('error_count', 0)}")
+    print()
+    
+    # 遍历规则组
+    for group in groups:
+        group_name = group.get("group_name")
+        review_tasks = group.get("review_tasks", [])
+        
+        print(f"规则组: {group_name}")
+        print(f"  规则数量: {len(review_tasks)}")
+        
+        # 遍历规则审核结果
+        for review_task in review_tasks:
+            rule_name = review_task.get("rule_name")
+            review_result_status = review_task.get("review_result")
+            reasoning = review_task.get("reasoning", "")
+            risk_level = review_task.get("risk_level")
+            
+            # 审核结果状态映射
+            result_map = {
+                0: "未审核",
+                1: "审核通过",
+                2: "审核失败",
+                3: "审核中",
+                4: "审核不通过",
+                5: "识别中",
+                6: "排队中",
+                7: "识别失败"
+            }
+            
+            result_text = result_map.get(review_result_status, "未知")
+            
+            # 风险等级映射
+            risk_map = {
+                10: "高风险",
+                20: "中风险",
+                30: "低风险"
+            }
+            risk_text = risk_map.get(risk_level, "未知")
+            
+            print(f"  规则: {rule_name}")
+            print(f"    风险等级: {risk_text}")
+            print(f"    审核结果: {result_text}")
+            print(f"    审核依据: {reasoning}")
+            
+            # 处理位置回溯
+            anchors = review_task.get("anchors", [])
+            if anchors:
+                print(f"    位置回溯: {len(anchors)} 处")
+                for i, anchor in enumerate(anchors, 1):
+                    text = anchor.get("text", "")
+                    vertices = anchor.get("vertices", [])
+                    file_id = anchor.get("file_id", "")
+                    print(f"      [{i}] 文件: {file_id}, 文本: {text[:50]}..., 坐标: {vertices}")
+            
+            print()
+
+# 获取审核结果
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    review_result = result.get("result", {})
+    process_review_result(review_result)
+else:
+    print(f"获取失败: {result.get('msg')}")
+```
+
+## 使用位置回溯进行可视化
+
+位置回溯信息可以用于在文档中高亮显示审核依据的位置：
+
+```python Python icon=python expandable
+def visualize_anchors(review_result):
+    """使用位置回溯信息进行可视化"""
+    groups = review_result.get("groups", [])
+    
+    for group in groups:
+        review_tasks = group.get("review_tasks", [])
+        
+        for review_task in review_tasks:
+            rule_name = review_task.get("rule_name")
+            review_result_status = review_task.get("review_result")
+            anchors = review_task.get("anchors", [])
+            
+            # 只处理审核不通过的规则
+            if review_result_status == 4:  # 审核不通过
+                print(f"规则: {rule_name} - 审核不通过")
+                
+                # 按文件分组
+                file_anchors = {}
+                for anchor in anchors:
+                    file_id = anchor.get("file_id")
+                    if file_id not in file_anchors:
+                        file_anchors[file_id] = []
+                    file_anchors[file_id].append(anchor)
+                
+                # 为每个文件绘制高亮区域
+                for file_id, anchors_list in file_anchors.items():
+                    print(f"  文件ID: {file_id}")
+                    print(f"  需要高亮的区域数: {len(anchors_list)}")
+                    
+                    for anchor in anchors_list:
+                        vertices = anchor.get("vertices", [])
+                        text = anchor.get("text", "")
+                        
+                        # 绘制矩形框（假设使用某种绘图库）
+                        # 这里只是示例，实际需要根据您的前端框架来实现
+                        print(f"    文本: {text[:30]}...")
+                        print(f"    坐标: {vertices}")
+                        # 在实际应用中，可以使用这些坐标在文档图像上绘制高亮框
+```
+
+## 完整示例
+
+完整的获取和使用审核结果的流程：
+
+```python Python icon=python expandable
+import requests
+import time
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+def get_review_result():
+    """获取审核结果"""
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id
+    }
+    
+    resp = requests.post(
+        url=f"{host}{url}",
+        json=payload,
+        headers={
+            "x-ti-app-id": ti_app_id,
+            "x-ti-secret-code": ti_secret_code,
+        },
+        timeout=60,
+    )
+    
+    result = resp.json()
+    if result.get("code") == 200:
+        return result.get("result")
+    else:
+        print(f"获取失败: {result.get('msg')}")
+        return None
+
+def wait_for_review_complete(max_wait_time=300, poll_interval=5):
+    """等待审核完成"""
+    start_time = time.time()
+    
+    while True:
+        review_result = get_review_result()
+        if not review_result:
+            return None
+        
+        status = review_result.get("status")
+        
+        # 审核完成
+        if status in [1, 2, 7]:
+            return review_result
+        
+        # 审核中
+        if status in [0, 3, 4, 5, 6]:
+            elapsed = time.time() - start_time
+            if elapsed >= max_wait_time:
+                print("等待超时")
+                return review_result
+            
+            print(f"审核中，状态: {status}，等待 {poll_interval} 秒...")
+            time.sleep(poll_interval)
+            continue
+        
+        return review_result
+
+# 等待审核完成
+review_result = wait_for_review_complete()
+
+if review_result:
+    # 处理审核结果
+    statistics = review_result.get("statistics", {})
+    print(f"通过数: {statistics.get('pass_count', 0)}")
+    print(f"不通过数: {statistics.get('failure_count', 0)}")
+    
+    # 查找审核不通过的规则
+    groups = review_result.get("groups", [])
+    for group in groups:
+        review_tasks = group.get("review_tasks", [])
+        for review_task in review_tasks:
+            if review_task.get("review_result") == 4:  # 审核不通过
+                rule_name = review_task.get("rule_name")
+                reasoning = review_task.get("reasoning", "")
+                print(f"不通过规则: {rule_name}")
+                print(f"审核依据: {reasoning}")
+```
+
+## 注意事项
+
+1. **异步执行**：审核任务是异步执行的，创建任务后需要定期查询审核状态
+2. **状态判断**：通过 `status` 字段判断任务状态，`1` 表示审核通过，`4` 表示审核不通过
+3. **位置回溯**：使用 `anchors` 信息可以在文档中高亮显示审核依据的位置
+
+## 相关页面
+
+- [审核概念](./quickstart) - 了解审核功能的核心概念
+- [规则库管理](./rule_management) - 学习如何管理审核规则库
+- [创建审核任务](./create_task) - 学习如何创建审核任务
+

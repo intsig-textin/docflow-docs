@@ -1,0 +1,248 @@
+---
+title: "Upload by URLs"
+description: "Upload documents to DocFlow using file URLs"
+---
+
+<Tip>
+  This guide demonstrates how to upload documents to DocFlow using file URLs via REST API.  
+  Compared to direct file upload, URL upload is more suitable for processing remote files or batch processing scenarios.
+</Tip>
+
+DocFlow supports uploading documents via file URLs without requiring local file storage. This approach is particularly suitable for:
+
+- Processing files on remote servers
+- Batch processing multiple file URLs
+- Reducing local storage and network transmission overhead
+
+## 01 Single File URL Upload
+
+Submit file URL list using `application/json` format:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com/document.pdf"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_url = "https://example.com/document.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+payload = {
+    "urls": [file_url]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 02 Batch URL Upload
+
+A single request can upload multiple file URLs, supporting up to **10 files**:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": [
+      "https://example.com/invoice1.pdf",
+      "https://example.com/invoice2.pdf",
+      "https://example.com/contract.docx"
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&batch_number=202412190001"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+# Batch upload multiple file URLs
+file_urls = [
+    "https://example.com/invoice1.pdf",
+    "https://example.com/invoice2.pdf", 
+    "https://example.com/contract.docx"
+]
+
+payload = {
+    "urls": file_urls
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "202412190001",
+        "category": "invoice"
+    },
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Batch number: {result['result']['batch_number']}")
+for file_info in result['result']['files']:
+    print(f"File ID: {file_info['id']}, File name: {file_info['name']}")
+```
+
+</CodeGroup>
+
+## 03 Parameter Description
+
+### Required Parameters
+
+- `workspace_id`: Workspace ID. Please refer to the [Get Workspace ID](../100-faq/get_workspace_id) documentation.
+
+### Request Body Parameters
+
+- `urls`: File URL list
+  - Type: String array
+  - Limit: Maximum 10 URLs per request
+  - Format: Must be valid URLs starting with `http://` or `https://`
+  - File size: Each file maximum 100MB
+
+### Optional Parameters
+
+Can be added in URL query parameters as needed:
+
+- `category`: File category (e.g., invoice)
+- `batch_number`: Batch number, auto-generated if not provided
+- `split_flag`: Whether to perform file splitting, default false (see [File Splitting](../05-split/split) chapter)
+- `crop_flag`: Whether to perform multi-image cropping, default false (see [Multi-image Cropping](../05-split/crop) chapter)
+- `target_process`: Target processing type, optional `classify` or `extract`
+
+## 04 URL Requirements
+
+### Supported URL Formats
+
+- Must start with `http://` or `https://`
+- URL must be publicly accessible (no authentication required)
+- Server must support HTTP GET requests
+
+### File Requirements
+
+- File format: Supports all formats listed in [File Format Support](./support_format)
+- File size: Single file not exceeding 100MB
+- File pages: Multi-page documents not exceeding 1000 pages
+
+### Example URLs
+
+```bash
+# Valid URL examples
+https://example.com/document.pdf
+https://cdn.example.com/files/invoice.pdf
+http://192.168.1.100/shared/contract.docx
+
+# Invalid URL examples
+ftp://example.com/file.pdf          # FTP protocol not supported
+file:///local/path/document.pdf      # Local file paths not supported
+https://example.com/protected.pdf   # URLs requiring authentication
+```
+
+## 05 Response Format
+
+The response format after successful URL upload is the same as regular file upload:
+
+```json expandable
+{
+   "code": 200,
+   "msg": "Success",
+   "result": {
+      "batch_number": "202412190001",
+      "files": [
+         {
+            "id": "1955840505753140508",
+            "name": "document.pdf",
+            "format": "pdf"
+         },
+         {
+            "id": "1955840505753140509", 
+            "name": "invoice.pdf",
+            "format": "pdf"
+         }
+      ]
+   }
+}
+```
+
+## 06 Query Processing Results
+
+After upload completion, use the returned `batch_number` to query processing results:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}, File name: {f.get('name')}, Status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>

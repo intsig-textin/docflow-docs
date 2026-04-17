@@ -1,0 +1,456 @@
+TaskProcessResult:
+  type: object
+  properties:
+    result:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: 文件总数
+          example: 100
+        page:
+          type: integer
+          description: 当前页码
+          example: 1
+        page_size:
+          type: integer
+          description: 每页数量
+          example: 20
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: 文件ID
+                example: 202412190001
+              task_id:
+                type: string
+                description: 任务ID
+                example: 202412190001
+              task_detail_url:
+                type: string
+                description: 文件任务详情页URL
+              task_type:
+                $ref: './common.yaml#/TaskType'
+              batch_number:
+                type: string
+                description: 批次编号
+                example: 202412190001
+              name:
+                type: string
+                description: 文件名
+                example: invoice.pdf
+              format:
+                type: string
+                description: 文件格式
+              recognition_status:
+                $ref: './common.yaml#/RecognitionStatus'
+              failure_causes:
+                type: string
+                description: |
+                  任务失败原因。
+                  当recognition_status为2时，有此字段。
+              verification_status:
+                $ref: './common.yaml#/VerificationStatus'
+              category:
+                type: string
+                description: 文件类别
+                example: invoice
+              pages:
+                $ref: './common.yaml#/PagesInfo'
+              data:
+                type: object
+                description: 处理结果
+                properties:
+                  fields:
+                    description: 字段列表
+                    type: array
+                    items:
+                      $ref: './common.yaml#/FieldRespKeyValue'
+                    example:
+                      - key: 发票代码
+                        identifier: 发票代码标识
+                        value: '3100231130'
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - key: 发票号码
+                        identifier: 发票号码标识
+                        value: '28737000'
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  items:
+                    description: 表格数据列表
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        $ref: './common.yaml#/KeyValue'
+                    example:
+                      - - key: 货物劳务名称
+                          value: ＊电子计算机＊微型计算机主机
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                        - key: 规格型号
+                          value: DMS-SC68
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - - key: 货物劳务名称
+                          value: ＊机械计算机＊巨型计算机主机
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                        - key: 规格型号
+                          value: AN/FSQ-7
+                          position:
+                            - page: 0
+                              vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  tables:
+                    description: 全部表格数据列表（含系统表格和手动配置表格）
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tableName:
+                          description: 表格名称
+                          type: string
+                          example: table1
+                        tableType:
+                          description: 表格类型， 0， 系统配置， 1 手动添加。
+                          type: string
+                          example: 0
+                        usePrompt:
+                          description: 是否使用语意抽取
+                          type: boolean
+                        extractModel:
+                          description: 整表抽取模型
+                          type: string
+                        items:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              $ref: './common.yaml#/CommonFieldDetailRespVO'
+                  stamps:
+                    description: 印章信息
+                    type: array
+                    items:
+                      $ref: './common.yaml#/StampValue'
+                    example:
+                      - angel: 0
+                        page: 0
+                        text: 全国统一发票监制章
+                        type: 其他
+                        color: 红色
+                        shape: 椭圆章
+                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - angel: 0
+                        page: 0
+                        text: 税务局章
+                        type: 其他
+                        color: 红色
+                        shape: 椭圆章
+                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  handwritings:
+                    description: 手写体信息
+                    type: array
+                    items:
+                      $ref: './common.yaml#/HandWritingValue'
+                    example:
+                      - angel: 0
+                        page: 0
+                        text: 3月1日
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - angel: 0
+                        page: 0
+                        text: 张三
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              document:
+                $ref: './common.yaml#/Document'
+              child_files:
+                description: 子任务信息
+                type: array
+                items:
+                  $ref: './files.yaml#/SubFileDetailInfo'
+              duration_ms:
+                type: integer
+                description: |
+                  任务处理时间，单位：毫秒
+                  计算的是从任务开始至完成(成功或失败)的时间，不包括排队等待时间。
+                example: 10000
+              total_page_num:
+                type: integer
+                description: 当前文件总页数
+                example: 10
+              from_parent_position_list:
+                type: array
+                description: 切图结果在原文件中的坐标位置
+                items:
+                  type: integer
+                  description: 位置信息
+                  example: 1
+            required:
+              - id
+              - name
+              - format
+              - recognition_status
+              - verification_status
+              - category
+
+SubFileDetailInfo:
+  type: object
+  properties:
+    id:
+      type: string
+      description: 文件ID
+      example: 202412190001
+    task_id:
+      type: string
+      description: 任务ID
+      example: 202412190001
+    task_detail_url:
+      type: string
+      description: 文件任务详情页URL
+    task_type:
+      type: integer
+      description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+      example: 1
+    parent_task_id:
+      type: string
+      description: 父任务ID（不为0时有意义）
+      example: 202412190001
+    batch_number:
+      type: string
+      description: 批次编号
+      example: 202412190001
+    name:
+      type: string
+      description: 文件名
+      example: invoice.pdf
+    format:
+      type: string
+      description: 文件格式
+    recognition_status:
+      $ref: './common.yaml#/RecognitionStatus'
+    verification_status:
+      $ref: './common.yaml#/VerificationStatus'
+    category:
+      type: string
+      description: 文件类别
+      example: invoice
+    pages:
+      type: array
+      description: |
+        文件每页用于渲染的数据。
+        配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+      items:
+        type: object
+        properties:
+          angle:
+            type: integer
+            description: 旋转角度
+            enum:
+              - 0
+              - 90
+              - 180
+              - 270
+          width:
+            type: integer
+            description: 转正后的页宽
+            example: 1024
+          height:
+            type: integer
+            description: 转正后的页高
+            example: 1024
+          dpi:
+            type: integer
+            description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+            example: 144
+    data:
+      type: object
+      description: 处理结果
+      properties:
+        fields:
+          description: 字段列表
+          type: array
+          items:
+            $ref: './common.yaml#/KeyValue'
+          example:
+            - key: 发票代码
+              value: "3100231130"
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - key: 发票号码
+              value: "28737000"
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        items:
+          description: 表格数据列表
+          type: array
+          items:
+            type: array
+            items:
+              $ref: './common.yaml#/KeyValue'
+          example:
+            - - key: 货物劳务名称
+                value: ＊电子计算机＊微型计算机主机
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              - key: 规格型号
+                value: DMS-SC68
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - - key: 货物劳务名称
+                value: ＊机械计算机＊巨型计算机主机
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              - key: 规格型号
+                value: AN/FSQ-7
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        tables:
+          description: 全部表格数据列表（含系统表格和手动配置表格）
+          type: array
+          items:
+            type: object
+            properties:
+              tableName:
+                description: 表格名称
+                type: string
+                example: table1
+              tableType:
+                description: 表格类型， 0， 系统配置， 1 手动添加。
+                type: string
+                example: 0
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    $ref: './common.yaml#/CommonFieldDetailRespVO'
+        stamps:
+          description: 印章信息
+          type: array
+          items:
+            $ref: './common.yaml#/StampValue'
+          example:
+            - angel: 0
+              page: 0
+              text: 全国统一发票监制章
+              type: 其他
+              color: 红色
+              shape: 椭圆章
+              position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - angel: 0
+              page: 0
+              text: 税务局章
+              type: 其他
+              color: 红色
+              shape: 椭圆章
+              position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        handwritings:
+          description: 手写体信息
+          type: array
+          items:
+            $ref: './common.yaml#/HandWritingValue'
+          example:
+            - angel: 0
+              page: 0
+              text: 3月1日
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - angel: 0
+              page: 0
+              text: 张三
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+    document:
+      $ref: './common.yaml#/Document'
+    from_parent_position_list:
+      type: array
+      description: 切图结果在原文件中的坐标位置
+      items:
+        type: integer
+        description: 位置信息
+        example: 1
+
+ExtractFieldReqVO:
+  type: object
+  properties:
+    key:
+      type: string
+      description: 字段名称
+      example: 发票代码
+    prompt:
+      type: string
+      description: 字段提示
+      example: 只保留年的部分
+    extract_model:
+      type: string
+      description: |
+        字段级抽取模型，不填默认使用 Model 1
+        - Model 1: 速度快，抽取结果稳定
+        - Model 2: 适用复杂文档理解
+        - Model 3: 多模态，适用简单抽取
+        注意：表格内字段的抽取模型由整表的 extract_model 决定，此处设置无效
+      example: Model 1
+      enum:
+        - Model 1
+        - Model 2
+        - Model 3
+
+DocumentParserParam:
+  type: object
+  properties:
+    formula_level:
+      type: integer
+      description: 公式识别等级(0 行间公式和行内公式都识别、1 仅识别行间公式，行内公式不识别、2 不识别公式)
+      example: 0
+    apply_merge:
+      type: integer
+      description: 跨页段落表格合并(0 不合并、1 合并)
+      example: 1
+    table_text_split_mode:
+      type: integer
+      description: 切分被表格线穿过的文本块(0 不切分、1 切分)
+      example: 0
+    crop_dewarp:
+      type: integer
+      description: 是否进行切边矫正(0 不进行切边矫正、1 进行切边矫正)
+      example: 0
+    remove_watermark:
+      type: integer
+      description: 是否去水印(0 不去水印、1 去水印)
+      example: 0
+
+TokenResult:
+  type: object
+  properties:
+    result:
+      type: object
+      properties:
+        token:
+          type: string
+          description: 有效的token
+          example: abcd
+        expiry:
+          type: integer
+          description: 过期时间(格式是epoch时间戳，单位：秒)
+          example: 1700000000

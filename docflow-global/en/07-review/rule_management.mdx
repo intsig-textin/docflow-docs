@@ -1,0 +1,1173 @@
+---
+title: "Rule Repository Management"
+description: "Manage review rule repositories, rule groups, and rules via REST API"
+---
+
+<Tip>
+  This document introduces how to manage review rule repositories, rule groups, and rules via REST API. Rule repository management uses a three-tier structure: Rule Repository → Rule Group → Rule. You need to create a rule repository first, then create rule groups under it, and finally create rules under rule groups.
+</Tip>
+
+Intelligent review rule repository management uses a three-tier structure: **Rule Repository** → **Rule Group** → **Rule**. This document introduces how to manage rule repositories via REST API.
+
+## Rule Repository Management
+
+A rule repository is the top-level container for review rules, used to organize and manage related review rules.
+
+### Create Rule Repository
+
+Create a review rule repository:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "name": "Review Rule Repository 1"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/create"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/create"
+
+payload = {
+    "workspace_id": workspace_id,
+    "name": "Review Rule Repository 1"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    repo_id = result.get("result", {}).get("repo_id")
+    print(f"Rule repository created successfully, ID: {repo_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `name` (required): Repository name, max length 30
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "repo_id": "31415926"
+  }
+}
+```
+
+### List Rule Repositories
+
+Get a list of all review rule repositories under the workspace, including rule groups and rules information:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/list?workspace_id=<your-workspace-id>&page=1&page_size=10"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "page": 1,
+        "page_size": 10
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    repos = result.get("result", {}).get("repos", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} rule repositories")
+    for repo in repos:
+        print(f"Repository ID: {repo.get('repo_id')}, Name: {repo.get('name')}")
+        groups = repo.get("groups", [])
+        print(f"  Contains {len(groups)} rule groups")
+else:
+    print(f"Failed to retrieve: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `page` (optional): Page number, default is 1
+- `page_size` (optional): Number of items per page, default is 10
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "repos": [
+      {
+        "repo_id": "31415926",
+        "name": "Review Rule Repository 1",
+        "category_ids": ["invoice_category_id"],
+        "groups": [
+          {
+            "group_id": "31415926",
+            "name": "Review Rule Group 1",
+            "rules": [
+              {
+                "rule_id": "31415926",
+                "name": "Review Rule 1",
+                "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+                "category_ids": ["invoice_category_id"],
+                "risk_level": 10,
+                "referenced_fields": [
+                  {
+                    "category_id": "invoice_category_id",
+                    "category_name": "Invoice",
+                    "fields": [
+                      {
+                        "field_id": "amount_field_id",
+                        "field_name": "Invoice Amount"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "page_size": 10
+  }
+}
+```
+
+### Get Rule Repository
+
+Get detailed information of a single review rule repository by repository ID:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/get?workspace_id=<your-workspace-id>&repo_id=31415926"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/get"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "repo_id": repo_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    repo = result.get("result", {})
+    print(f"Repository ID: {repo.get('repo_id')}")
+    print(f"Repository Name: {repo.get('name')}")
+    print(f"Applicable Categories: {repo.get('category_ids', [])}")
+    groups = repo.get("groups", [])
+    print(f"Contains {len(groups)} rule groups")
+    for group in groups:
+        print(f"  Rule Group: {group.get('name')} (ID: {group.get('group_id')})")
+        rules = group.get("rules", [])
+        print(f"    Contains {len(rules)} rules")
+else:
+    print(f"Failed to retrieve: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `repo_id` (required): Review rule repository ID
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "repo_id": "31415926",
+    "name": "Review Rule Repository 1",
+    "category_ids": ["invoice_category_id"],
+    "groups": [
+      {
+        "group_id": "31415926",
+        "name": "Review Rule Group 1",
+        "rules": [
+          {
+            "rule_id": "31415926",
+            "name": "Review Rule 1",
+            "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+            "category_ids": ["invoice_category_id"],
+            "risk_level": 10,
+            "referenced_fields": [
+              {
+                "category_id": "invoice_category_id",
+                "category_name": "Invoice",
+                "fields": [
+                  {
+                    "field_id": "amount_field_id",
+                    "field_name": "Invoice Amount"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Update Rule Repository
+
+Update the name of a review rule repository:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_id": "31415926",
+    "name": "Updated Repository Name"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/update"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "name": "Updated Repository Name"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `repo_id` (required): Rule repository ID
+- `name` (required): New repository name, max length 30
+
+### Delete Rule Repository
+
+Delete review rule repositories (batch deletion supported):
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_ids": ["31415926", "31415927"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_ids": ["31415926", "31415927"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `repo_ids` (required): Array of rule repository IDs
+
+<Warning>
+  Deleting a rule repository will also delete all rule groups and rules under it. Please proceed with caution.
+</Warning>
+
+## Rule Group Management
+
+A rule group is a secondary classification under a rule repository, used for more granular rule grouping and management.
+
+### Create Rule Group
+
+Create a rule group under a rule repository:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_id": "31415926",
+    "name": "Review Rule Group 1"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_group/create"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_group/create"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "name": "Review Rule Group 1"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    group_id = result.get("result", {}).get("group_id")
+    print(f"Rule group created successfully, ID: {group_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `repo_id` (required): Rule repository ID
+- `name` (required): Rule group name, max length 30
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "group_id": "31415926"
+  }
+}
+```
+
+### Update Rule Group
+
+Update the name of a rule group:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "group_id": "31415926",
+    "name": "Updated Rule Group Name"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_group/update"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+group_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_group/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "group_id": group_id,
+    "name": "Updated Rule Group Name"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `group_id` (required): Rule group ID
+- `name` (required): New rule group name, max length 30
+
+### Delete Rule Group
+
+Delete a rule group:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "group_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_group/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+group_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_group/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "group_id": group_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `group_id` (required): Rule group ID
+
+<Warning>
+  Deleting a rule group will also delete all rules under it. Please proceed with caution.
+</Warning>
+
+## Rule Management
+
+A rule is the smallest execution unit of review, defining specific review standards and logic.
+
+### Create Rule
+
+Create a review rule under a rule group:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_id": "31415926",
+    "group_id": "31415926",
+    "name": "Review Rule 1",
+    "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 10,
+    "referenced_fields": [
+      {
+        "category_id": "invoice_category_id",
+        "category_name": "Invoice",
+        "fields": [
+          {
+            "field_id": "amount_field_id",
+            "field_name": "Invoice Amount"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule/create"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+group_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule/create"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "group_id": group_id,
+    "name": "Review Rule 1",
+    "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 10,
+    "referenced_fields": [
+        {
+            "category_id": "invoice_category_id",
+            "category_name": "Invoice",
+            "fields": [
+                {
+                    "field_id": "amount_field_id",
+                    "field_name": "Invoice Amount"
+                }
+            ]
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    rule_id = result.get("result", {}).get("rule_id")
+    print(f"Rule created successfully, ID: {rule_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+### Get Category ID and Field ID
+
+Before creating a rule, you need to get the category ID (`category_id`) and field ID (`field_id`). These IDs can be obtained through the following interfaces:
+
+#### Get Category List
+
+Get all categories under the workspace to obtain category IDs:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/list?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    categories = result.get("result", {}).get("categories", [])
+    for category in categories:
+        print(f"Category ID: {category.get('id')}, Category Name: {category.get('name')}")
+```
+
+</CodeGroup>
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 10,
+    "page": 1,
+    "page_size": 1000,
+    "categories": [
+      {
+        "id": "invoice_category_id",
+        "name": "Invoice",
+        "description": "Invoice category description",
+        "enabled": 1
+      },
+      {
+        "id": "contract_category_id",
+        "name": "Contract",
+        "description": "Contract category description",
+        "enabled": 1
+      }
+    ]
+  }
+}
+```
+
+Get `categories[].id` from the response as the category ID (`category_id`).
+
+#### Get Category Fields List
+
+Get all fields under a specified category to obtain field IDs:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/list?workspace_id=<your-workspace-id>&category_id=<category-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"  # Get from category list interface
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    fields = result.get("result", {}).get("fields", [])
+    tables = result.get("result", {}).get("tables", [])
+    
+    print("Regular Fields:")
+    for field in fields:
+        print(f"  Field ID: {field.get('id')}, Field Name: {field.get('name')}")
+    
+    print("Table Fields:")
+    for table in tables:
+        print(f"  Table ID: {table.get('id')}, Table Name: {table.get('name')}")
+        for field in table.get("fields", []):
+            print(f"    Field ID: {field.get('id')}, Field Name: {field.get('name')}")
+```
+
+</CodeGroup>
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "fields": [
+      {
+        "id": "amount_field_id",
+        "name": "Invoice Amount",
+        "description": "Invoice amount description",
+        "enabled": 1
+      },
+      {
+        "id": "invoice_code_field_id",
+        "name": "Invoice Code",
+        "description": "Invoice code description",
+        "enabled": 1
+      }
+    ],
+    "tables": [
+      {
+        "id": "invoice_items_table_id",
+        "name": "Invoice Items",
+        "description": "Invoice items table",
+        "fields": [
+          {
+            "id": "item_name_field_id",
+            "name": "Item Name",
+            "description": "Item name description",
+            "enabled": 1
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+From the response, get:
+- `fields[].id` is the regular field ID (`field_id`)
+- `tables[].id` is the table ID (`table_id`)
+- `tables[].fields[].id` is the table field ID (`field_id`)
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `repo_id` (required): Rule repository ID
+- `group_id` (required): Rule group ID
+- `name` (required): Rule name
+- `prompt` (required): Rule prompt, describing the review rule, used to guide AI in making review judgments
+- `category_ids` (optional): Array of applicable category IDs, which document categories the rule applies to. Obtained via the [Get Category List](#get-category-list) interface
+- `risk_level` (optional): Risk level, optional values: `10`(high risk), `20`(medium risk), `30`(low risk)
+- `referenced_fields` (optional): Array of referenced fields, extraction fields that the rule needs to reference. Field IDs are obtained via the [Get Category Fields List](#get-category-fields-list) interface
+
+**Referenced Fields Structure:**
+
+```json
+{
+  "referenced_fields": [
+    {
+      "category_id": "Category ID",
+      "category_name": "Category Name",
+      "fields": [
+        {
+          "field_id": "Field ID",
+          "field_name": "Field Name"
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "Table ID",
+          "table_name": "Table Name",
+          "fields": [
+            {
+              "field_id": "Field ID",
+              "field_name": "Field Name"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "rule_id": "31415926"
+  }
+}
+```
+
+### Update Rule
+
+Update a review rule:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "rule_id": "31415926",
+    "group_id": "31415926",
+    "name": "Updated Rule Name",
+    "prompt": "Updated Rule Prompt",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 20,
+    "referenced_fields": [
+      {
+        "category_id": "invoice_category_id",
+        "category_name": "Invoice",
+        "fields": [
+          {
+            "field_id": "amount_field_id",
+            "field_name": "Invoice Amount"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule/update"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+rule_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "rule_id": rule_id,
+    "group_id": "31415926",
+    "name": "Updated Rule Name",
+    "prompt": "Updated Rule Prompt",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 20,
+    "referenced_fields": [
+        {
+            "category_id": "invoice_category_id",
+            "category_name": "Invoice",
+            "fields": [
+                {
+                    "field_id": "amount_field_id",
+                    "field_name": "Invoice Amount"
+                }
+            ]
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `rule_id` (required): Rule ID
+- Other parameters are the same as creating a rule, used to update rule properties
+
+### Delete Rule
+
+Delete a review rule:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "rule_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+rule_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "rule_id": rule_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `rule_id` (required): Rule ID
+
+## Complete Rule Creation Flow Example
+
+Complete rule creation flow (including getting category ID and field ID):
+
+```python Python icon=python expandable
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+host = "https://docflow.textin.ai"
+
+# 1. Get category list to obtain category ID
+categories_resp = requests.get(
+    f"{host}/api/app-api/sip/platform/v2/category/list",
+    params={"workspace_id": workspace_id},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+categories = categories_resp.json()["result"]["categories"]
+# Assume we want to use "Invoice" category
+invoice_category = next((c for c in categories if c["name"] == "Invoice"), None)
+if not invoice_category:
+    print("Invoice category not found")
+    exit(1)
+category_id = invoice_category["id"]
+category_name = invoice_category["name"]
+print(f"Found category: {category_name}, ID: {category_id}")
+
+# 2. Get category fields list to obtain field ID
+fields_resp = requests.get(
+    f"{host}/api/app-api/sip/platform/v2/category/fields/list",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+fields_result = fields_resp.json()["result"]
+fields = fields_result.get("fields", [])
+# Assume we want to use "Invoice Amount" field
+amount_field = next((f for f in fields if f["name"] == "Invoice Amount"), None)
+if not amount_field:
+    print("Invoice Amount field not found")
+    exit(1)
+field_id = amount_field["id"]
+field_name = amount_field["name"]
+print(f"Found field: {field_name}, ID: {field_id}")
+
+# 3. Create rule repository
+repo_payload = {
+    "workspace_id": workspace_id,
+    "name": "Invoice Review Rule Repository"
+}
+repo_resp = requests.post(
+    f"{host}/api/app-api/sip/platform/v2/review/rule_repo/create",
+    json=repo_payload,
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+repo_id = repo_resp.json()["result"]["repo_id"]
+print(f"Rule repository created successfully, ID: {repo_id}")
+
+# 4. Create rule group
+group_payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "name": "Invoice Compliance Check"
+}
+group_resp = requests.post(
+    f"{host}/api/app-api/sip/platform/v2/review/rule_group/create",
+    json=group_payload,
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+group_id = group_resp.json()["result"]["group_id"]
+print(f"Rule group created successfully, ID: {group_id}")
+
+# 5. Create rule (using obtained category ID and field ID)
+rule_payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "group_id": group_id,
+    "name": "Invoice Amount Validation",
+    "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+    "category_ids": [category_id],  # Use obtained category ID
+    "risk_level": 10,
+    "referenced_fields": [
+        {
+            "category_id": category_id,  # Use obtained category ID
+            "category_name": category_name,  # Use obtained category name
+            "fields": [
+                {
+                    "field_id": field_id,  # Use obtained field ID
+                    "field_name": field_name  # Use obtained field name
+                }
+            ]
+        }
+    ]
+}
+rule_resp = requests.post(
+    f"{host}/api/app-api/sip/platform/v2/review/rule/create",
+    json=rule_payload,
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+rule_id = rule_resp.json()["result"]["rule_id"]
+print(f"Rule created successfully, ID: {rule_id}")
+```
+
+## Related Pages
+
+- [Review Concepts](./quickstart) - Learn about core concepts of the review feature
+- [Create Review Tasks](./create_task) - Learn how to create review tasks
+- [Get Review Results](./get_result) - Learn how to get and use review results
+

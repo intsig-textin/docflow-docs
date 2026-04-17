@@ -1,0 +1,362 @@
+/api/app-api/sip/platform/v2/review/task/submit:
+  post:
+    summary: Submit Review Task
+    description: Submit review task
+    operationId: submitReviewTask
+    tags:
+      - Intelligent Review
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              name:
+                type: string
+                description: Task name
+                example: "Review Task 1"
+                maxLength: 100
+              repo_id:
+                type: string
+                description: Review rule repository ID
+                example: "31415926"
+              extract_task_ids:
+                type: array
+                items:
+                  type: string
+                  description: Extraction task ID
+                  example: "1234567890"
+              batch_number:
+                type: string
+                description: Batch number
+                example: "1234567890"
+            required:
+              - workspace_id
+              - name
+              - repo_id
+    responses:
+      '200':
+        description: Successfully submitted review task
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          description: Review task ID
+                          example: "31415926"
+
+/api/app-api/sip/platform/v2/review/task/result:
+  post:
+    summary: Get Review Task Result
+    description: Get review task result
+    operationId: getReviewTaskResult
+    tags:
+      - Intelligent Review
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              task_id:
+                type: string
+                description: Review task ID
+                example: "31415926"
+              with_task_detail_url:
+                type: boolean
+                description: Whether to return the review task detail URL
+                example: false
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: Successfully retrieved review task result
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          description: Review task ID
+                          example: "31415926"
+                        task_name:
+                          type: string
+                          description: Task name
+                          example: "Review Task 1"
+                        task_detail_url:
+                          type: string
+                          description: Review task detail URL
+                        status:
+                          $ref: '../components/schemas/reviews.yaml#/ReviewTaskStatus'
+                        rule_repo:
+                          type: object
+                          properties:
+                            repo_id:
+                              type: string
+                              description: Review rule repository ID
+                              example: "31415926"
+                            name:
+                              type: string
+                              description: Review rule repository name
+                              example: "Review Rule Repository 1"
+                        extract_task_ids:
+                          type: array
+                          items:
+                            type: string
+                            description: Extraction task ID
+                            example: "1234567890"
+                        statistics:
+                          type: object
+                          properties:
+                            pass_count:
+                              type: integer
+                              description: Pass count
+                              example: 100
+                            failure_count:
+                              type: integer
+                              description: Failure count
+                              example: 100
+                            error_count:
+                              type: integer
+                              description: Task execution error count
+                              example: 100
+                        groups:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              group_id:
+                                type: string
+                                description: Review rule group ID
+                                example: "31415926"
+                              group_name:
+                                type: string
+                                description: Review rule group name
+                                example: "Review Rule Group 1"
+                              review_tasks:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    rule_task_id:
+                                      type: string
+                                      description: Review subtask ID
+                                      example: "31415926"
+                                    rule_id:
+                                      type: string
+                                      description: Review rule ID
+                                      example: "31415926"
+                                    rule_name:
+                                      type: string
+                                      description: Review rule name
+                                      example: "Review Rule 1"
+                                    risk_level:
+                                      $ref: '../components/schemas/reviews.yaml#/RiskLevel'
+                                    prompt:
+                                      type: string
+                                      description: Review rule prompt
+                                      example: "Review rule prompt"
+                                    review_result:
+                                      $ref: '../components/schemas/reviews.yaml#/ReviewTaskStatus'
+                                    reasoning:
+                                      type: string
+                                      description: Review reasoning
+                                      example: "Review reasoning"
+                                    anchors:
+                                      type: array
+                                      description: Position anchor information for review reasoning, used to locate the position of review reasoning in the original text
+                                      items:
+                                        type: object
+                                        properties:
+                                          start_pos:
+                                            type: integer
+                                            description: Starting character position in `reasoning`
+                                          end_pos:
+                                            type: integer
+                                            description: Ending character position in `reasoning`
+                                          text:
+                                            type: string
+                                            description: Original text content
+                                          vertices:
+                                            type: array
+                                            items:
+                                              type: integer
+                                              description: Bounding quadrilateral coordinates of original text
+                                              example: [0, 0, 100, 0, 100, 100, 0, 100]
+                                          file_id:
+                                            type: string
+                                            description: File ID
+                                            example: "1234567890"
+                                          extract_task_id:
+                                            type: string
+                                            description: Extraction task ID
+                                            example: "1234567890"
+                                          page:
+                                            type: integer
+                                            description: Page number in the file
+                                            example: 1
+                                          source:
+                                            type: string
+                                            description: |
+                                              Position anchor source
+                                              - "ocr": Recognition
+                                              - "extract_field": Associated field
+                                            example: "ocr"
+                                            enum:
+                                              - ocr
+                                              - extract_field
+                                          file_category:
+                                            type: string
+                                            description: File category
+                                            example: "Invoice"
+                                          field_name:
+                                            type: string
+                                            description: Associated field name
+                                            example: "Invoice Code"
+                                    audit_result:
+                                      type: integer
+                                      description: |
+                                        Manual review result
+                                        - 0: Manual review failed
+                                        - 1: Manual review passed
+                                      example: 1
+                                      enum:
+                                        - 0
+                                        - 1
+                                    audit_message:
+                                      type: string
+                                      description: Manual review comments
+                                      example: "Manual review comments"
+
+/api/app-api/sip/platform/v2/review/task/delete:
+  post:
+    summary: Delete Review Task
+    description: Delete review task
+    operationId: deleteReviewTask
+    tags:
+      - Intelligent Review
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              task_ids:
+                type: array
+                items:
+                  type: string
+                  description: Review task ID
+                  example: "31415926"
+            required:
+              - workspace_id
+              - task_ids
+    responses:
+      '200':
+        description: Successfully deleted review task
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/task/retry:
+  post:
+    summary: Retry Review Task
+    description: Retry review task
+    operationId: retryReviewTask
+    tags:
+      - Intelligent Review
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              task_id:
+                type: string
+                description: Review task ID
+                example: "31415926"
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: Successfully retried review task
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/task/rule/retry:
+  post:
+    summary: Retry Specific Rule in Review Task
+    description: Retry a specific rule in the review task.
+    operationId: retryReviewTaskRule
+    tags:
+      - Intelligent Review
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              task_id:
+                type: string
+                description: Review task ID
+                example: "31415926"
+              rule_id:
+                type: string
+                description: Review rule ID
+                example: "31415926"
+            required:
+              - workspace_id
+              - task_id
+              - rule_id
+    responses:
+      '200':
+        description: Successfully retried specific rule in review task
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'

@@ -1,0 +1,162 @@
+Category:
+  type: object
+  description: File Category
+  properties:
+    id:
+      type: string
+      description: File category ID
+      example: "1234567890"
+    name:
+      type: string
+      description: File category name
+      example: "Invoice"
+    description:
+      type: string
+      description: File category description
+      example: "VAT invoice type"
+    category_prompt:
+      type: string
+      description: Prompt for classification
+      example: "VAT invoice, including fields such as invoice code, invoice number, etc."
+    extract_model:
+      type: string
+      description: |
+        Extraction model
+        - Model 1: Fast speed with stable extraction results
+        - Model 2: Suitable for complex document understanding
+        - Model 3: VLM, suitable for simple extraction
+        - mixed: Only in responses, indicates different models are used across fields/tables in this category
+      example: "Model 1"
+      enum:
+        - Model 1
+        - Model 2
+        - Model 3
+        - mixed
+    enabled:
+      $ref: '#/EnabledStatus'
+  required:
+    - id
+    - name
+
+CategoryFieldConfig:
+  type: object
+  properties:
+    name:
+      type: string
+      description: Field name
+      example: Invoice Code
+    description:
+      type: string
+      description: Field description
+      example: Invoice code description
+    prompt:
+      type: string
+      description: Semantic extraction prompt
+    use_prompt:
+      type: boolean
+      description: Whether to use semantic prompt
+    alias:
+      type: array
+      description: Field aliases
+      items:
+        type: string
+    identity:
+      type: string
+      description: Export field name
+    multi_value:
+      type: boolean
+      description: Whether to enable multi-value extraction
+    duplicate_value_distinct:
+      type: boolean
+      description: Whether to deduplicate values, only effective when multi_value is true
+    transform_settings:
+      type: object
+      description: Transform configuration
+      properties:
+        type:
+          type: string
+          description: Transform type
+          enum:
+            - datetime
+            - enumerate
+            - regex
+        datetime_settings:
+          type: object
+          description: Datetime type transform configuration
+          properties:
+            format:
+              type: string
+              description: Date time format, refer to DocFlow date format guide (https://docflow.textin.ai/markdown?key=dateFormatGuide)
+              example: yyyy-MM-dd HH:mm:ss
+        enumerate_settings:
+          type: object
+          description: Enumeration type transform configuration
+          properties:
+            items:
+              type: array
+              description: List of available enumeration values
+              items:
+                type: string
+        regex_settings:
+          type: object
+          description: Regex type transform configuration
+          properties:
+            match:
+              type: string
+              description: Regex pattern for matching
+              example: ^\d{4}-\d{2}-\d{2}$
+            replace:
+              type: string
+              description: Regex pattern for replacement
+              example: $1-$2-$3
+        mismatch_action:
+          type: object
+          description: Action when field value does not match
+          properties:
+            mode:
+              type: string
+              description: Mismatch handling mode
+              enum:
+                - default
+                - warning
+            default_value:
+              type: string
+              description: Default value when mode is default
+
+CategoryField:
+  allOf:
+    - $ref: '#/CategoryFieldConfig'
+    - type: object
+      properties:
+        id:
+          type: string
+          description: Field ID
+          example: "1234567890"
+
+CategorySample:
+  type: object
+  description: File category sample
+  properties:
+    sample_id:
+      type: string
+      description: Sample ID
+      example: "1234567890"
+    file_name:
+      type: string
+      description: File name
+      example: "invoice_sample.pdf"
+  required:
+    - sample_id
+    - file_name
+
+EnabledStatus:
+  type: integer
+  description: |
+    Enabled status
+    - 0: Disabled
+    - 1: Enabled
+    - 2: Draft
+  enum:
+    - 0
+    - 1
+    - 2

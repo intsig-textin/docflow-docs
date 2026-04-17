@@ -9,193 +9,10 @@ servers:
 x-codeSamples: custom
 
 paths:
-  /api/app-api/sip/platform/v2/workspace/create:
-    post:
-      summary: 创建空间
-      description: 创建一个新的工作空间
-      operationId: createWorkspace
-      tags:
-        - 空间管理
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: 空间名称
-                  example: "我的工作空间"
-                  maxLength: 50
-                description:
-                  type: string
-                  description: 空间描述
-                  example: "这是一个用于处理发票的工作空间"
-                  maxLength: 200
-                enterprise_id:
-                  type: integer
-                  format: int64
-                  description: 企业组织ID
-                  example: 12345
-                auth_scope:
-                  type: integer
-                  description: "协作范围 0:仅自己可见 1:企业成员可见"
-                  example: 1
-                  enum:
-                    - 0
-                    - 1
-              required:
-                - name
-                - enterprise_id
-                - auth_scope
-      responses:
-        '200':
-          description: 成功创建空间
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/CodeMessage'
-                  - type: object
-                    properties:
-                      result:
-                        type: object
-                        properties:
-                          workspace_id:
-                            type: string
-                            description: 空间ID
-                            example: "1234567890"
-
-  /api/app-api/sip/platform/v2/category/create:
-    post:
-      summary: 创建文件类别
-      description: 在指定空间中创建一个新的文件类别，需要上传至少一个样本文件并配置至少一个字段
-      operationId: createCategory
-      tags:
-        - 文件类别
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                workspace_id:
-                  type: string
-                  description: 空间ID
-                  example: "1234567890"
-                name:
-                  type: string
-                  description: 文件类别名称
-                  example: "发票"
-                  maxLength: 50
-                category_prompt:
-                  type: string
-                  description: 用于分类的提示词
-                  example: "增值税发票，包含发票代码、发票号码等字段"
-                  maxLength: 500
-                extract_model:
-                  description: 抽取模型
-                  example: "llm"
-                  enum:
-                    - llm
-                    - vlm
-                sample_files:
-                  type: array
-                  description: 样本文件列表，至少上传一个样本文件
-                  items:
-                    type: string
-                    format: binary
-                  minItems: 1
-                fields:
-                  type: array
-                  description: 字段配置列表，至少配置一个字段
-                  items:
-                    allOf:
-                      - $ref: '#/components/schemas/CategoryFieldConfig'
-                  minItems: 1
-              required:
-                - workspace_id
-                - name
-                - extract_model
-                - sample_files
-                - fields
-      responses:
-        '200':
-          description: 成功创建文件类别
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/CodeMessage'
-                  - type: object
-                    properties:
-                      result:
-                        type: object
-                        properties:
-                          category_id:
-                            type: string
-                            description: 文件类别ID
-                            example: "1234567890"
-
-  /api/app-api/sip/platform/v2/category/fields/add:
-    post:
-      summary: 新增文件类别字段
-      description: 在指定文件类别下新增一个字段，支持新增普通字段和表格字段
-      operationId: addCategoryField
-      tags:
-        - 文件类别
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              allOf:
-                - $ref: '#/components/schemas/CategoryFieldConfig'
-              type: object
-              properties:
-                workspace_id:
-                  type: string
-                  description: 空间ID
-                  example: "1234567890"
-                category_id:
-                  type: string
-                  description: 文件类别ID
-                  example: "1234567890"
-                table_id:
-                  type: string
-                  description: |
-                    表格ID
-                    - 不传或为空：创建普通字段，结果会出现在 result.fields 中
-                    - 传入表格ID：创建对应表格下的表格字段，结果会出现在 result.tables[].fields 中
-                  example: "1234567890"
-              required:
-                - workspace_id
-                - category_id
-                - name
-      responses:
-        '200':
-          description: 成功新增文件类别字段
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/CodeMessage'
-                  - type: object
-                    properties:
-                      result:
-                        type: object
-                        properties:
-                          field_id:
-                            type: string
-                            description: 新创建的字段ID
-                            example: "1234567890"
-
   /api/app-api/sip/platform/v2/file/upload:
     post:
       summary: 上传文件
-      description: ""
+      description: 上传文件
       operationId: uploadFile
       parameters:
         - name: workspace_id
@@ -257,6 +74,41 @@ paths:
               - classify
               - extract
             example: classify
+        - name: parser_remove_watermark
+          in: query
+          description: '是否去水印（0:不去水印、1:去水印）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_crop_dewarp
+          in: query
+          description: '是否进行切边矫正（0:不进行切边矫正、1:进行切边矫正）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_apply_merge
+          in: query
+          description: '是否进行跨页段落表格合并（0:不合并、1:合并）'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: parser_formula_level
+          in: query
+          description: 公式识别等级(0 行间公式和行内公式都识别、1 仅识别行间公式，行内公式不识别、2 不识别公式)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_table_text_split_mode
+          in: query
+          description: '表格线是否分割ocr文本（0:不切割、1:切割）'
+          required: false
+          schema:
+            type: integer
+            default: 0
       requestBody:
         required: true
         content:
@@ -267,6 +119,23 @@ paths:
                 file:
                   type: string
                   format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  description: |
+                    文件URL列表
+                    一次最多支持上传10个文件URL，每个文件最大不超过50MB
+                  type: array
+                  items:
+                    type: string
+                    description: 文件URL
+                    example: 'https://example.com/file.pdf'
+                    pattern: '^https?://.*$'
+                  maxItems: 10
+              required:
+                - urls
       responses:
         '200':
           description: 文件上传成功
@@ -285,7 +154,7 @@ paths:
                           description: 批次编号
                           example: 202412190001
                         files:
-                          type: array   
+                          type: array
                           items:
                             type: object
                             properties:
@@ -293,6 +162,10 @@ paths:
                                 type: string
                                 description: 文件ID
                                 example: 202412190001
+                              task_id:
+                                type: string
+                                description: 任务ID
+                                example: '1981692246135111700'
                               name:
                                 type: string
                                 description: 文件名
@@ -319,10 +192,147 @@ paths:
             -F 'file=@another.pdf'
             'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=1234567890&category=invoice&batch_number=202412190001'
 
+  /api/app-api/sip/platform/v2/file/upload/sync:
+    post:
+      summary: 同步上传文件
+      description: 同步上传文件并等待处理完成，返回处理结果
+      operationId: uploadFileSync
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            type: string
+            example: 1234567890
+        - name: category
+          in: query
+          description: 文件类别
+          required: false
+          schema:
+            type: string
+            example: invoice
+        - name: batch_number
+          in: query
+          description: |
+            批次编号。
+            可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。
+            如果值为空，则系统自动生成最长20位字符串
+          required: false
+          schema:
+            type: string
+            example: 202412190001
+        - name: split_flag
+          in: query
+          description: 是否进行文件拆分
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: crop_flag
+          in: query
+          description: 是否进行多图切分
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: target_process
+          in: query
+          description: |
+            目标处理类型。
+            可选值：
+            - `classify`: 分类
+            - `extract`: 抽取
+          required: false
+          schema:
+            type: string
+            enum:
+              - classify
+              - extract
+            example: classify
+        - name: parser_remove_watermark
+          in: query
+          description: '是否去水印（0:不去水印、1:去水印）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_crop_dewarp
+          in: query
+          description: '是否进行切边矫正（0:不进行切边矫正、1:进行切边矫正）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_apply_merge
+          in: query
+          description: '是否进行跨页段落表格合并（0:不合并、1:合并）'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: parser_formula_level
+          in: query
+          description: 公式识别等级(0 行间公式和行内公式都识别、1 仅识别行间公式，行内公式不识别、2 不识别公式)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_table_text_split_mode
+          in: query
+          description: '表格线是否分割ocr文本（0:不切割、1:切割）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: with_task_detail_url
+          in: query
+          description: 是否返回任务详情页URL
+          required: false
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  description: |
+                    文件URL列表
+                    一次最多支持上传10个文件URL，每个文件最大不超过50MB
+                  type: array
+                  items:
+                    type: string
+                    description: 文件URL
+                    example: 'https://example.com/file.pdf'
+                    pattern: '^https?://.*$'
+                  maxItems: 10
+              required:
+                - urls
+      responses:
+        '200':
+          description: 文件上传并处理成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - $ref: '#/components/schemas/TaskProcessResult'
+
   /api/app-api/sip/platform/v2/file/fetch:
     get:
       summary: 获取文件处理结果列表
-      description: ""
+      description: 获取文件处理结果列表
       operationId: getFiles
       parameters:
         - name: page
@@ -437,7 +447,9 @@ paths:
                                 description: 任务ID
                                 example: 202412190001
                               task_type:
-                                $ref: '#/components/schemas/TaskType'
+                                type: integer
+                                description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+                                example: 1
                               batch_number:
                                 type: string
                                 description: 批次编号
@@ -747,6 +759,584 @@ paths:
             -H 'x-ti-secret-code: 1234567890' \
             -d '[{"workspace_id": "1234567890", "file_id": "202412190001", "data": {"fields": [{"key": "发票代码", "value": "3100231130"}]}}]' \
             'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/update'
+  /api/app-api/sip/platform/v2/workspace/create:
+    post:
+      summary: 创建工作空间
+      description: 创建工作空间
+      operationId: createWorkspace
+      tags:
+        - 工作空间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 工作空间名称
+                  example: 我的工作空间
+                description:
+                  type: string
+                  description: 工作空间描述
+                  example: 我的工作空间描述
+      responses:
+        '200':
+          description: 成功创建空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          $ref: '#/components/schemas/WorkspaceId'
+  /api/app-api/sip/platform/v2/workspace/list:
+    get:
+      summary: 获取工作空间列表
+      description: 获取工作空间列表
+      operationId: listWorkspaces
+      tags:
+        - 工作空间
+      parameters:
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+      responses:
+        '200':
+          description: 成功获取工作空间列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 工作空间总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        workspaces:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/WorkspaceItem'
+  /api/app-api/sip/platform/v2/workspace/delete:
+    delete:
+      summary: 删除工作空间
+      description: 删除工作空间
+      operationId: deleteWorkspace
+      tags:
+        - 工作空间
+      parameters:
+        - name: id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+      responses:
+        '200':
+          description: 成功删除工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/workspace/update:
+    post:
+      summary: 更新工作空间
+      description: 更新工作空间
+      operationId: updateWorkspace
+      tags:
+        - 工作空间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceItem'
+      responses:
+        '200':
+          description: 成功更新工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/workspace/get:
+    get:
+      summary: 获取工作空间
+      description: 获取工作空间
+      operationId: getWorkspace
+      tags:
+        - 工作空间
+      parameters:
+        - name: id
+          in: query
+          description: 空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+      responses:
+        '200':
+          description: 成功获取工作空间
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '#/components/schemas/WorkspaceItem'
+  /api/app-api/sip/platform/v2/category/create:
+    post:
+      summary: 创建文件类别
+      description: 创建文件类别
+      operationId: createCategory
+      tags:
+        - 文件类别
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  $ref: '#/components/schemas/WorkspaceId'
+                name:
+                  type: string
+                  description: 文件类别名称
+                  example: 发票
+                description:
+                  type: string
+                  description: 文件类别描述
+                  example: 发票分类描述
+              required:
+                - name
+      responses:
+        '200':
+          description: 成功创建文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: 文件类别ID
+                          example: "1234567890"
+  /api/app-api/sip/platform/v2/category/list:
+    get:
+      summary: 获取文件类别列表
+      description: 获取文件类别列表
+      operationId: listCategories
+      tags:
+        - 文件类别
+      parameters:
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: enabled
+          in: query
+          description: "启用状态 0: 禁用 1: 启用 2: 草稿"
+          required: false
+          schema:
+            type: string
+            default: "1"
+            enum:
+              - "all"
+              - "1"
+              - "0"
+              - "2"
+      responses:
+        '200':
+          description: 成功获取文件类别列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 文件类别总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        categories:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/CategoryListItem'
+  /api/app-api/sip/platform/v2/category/get:
+    get:
+      summary: 获取文件类别
+      description: 获取文件类别
+      operationId: getCategory
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      responses:
+        '200':
+          description: 成功获取文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '#/components/schemas/CategoryItem'
+  /api/app-api/sip/platform/v2/category/update:
+    post:
+      summary: 更新文件类别
+      description: 更新文件类别
+      operationId: updateCategory
+      tags:
+        - 文件类别
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+              - type: object
+                properties:
+                  workspace_id:
+                    $ref: '#/components/schemas/WorkspaceId'
+              - $ref: '#/components/schemas/CategoryItem'
+      responses:
+        '200':
+          description: 成功更新文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/delete:
+    delete:
+      summary: 删除文件类别
+      description: 删除文件类别
+      operationId: deleteCategory
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      responses:
+        '200':
+          description: 成功删除文件类别
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/upload:
+    post:
+      summary: 上传文件类别样本
+      description: 上传文件类别样本
+      operationId: uploadCategorySample
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 成功上传文件类别样本
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          id:
+                            $ref: '#/components/schemas/CategorySampleId'
+  /api/app-api/sip/platform/v2/category/sample/list:
+    get:
+      summary: 获取文件类别样本列表
+      description: 获取文件类别样本列表
+      operationId: listCategorySamples
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: page
+          in: query
+          description: 页码，默认1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 每页数量，默认1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+      responses:
+        '200':
+          description: 成功获取文件类别样本列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: 样本总数
+                            example: 100
+                          page:
+                            type: integer
+                            description: 当前页码
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: 每页数量
+                            example: 20
+                          samples:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategorySampleListItem'
+  /api/app-api/sip/platform/v2/category/sample/delete:
+    delete:
+      summary: 删除文件类别样本
+      description: 删除文件类别样本
+      operationId: deleteCategorySample
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功删除文件类别样本
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/download:
+    get:
+      summary: 获取文件类别样本
+      description: 获取文件类别样本
+      operationId: getCategorySample
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功获取文件类别样本
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+  /api/app-api/sip/platform/v2/category/sample/get_fields:
+    get:
+      summary: 获取文件类别样本字段
+      description: 获取文件类别样本字段
+      operationId: getCategorySampleFields
+      tags:
+        - 文件类别
+      parameters:
+        - name: workspace_id
+          in: query
+          description: 工作空间ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/WorkspaceId'
+        - name: category_id
+          in: query
+          description: 文件类别ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: id
+          in: query
+          description: 样本ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/CategorySampleId'
+      responses:
+        '200':
+          description: 成功获取文件类别样本字段
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          fields:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
   /api/app-api/sip/platform/v2/review/listByFileBatchNo:
     get:
       tags:
@@ -795,14 +1385,12 @@ paths:
       tags:
         - 文件审核
       summary: 文件任务类别列表
-      description: |
+      description: |-
         文件任务类别列表，请求参数需从前置接口获取。 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
-        **关键返回结果字段**: 
-        >- fileBatchNo
-
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
       operationId: listExecuteTasksByFileBatchNo
       parameters:
         - name: workspaceIdNo
@@ -845,14 +1433,12 @@ paths:
       tags:
         - 文件审核
       summary: 审核规则列表
-      description: |
-        审核规则列表，部分请求参数需从前置接口获取。 
+      description: |-
+        审核规则列表(一般不传分类获取批次下所有规则)，部分请求参数需从前置接口获取。 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
-        **关键返回结果字段**: 
-        >- fileBatchNo
-
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
       operationId: getRulesByClassificationIdNo
       parameters:
         - name: x-ti-app-id
@@ -887,14 +1473,12 @@ paths:
       tags:
         - 文件审核
       summary: 文件任务列表
-      description: |
+      description: |-
         文件任务列表，请求参数需从前置接口获取。 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
-        **关键返回结果字段**: 
-        >- fileBatchNo
-
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
+        关键返回结果字段：fileBatchNo
       operationId: listTaskDetailInfoByClassificationIdNo
       parameters:
         - name: x-ti-app-id
@@ -929,19 +1513,23 @@ paths:
       tags:
         - 文件审核
       summary: 模型字段列表
-      description: |
+      description: >-
         模型字段列表，请求参数需从前置接口获取。 
 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo  
-        **作用**: 用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类  
-        **关键返回结果字段**: 
-        >- taskClassificationIdNo: 分类id
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo  
-        **作用**: 用于修改规则时的前置接口，获取规则的分类id信息  
-        **关键返回结果字段**: 
-        >- classificationIdNoList: 当前规则配置的分类id列表
+        作用：用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：用于修改规则时的前置接口，获取规则的分类id信息 
+
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）
       operationId: listModelFieldInfoByClassificationIdNoList
       parameters:
         - name: x-ti-app-id
@@ -976,23 +1564,25 @@ paths:
       tags:
         - 文件审核
       summary: 创建审核规则
-      description: |
+      description: >-
         创建审核规则，调用接口前需要调用一些前置接口。 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo  
-        **作用**: 获取批次下的所有分类id  
-        **关键返回结果字段**: 
-        >- taskClassificationIdNo: 分类id
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList  
-        **作用**: 获取分类下的字段信息  
-        **关键返回结果字段**: 
-        >- id: 含义同fieldId
-        >- fieldName: 字段名称
-        >- blockType: 区分是普通字段还是表格字段
-        >- classificationIdNo: 区分字段属于哪个分类
-        >- tableIdNo: 表格id，如果字段是表格字段
-        >- tableName: 表格名称，如果字段是表格字段
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
       operationId: createReviewRule
       parameters:
         - name: x-ti-app-id
@@ -1027,25 +1617,24 @@ paths:
       tags:
         - 文件审核
       summary: 更新审核规则
-      description: |
+      description: >-
         更新审核规则，调用接口前需要调用一些前置接口。 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList  
-        **作用**: 获取分类下的字段信息  
-        **关键返回结果字段**: 
-        >- id: 含义同fieldId
-        >- fieldName: 字段名称
-        >- blockType: 区分是普通字段还是表格字段
-        >- classificationIdNo: 区分字段属于哪个分类
-        >- tableIdNo: 表格id，如果字段是表格字段
-        >- tableName: 表格名称，如果字段是表格字段
 
-        >**前置接口**: /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo  
-        **作用**: 根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则  
-        **关键返回结果字段**: 
-        >- classificationIdNoList: 当前规则配置的分类id列表
-        >- fieldInfoList: 当前规则配置的字段信息列表
-        >- reviewRuleIdNo: 审核规则id
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList 
+
+        作用：获取分类下的字段信息 
+
+        关键返回结果字段：id（含义同fieldId）、fieldName、blockType（区分是普通字段还是表格字段）、classificationIdNo（区分字段属于哪个分类）、
+        tableIdNo（表格id，如果字段是表格字段）、tableName（表格名称，如果字段是表格字段）
+
+
+        > 前置接口：/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo 
+
+        作用：根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则 
+
+        关键返回结果字段：classificationIdNoList（当前规则配置的分类id列表）、fieldInfoList（当前规则配置的字段信息列表）、reviewRuleIdNo（审核规则id）
       operationId: updateReviewRule
       parameters:
         - name: x-ti-app-id
@@ -1114,13 +1703,16 @@ paths:
       tags:
         - 文件审核
       summary: 试运行审核规则
-      description: |
+      description: >-
         试运行审核规则，部分请求参数需从前置接口获取。 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
-        **作用**: 获取任务id  
-        **关键返回结果字段**: 
-        >- executeTaskId: 任务id
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
+        关键返回结果字段：executeTaskId（任务id）
       operationId: runRule
       parameters:
         - name: x-ti-app-id
@@ -1155,13 +1747,16 @@ paths:
       tags:
         - 文件审核
       summary: 提交审核任务
-      description: |
+      description: >-
         提交审核任务，部分请求参数需从前置接口获取。
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
-        **作用**: 获取任务id  
-        **关键返回结果字段**: 
-        >- executeTaskId: 任务id
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+
+        作用：获取任务id 
+
+        关键返回结果字段：executeTaskId（任务id）
       operationId: submitReviewTask
       parameters:
         - name: x-ti-app-id
@@ -1196,20 +1791,23 @@ paths:
       tags:
         - 文件审核
       summary: 审核规则任务列表
-      description: |
+      description: >-
         审核规则任务列表，请求参数需从前置接口获取。 
 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
-        **关键返回结果字段**: 
-        >- fileBatchNo
+        > 前置接口：/api/app-api/sip/platform/v2/review/listByFileBatchNo 
 
-        >**前置接口**:/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
-        **作用**: 获取批次下的所有分类id  
-        **关键返回结果字段**: 
-        >- taskClassificationIdNo: 分类id
+        作用：根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取 
 
+        关键返回结果字段：fileBatchNo
+
+
+        >
+        前置接口：/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+
+        作用：获取批次下的所有分类id 
+
+        关键返回结果字段：taskClassificationIdNo（分类id）
       operationId: listReviewRuleAndTask
       parameters:
         - name: x-ti-app-id
@@ -1404,7 +2002,7 @@ components:
           description: 所属原文件的页索引，0代表源文件的第一页
         imageAngle:
           type: string
-          description: 切分图片的角度信息
+          description: 角度
     CommonFieldDetailRespVO:
       type: object
       properties:
@@ -1434,7 +2032,9 @@ components:
           description: 任务ID
           example: 202412190001
         task_type:
-          $ref: '#/components/schemas/TaskType'
+          type: integer
+          description: 任务类型（0：文件拆分子任务、1:普通任务、2:父任务、3:切图子任务）
+          example: 1
         parent_task_id:
           type: string
           description: 父任务ID（不为0时有意义）
@@ -2695,101 +3295,6 @@ components:
           type: string
           description: 分类名称
           example: 身份证
-    TaskType:
-      type: integer
-      description: |
-        任务类型
-        - `0`: **文件拆分子任务**：打开“文件拆分”开关的文件任务执行成功后，该文件批次任务中因文件拆分操作产生的子任务即为拆分子任务，按照文件类别下实际文件套数区分子任务
-        - `1`: **普通任务**：未打开“文件拆分”和“多图切分”开关的文件任务
-        - `2`: **父任务**：打开“文件拆分”或“多图切分”开关的文件任务执行后，该文件批次任务中的每份文件即为父任务
-        - `3`: **切图子任务**：打开“多图切分”开关的文件任务执行成功后，该文件批次任务中因多图切分操作产生的子任务即为切分子任务，按照文件类别下实际切图结果数量区分子任务
-      example: 1
-
-    CategoryFieldConfig:
-      type: object
-      properties:
-        name:
-          type: string
-          description: 字段名称
-          example: 发票代码
-        description:
-          type: string
-          description: 字段描述
-          example: 发票代码描述
-        prompt:
-          type: string
-          description: 语义抽取提示词
-        use_prompt:
-          type: boolean
-          description: 是否使用语义提示词
-        alias:
-          type: array
-          description: 字段别名
-          items:
-            type: string
-        identity:
-          type: string
-          description: 导出字段名
-        multi_value:
-          type: boolean
-          description: 是否多值抽取
-        duplicate_value_distinct:
-          type: boolean
-          description: 是否重复值去重，仅当 multi_value 为 true 时有效
-        transform_settings:
-          type: object
-          description: 转换配置
-          properties:
-            type:
-              type: string
-              description: 转换类型
-              enum:
-                - datetime
-                - enumerate
-                - regex
-            datetime_settings:
-              type: object
-              description: 时间类型转换配置
-              properties:
-                format:
-                  type: string
-                  description: 日期时间格式，参考 DocFlow 日期格式说明 (https://docflow.textin.com/markdown?key=dateFormatGuide)
-                  example: yyyy-MM-dd HH:mm:ss
-            enumerate_settings:
-              type: object
-              description: 枚举类型转换配置
-              properties:
-                items:
-                  type: array
-                  description: 可选枚举值列表
-                  items:
-                    type: string
-            regex_settings:
-              type: object
-              description: 正则类型转换配置
-              properties:
-                match:
-                  type: string
-                  description: 匹配用的正则表达式
-                  example: ^\d{4}-\d{2}-\d{2}$
-                replace:
-                  type: string
-                  description: 替换用的正则表达式
-                  example: $1-$2-$3
-            mismatch_action:
-              type: object
-              description: 字段值不匹配时的处理动作
-              properties:
-                mode:
-                  type: string
-                  description: 不匹配时的处理模式
-                  enum:
-                    - default
-                    - warning
-                default_value:
-                  type: string
-                  description: 当模式为 default 时使用的默认值
-
   securitySchemes:
     ApiId: # arbitrary name for the security scheme
       type: apiKey

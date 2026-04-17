@@ -1,0 +1,14 @@
+/api/app-api/sip/platform/v2/auth/token:
+  get:
+    summary: Generate a short-lived token
+    description: Generate a short-lived token (for iframe scenarios)
+    operationId: authToken
+    responses:
+      '200':
+        description: Token information successfully retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - $ref: '../components/schemas/files.yaml#/TokenResult'

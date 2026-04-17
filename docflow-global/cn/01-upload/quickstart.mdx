@@ -74,7 +74,6 @@ print(resp.status_code, resp.text)
 
 - `category`: 文件类别（例如：invoice）
 - `batch_number`: 批次编号，未提供时系统自动生成（推荐：同批多文件共用一个批次号，便于一起查询）
-- `auto_verify_vat`: 是否开启发票验真，默认 false
 - `split_flag`: 是否进行文件拆分，默认 false（详见[文件拆分](../05-split/split)章节）
 - `crop_flag`: 是否进行多图切分，默认 false（详见[多图切分](../05-split/crop)章节）
 - `target_process`: 目标处理类型，可选 `classify` 或 `extract`。\

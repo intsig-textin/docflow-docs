@@ -1,0 +1,249 @@
+---
+title: "Retry Review Task"
+description: "Retry review tasks or specific rules in review tasks via REST API"
+---
+
+<Tip>
+  This document introduces how to retry review tasks via REST API. When a review task execution fails or needs to be reviewed again, you can retry the entire review task or retry a specific rule in the review task.
+</Tip>
+
+Review tasks support two retry methods:
+1. **Retry entire review task**: Re-execute all rules in the entire review task
+2. **Retry a specific rule**: Re-execute only a specific rule in the review task
+
+## Retry Entire Review Task
+
+Re-execute the entire review task, which will re-review all rules in the task:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/retry"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Review task retry successful")
+else:
+    print(f"Retry failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `task_id` (required): Review task ID
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## Retry a Specific Rule in Review Task
+
+Re-execute only a specific rule in the review task, suitable for cases where only a specific rule needs to be reviewed again:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "31415926",
+    "rule_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/rule/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+rule_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/rule/retry"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id,
+    "rule_id": rule_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Rule retry successful")
+else:
+    print(f"Retry failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `task_id` (required): Review task ID
+- `rule_id` (required): Review rule ID
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## Parameter Description
+
+### Review Task ID (task_id)
+
+The review task ID is the identifier of a created review task. You can obtain it through:
+
+- Returned when creating a task via the [Create Review Task](./create_task) API
+- Obtained when querying tasks via the [Get Review Result](./get_result) API
+
+### Review Rule ID (rule_id)
+
+The review rule ID is the identifier of a specific rule in the review task. You can obtain it through:
+
+- Querying task results via the [Get Review Result](./get_result) API, from the `groups[].review_tasks[].rule_id` field
+- Obtaining rule IDs from the rule repository via the [Rule Management](./rule_management) API
+
+**Example: Get Rule ID from Review Result**
+
+```python Python icon=python expandable
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+# Get review result
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    review_result = result.get("result", {})
+    groups = review_result.get("groups", [])
+    
+    # Iterate through all rules to get rule IDs
+    rule_ids = []
+    for group in groups:
+        review_tasks = group.get("review_tasks", [])
+        for review_task in review_tasks:
+            rule_id = review_task.get("rule_id")
+            rule_name = review_task.get("rule_name")
+            if rule_id:
+                rule_ids.append({
+                    "rule_id": rule_id,
+                    "rule_name": rule_name
+                })
+    
+    print(f"Found {len(rule_ids)} rules:")
+    for rule in rule_ids:
+        print(f"  Rule ID: {rule['rule_id']}, Rule Name: {rule['rule_name']}")
+```
+
+## Use Cases
+
+### Retry Entire Review Task
+
+Suitable for the following scenarios:
+
+1. **Review task execution failure**: When the entire review task execution fails, you can retry the entire task
+2. **After rule repository update**: When rules in the rule repository are updated, you can retry the entire review task to apply the new rules
+3. **After extraction result update**: When the associated extraction task results are updated, you can retry the review task to re-review based on the new extraction results
+
+### Retry a Specific Rule
+
+Suitable for the following scenarios:
+
+1. **Single rule execution failure**: When a specific rule execution fails, you can retry only that rule without affecting other rules
+2. **After rule configuration adjustment**: When a specific rule's configuration is adjusted, you can retry only that rule
+3. **Improve efficiency**: When only a specific rule needs to be reviewed again, retrying a single rule is more efficient than retrying the entire task
+
+## Notes
+
+1. **Asynchronous execution**: Retry operations are executed asynchronously. After retrying, you need to query the review status via the [Get Review Result](./get_result) API
+2. **Task status**: Ensure the review task exists and can be retried. Deleted tasks cannot be retried
+3. **Rule status**: When retrying a rule, ensure the rule ID is correct and belongs to the specified review task
+4. **Retry frequency**: It is recommended to control retry frequency to avoid excessive system load from frequent retries
+5. **Result overwrite**: Retrying will regenerate review results, and the original review results will be overwritten
+
+## Related Pages
+
+- [Create Review Task](./create_task) - Learn how to create review tasks
+- [Get Review Result](./get_result) - Learn how to get review results
+- [Rule Management](./rule_management) - Learn how to manage review rule repositories
+

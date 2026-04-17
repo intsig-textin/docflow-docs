@@ -1,0 +1,406 @@
+---
+title: "抽取特定字段"
+description: "针对已完成抽取的任务，抽取额外字段或重新抽取已有字段"
+---
+
+针对已经完成抽取的任务，可以使用抽取特定字段接口为该任务抽取额外的字段，或重新抽取个别已有的字段。该接口会返回所有字段的完整抽取结果。
+
+## 功能说明
+
+- **抽取额外字段**：为已完成抽取的任务添加新的字段抽取
+- **重新抽取字段**：对已有字段进行重新抽取，可用于修正或优化抽取结果
+- **支持表格字段**：可以抽取表格中的特定字段
+- **返回完整结果**：返回所有字段的完整抽取结果，结构同 `/api/app-api/sip/platform/v2/file/fetch`
+
+## 字段抽取规则
+
+接口会根据字段是否在原分类配置中存在，采用不同的抽取策略：
+
+### 额外字段（原结果中不存在的字段）
+
+对于原抽取结果中**不存在**的字段（额外字段），系统会使用请求中提供的 `prompt` 进行抽取：
+
+- 如果请求中提供了 `prompt`，则使用该 `prompt` 指导字段抽取
+- 如果请求中未提供 `prompt`，则使用默认抽取逻辑
+
+**适用场景**：需要为文档抽取新的、未在分类配置中定义的字段。
+
+### 已配置字段（原分类中已存在的字段）
+
+对于原分类配置中**已存在**的字段，系统会优先使用分类配置中的设置进行抽取：
+
+- 使用分类配置中的 `prompt`（如果已配置）
+- 应用分类配置中的后处理规则
+- **忽略**请求中传入的 `prompt` 参数
+
+**适用场景**：重新抽取已有字段，确保使用统一的分类配置规则，保持抽取结果的一致性。
+
+### 使用建议
+
+- **抽取新字段**：在请求中提供 `prompt`，系统会使用该 `prompt` 进行抽取
+- **重新抽取已有字段**：直接指定 `key` 即可，系统会自动使用分类配置中的规则，无需在请求中提供 `prompt`
+
+## API 接口
+
+**接口地址**：`POST /api/app-api/sip/platform/v2/file/extract_fields`
+
+**请求参数**：
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| workspace_id | string | 是 | 工作空间ID |
+| task_id | string | 是 | 任务ID |
+| fields | array | 否 | 要抽取的字段列表，每个字段包含 `key`（字段名称）和 `prompt`（字段提示，可选） |
+| tables | array | 否 | 要抽取的表格字段列表，每个表格包含 `name`（表格名称）和 `fields`（字段列表） |
+
+### 字段结构
+
+**ExtractFieldReqVO**：
+
+```json
+{
+  "key": "发票代码",        // 字段名称
+  "prompt": "只保留年的部分"  // 字段提示（可选）
+}
+```
+
+**表格结构**：
+
+```json
+{
+  "name": "Table1",        // 表格名称
+  "fields": [              // 字段列表
+    {
+      "key": "货物名称",
+      "prompt": "提取商品全称"
+    }
+  ]
+}
+```
+
+## 示例代码
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_specific_fields(workspace_id, task_id, app_id, secret_code):
+    """抽取特定字段"""
+    
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/extract_fields"
+    
+    # 请求体
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "fields": [
+            {
+                "key": "发票代码",
+                "prompt": "提取完整的发票代码"
+            },
+            {
+                "key": "开票日期",
+                "prompt": "只保留年的部分"
+            }
+        ],
+        "tables": [
+            {
+                "name": "Table1",
+                "fields": [
+                    {
+                        "key": "货物名称",
+                        "prompt": "提取商品全称"
+                    },
+                    {
+                        "key": "单价"
+                    }
+                ]
+            }
+        ]
+    }
+    
+    resp = requests.post(
+        f"{host}{url}",
+        json=payload,
+        headers={
+            "x-ti-app-id": app_id,
+            "x-ti-secret-code": secret_code,
+            "Content-Type": "application/json"
+        },
+        timeout=60,
+    )
+    
+    if resp.status_code != 200:
+        print(f"请求失败: {resp.status_code}")
+        print(f"错误信息: {resp.text}")
+        return None
+    
+    data = resp.json()
+    
+    if data.get("code") != 200:
+        print(f"接口返回错误: {data.get('message')}")
+        return None
+    
+    # 处理返回结果
+    result = data.get("result", {})
+    files = result.get("files", [])
+    
+    for file in files:
+        print(f"文件名: {file.get('name')}")
+        print(f"任务ID: {file.get('task_id')}")
+        
+        # 提取字段信息
+        file_data = file.get("data", {})
+        fields = file_data.get("fields", [])
+        
+        if fields:
+            print("\n=== 字段信息 ===")
+            for field in fields:
+                key = field.get("key", "")
+                value = field.get("value", "")
+                positions = field.get("position", [])
+                
+                print(f"字段: {key}")
+                print(f"值: {value}")
+                
+                # 显示位置信息
+                for i, pos in enumerate(positions):
+                    page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  位置 {i+1} (第{page+1}页): {vertices}")
+                print("-" * 30)
+        
+        # 提取表格信息
+        tables = file_data.get("tables", [])
+        if tables:
+            print("\n=== 表格信息 ===")
+            for table in tables:
+                table_name = table.get("tableName", "")
+                print(f"表格名称: {table_name}")
+                items = table.get("items", [])
+                for row_idx, row in enumerate(items):
+                    print(f"  第 {row_idx + 1} 行:")
+                    for cell in row:
+                        print(f"    {cell.get('key')}: {cell.get('value')}")
+    
+    return data
+
+# 使用示例
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    task_id = "<your-task-id>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+    
+    result = extract_specific_fields(workspace_id, task_id, app_id, secret_code)
+```
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "<your-task-id>",
+    "fields": [
+      {
+        "key": "发票代码",
+        "prompt": "提取完整的发票代码"
+      },
+      {
+        "key": "开票日期",
+        "prompt": "只保留年的部分"
+      }
+    ],
+    "tables": [
+      {
+        "name": "Table1",
+        "fields": [
+          {
+            "key": "货物名称",
+            "prompt": "提取商品全称"
+          },
+          {
+            "key": "单价"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/extract_fields"
+```
+
+</CodeGroup>
+
+## 请求示例
+
+### 仅抽取基本字段
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "fields": [
+    {
+      "key": "发票代码"
+    },
+    {
+      "key": "开票日期",
+      "prompt": "只保留年的部分"
+    }
+  ]
+}
+```
+
+### 仅抽取表格字段
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "tables": [
+    {
+      "name": "Table1",
+      "fields": [
+        {
+          "key": "货物名称"
+        },
+        {
+          "key": "单价"
+        },
+        {
+          "key": "数量"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 同时抽取基本字段和表格字段
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "fields": [
+    {
+      "key": "发票代码"
+    },
+    {
+      "key": "开票日期"
+    }
+  ],
+  "tables": [
+    {
+      "name": "Table1",
+      "fields": [
+        {
+          "key": "货物名称",
+          "prompt": "提取商品全称"
+        },
+        {
+          "key": "单价"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 返回数据示例
+
+```json expandable
+{
+  "code": 200,
+  "message": "success",
+  "result": {
+    "total": 1,
+    "page": 1,
+    "page_size": 20,
+    "files": [
+      {
+        "id": "202412190001",
+        "task_id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "fields": [
+            {
+              "key": "发票代码",
+              "value": "3100231130",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 150, 200, 150, 200, 180, 100, 180]
+                }
+              ]
+            },
+            {
+              "key": "开票日期",
+              "value": "2024",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [400, 150, 500, 150, 500, 180, 400, 180]
+                }
+              ]
+            }
+          ],
+          "tables": [
+            {
+              "tableName": "Table1",
+              "tableType": "0",
+              "items": [
+                [
+                  {
+                    "key": "货物名称",
+                    "value": "电子计算机微型计算机主机",
+                    "position": [
+                      {
+                        "page": 0,
+                        "vertices": [100, 300, 400, 300, 400, 330, 100, 330]
+                      }
+                    ]
+                  },
+                  {
+                    "key": "单价",
+                    "value": "5000.00",
+                    "position": [
+                      {
+                        "page": 0,
+                        "vertices": [500, 300, 600, 300, 600, 330, 500, 330]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## 注意事项
+
+1. **任务状态**：该接口仅适用于已完成抽取的任务（`recognition_status` 为 1 或 2）
+2. **字段名称**：`key` 字段名称需要与配置的字段模板中的字段名称一致（对于已配置字段）或使用自定义名称（对于额外字段）
+3. **字段提示（prompt）**：
+   - 对于**额外字段**（原结果中不存在），`prompt` 会生效，可用于指导抽取逻辑
+   - 对于**已配置字段**（原分类中已存在），`prompt` 会被忽略，系统使用分类配置中的规则
+4. **返回结果**：接口返回所有字段的完整抽取结果，包括之前已抽取的字段和新抽取的字段
+5. **表格名称**：`tables` 中的 `name` 需要与文档中实际的表格名称匹配
+
+## 相关页面
+
+- [快速启动](./quickstart) - 文档抽取功能快速入门
+- [基本字段信息](./fields) - 基本字段信息结构和处理方法
+- [表格字段信息](./tables) - 表格字段信息结构和处理方法
+

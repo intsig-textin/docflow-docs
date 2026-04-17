@@ -1,0 +1,890 @@
+/api/app-api/sip/platform/v2/category/create:
+  post:
+    summary: 创建文件类别
+    description: 创建文件类别
+    operationId: createCategory
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+              name:
+                type: string
+                description: 文件类别名称
+                example: 发票
+              description:
+                type: string
+                description: 文件类别描述
+                example: 发票分类描述
+            required:
+              - name
+    responses:
+      '200':
+        description: 成功创建文件类别
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: 文件类别ID
+                        example: "1234567890"
+/api/app-api/sip/platform/v2/category/list:
+  get:
+    summary: 获取文件类别列表
+    description: 获取文件类别列表
+    operationId: listCategories
+    tags:
+      - 文件类别
+    parameters:
+      - name: page
+        in: query
+        description: 页码，默认1
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: 每页数量，默认1000
+        required: false
+        schema:
+          type: integer
+          default: 1000
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: enabled
+        in: query
+        description: "启用状态 0: 禁用 1: 启用 2: 草稿"
+        required: false
+        schema:
+          type: string
+          default: "1"
+          enum:
+            - "all"
+            - "1"
+            - "0"
+            - "2"
+    responses:
+      '200':
+        description: 成功获取文件类别列表
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        description: 文件类别总数
+                        example: 100
+                      page:
+                        type: integer
+                        description: 当前页码
+                        example: 1
+                      page_size:
+                        type: integer
+                        description: 每页数量
+                        example: 20
+                      categories:
+                        type: array
+                        items:
+                          $ref: '../components/schemas/categories.yaml#/CategoryListItem'
+/api/app-api/sip/platform/v2/category/get:
+  get:
+    summary: 获取文件类别
+    description: 获取文件类别
+    operationId: getCategory
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+    responses:
+      '200':
+        description: 成功获取文件类别
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    $ref: '../components/schemas/categories.yaml#/CategoryItem'
+/api/app-api/sip/platform/v2/category/update:
+  post:
+    summary: 更新文件类别
+    description: 更新文件类别
+    operationId: updateCategory
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+            - type: object
+              properties:
+                workspace_id:
+                  $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+            - $ref: '../components/schemas/categories.yaml#/CategoryItem'
+    responses:
+      '200':
+        description: 成功更新文件类别
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/category/delete:
+  delete:
+    summary: 删除文件类别
+    description: 删除文件类别
+    operationId: deleteCategory
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+    responses:
+      '200':
+        description: 成功删除文件类别
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/category/sample/upload:
+  post:
+    summary: 上传文件类别样本
+    description: 上传文件类别样本
+    operationId: uploadCategorySample
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+    responses:
+      '200':
+        description: 成功上传文件类别样本
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        id:
+                          $ref: '../components/schemas/categories.yaml#/CategorySampleId'
+/api/app-api/sip/platform/v2/category/sample/list:
+  get:
+    summary: 获取文件类别样本列表
+    description: 获取文件类别样本列表
+    operationId: listCategorySamples
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+      - name: page
+        in: query
+        description: 页码，默认1
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: 每页数量，默认1000
+        required: false
+        schema:
+          type: integer
+          default: 1000
+    responses:
+      '200':
+        description: 成功获取文件类别样本列表
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: 样本总数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 当前页码
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: 每页数量
+                          example: 20
+                        samples:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategorySampleListItem'
+/api/app-api/sip/platform/v2/category/sample/delete:
+  delete:
+    summary: 删除文件类别样本
+    description: 删除文件类别样本
+    operationId: deleteCategorySample
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+      - name: id
+        in: query
+        description: 样本ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategorySampleId'
+    responses:
+      '200':
+        description: 成功删除文件类别样本
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/category/sample/download:
+  get:
+    summary: 获取文件类别样本
+    description: 获取文件类别样本
+    operationId: getCategorySample
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+      - name: id
+        in: query
+        description: 样本ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategorySampleId'
+    responses:
+      '200':
+        description: 成功获取文件类别样本
+        content:
+          "*/*":
+            schema:
+              type: string
+              format: binary
+/api/app-api/sip/platform/v2/category/sample/get_fields:
+  get:
+    summary: 获取文件类别样本字段
+    description: 获取文件类别样本字段
+    operationId: getCategorySampleFields
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 工作空间ID
+        required: true
+        schema:
+          $ref: '../components/schemas/workspaces.yaml#/WorkspaceId'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategoryId'
+      - name: id
+        in: query
+        description: 样本ID
+        required: true
+        schema:
+          $ref: '../components/schemas/categories.yaml#/CategorySampleId'
+    responses:
+      '200':
+        description: 成功获取文件类别样本字段
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        fields:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryField'
+                        items:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryField'
+/api/app-api/sip/platform/v2/category/fields/list:
+  get:
+    summary: 获取文件类别字段列表
+    description: 获取文件类别字段列表
+    operationId: listCategoryFields
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 空间ID
+        required: true
+        schema:
+          type: string
+          example: '1234567890'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          type: string
+          example: '1234567890'
+    responses:
+      '200':
+        description: 成功获取文件类别字段列表
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      fields:
+                        type: array
+                        items:
+                          $ref: '../components/schemas/categories.yaml#/CategoryField'
+                      tables:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: 表格ID
+                              example: '1234567890'
+                            name:
+                              type: string
+                              description: 表格名称
+                              example: 表格1
+                            description:
+                              type: string
+                              description: 表格描述
+                              example: 表格描述
+                            fields:
+                              type: array
+                              items:
+                                $ref: '../components/schemas/categories.yaml#/CategoryField'
+/api/app-api/sip/platform/v2/category/fields/add:
+  post:
+    summary: 新增文件类别字段
+    description: 在指定文件类别下新增一个字段，支持新增普通字段和表格字段
+    operationId: addCategoryField
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+            - type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: 空间ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: 文件类别ID
+                  example: '1234567890'
+                table_id:
+                  type: string
+                  description: |
+                    表格ID
+                    - 不传或为空：创建普通字段，结果会出现在 result.fields 中
+                    - 传入表格ID：创建对应表格下的表格字段，结果会出现在 result.tables[].fields 中
+                  example: '1234567890'
+                extract_model:
+                  type: string
+                  description: |
+                    选填，字段级抽取模型，仅普通字段（非表格字段）支持，不填默认 Model 1
+                    - Model 1: 速度快，抽取结果稳定
+                    - Model 2: 适用复杂文档理解
+                    - Model 3: 多模态，适用简单抽取
+                  example: Model 1
+                  enum:
+                    - Model 1
+                    - Model 2
+                    - Model 3
+              required:
+                - workspace_id
+                - category_id
+                - name
+    responses:
+      '200':
+        description: 成功新增文件类别字段
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      field_id:
+                        type: string
+                        description: 新创建的字段ID
+                        example: '1234567890'
+/api/app-api/sip/platform/v2/category/fields/update:
+  post:
+    summary: 更新文件类别字段
+    description: 更新指定文件类别字段的信息，支持普通字段和表格字段
+    operationId: updateCategoryField
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+            - type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: 空间ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: 文件类别ID
+                  example: '1234567890'
+                field_id:
+                  type: string
+                  description: 字段ID
+                  example: '1234567890'
+                table_id:
+                  type: string
+                  description: |
+                    表格ID
+                    - 对普通字段可不传
+                    - 对表格字段需要传入其所属的表格ID
+                  example: '1234567890'
+                extract_model:
+                  type: string
+                  description: |
+                    字段级抽取模型
+                    - Model 1: 速度快，抽取结果稳定
+                    - Model 2: 适用复杂文档理解
+                    - Model 3: 多模态，适用简单抽取
+                  example: Model 1
+                  enum:
+                    - Model 1
+                    - Model 2
+                    - Model 3
+              required:
+                - workspace_id
+                - category_id
+                - field_id
+    responses:
+      '200':
+        description: 成功更新文件类别字段
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/category/fields/delete:
+  post:
+    summary: 删除文件类别字段
+    description: 删除指定的文件类别字段，支持批量删除普通字段和表格字段
+    operationId: deleteCategoryFields
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: 空间ID
+                example: '1234567890'
+              category_id:
+                type: string
+                description: 文件类别ID
+                example: '1234567890'
+              field_ids:
+                type: array
+                description: 要删除的字段ID列表
+                items:
+                  type: string
+                example:
+                  - '1234567890'
+                  - '0987654321'
+              table_id:
+                type: string
+                description: |
+                  表格ID
+                  - 不传：删除普通字段（result.fields 中的字段）
+                  - 传入表格ID：删除对应表格下的表格字段（result.tables[].fields 中的字段）
+                example: '1234567890'
+            required:
+              - workspace_id
+              - category_id
+              - field_ids
+    responses:
+      '200':
+        description: 成功删除文件类别字段
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/category/tables/list:
+  get:
+    summary: 获取文件类别下的表格列表
+    description: 获取指定文件类别下配置的所有表格
+    operationId: listCategoryTables
+    tags:
+      - 文件类别
+    parameters:
+      - name: workspace_id
+        in: query
+        description: 空间ID
+        required: true
+        schema:
+          type: string
+          example: '1234567890'
+      - name: category_id
+        in: query
+        description: 文件类别ID
+        required: true
+        schema:
+          type: string
+          example: '1234567890'
+    responses:
+      '200':
+        description: 成功获取文件类别表格列表
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      tables:
+                        type: array
+                        description: 表格列表
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: 表格ID
+                              example: '1234567890'
+                            name:
+                              type: string
+                              description: 表格名称
+                              example: 表格1
+                            prompt:
+                              type: string
+                              description: 表格语义抽取提示词
+                              example: 请抽取每行的品名、数量和金额
+                            collect_from_multi_table:
+                              type: boolean
+                              description: 多表合并
+                              example: true
+                            extract_model:
+                              type: string
+                              description: 表格级抽取模型
+                              example: Model 1
+/api/app-api/sip/platform/v2/category/tables/add:
+  post:
+    summary: 新增文件类别表格
+    description: 在指定文件类别下新增一个表格
+    operationId: addCategoryTable
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: 空间ID
+                example: '1234567890'
+              category_id:
+                type: string
+                description: 文件类别ID
+                example: '1234567890'
+              name:
+                type: string
+                description: 表格名称
+                example: 表格1
+                maxLength: 50
+              prompt:
+                type: string
+                description: 表格语义抽取提示词
+                example: 请抽取每行的品名、数量和金额
+                maxLength: 200
+              collect_from_multi_table:
+                type: boolean
+                description: 多表合并
+                example: true
+              extract_model:
+                type: string
+                description: |
+                  表格级抽取模型
+                  - Model 1: 速度快，抽取结果稳定
+                  - Model 2: 适用复杂文档理解
+                  - Model 3: 多模态，适用简单抽取
+                example: Model 1
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+              - name
+    responses:
+      '200':
+        description: 成功新增文件类别表格
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      table_id:
+                        type: string
+                        description: 新增表格ID
+                        example: '1234567890'
+/api/app-api/sip/platform/v2/category/tables/update:
+  post:
+    summary: 更新文件类别表格
+    description: 更新指定文件类别表格的信息
+    operationId: updateCategoryTable
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: 空间ID
+                example: '1234567890'
+              category_id:
+                type: string
+                description: 文件类别ID
+                example: '1234567890'
+              table_id:
+                type: string
+                description: 表格ID
+                example: '1234567890'
+              name:
+                type: string
+                description: 表格名称
+                example: 表格1
+                maxLength: 50
+              prompt:
+                type: string
+                description: 表格语义抽取提示词
+                example: 请抽取每行的品名、数量和金额
+                maxLength: 200
+              collect_from_multi_table:
+                type: boolean
+                description: 多表合并
+                example: true
+              extract_model:
+                type: string
+                description: |
+                  表格级抽取模型
+                  - Model 1: 速度快，抽取结果稳定
+                  - Model 2: 适用复杂文档理解
+                  - Model 3: 多模态，适用简单抽取
+                example: Model 1
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+              - table_id
+              - collect_from_multi_table
+    responses:
+      '200':
+        description: 成功更新文件类别表格
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+/api/app-api/sip/platform/v2/category/tables/delete:
+  post:
+    summary: 删除文件类别表格
+    description: 删除指定的文件类别表格，支持批量删除
+    operationId: deleteCategoryTables
+    tags:
+      - 文件类别
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: 空间ID
+                example: '1234567890'
+              category_id:
+                type: string
+                description: 文件类别ID
+                example: '1234567890'
+              table_ids:
+                type: array
+                description: 要删除的表格ID列表
+                items:
+                  type: string
+                example:
+                  - '1234567890'
+                  - '0987654321'
+            required:
+              - workspace_id
+              - category_id
+              - table_ids
+    responses:
+      '200':
+        description: 成功删除文件类别表格
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'

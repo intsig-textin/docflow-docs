@@ -1,0 +1,234 @@
+/api/app-api/sip/platform/v2/workspace/create:
+  post:
+    summary: Create Workspace
+    description: Create a new workspace
+    operationId: createWorkspace
+    tags:
+      - Workspace Management
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Workspace name
+                example: "My Workspace"
+                maxLength: 50
+              description:
+                type: string
+                description: Workspace description
+                example: "This is a workspace for invoice processing"
+                maxLength: 200
+              enterprise_id:
+                type: integer
+                format: int64
+                description: Enterprise organization ID
+                example: 12345
+              auth_scope:
+                type: integer
+                description: "Collaboration scope 0: Visible only to self 1: Visible to enterprise members"
+                example: 1
+                enum:
+                  - 0
+                  - 1
+            required:
+              - name
+              - enterprise_id
+              - auth_scope
+    responses:
+      '200':
+        description: Successfully created workspace
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        workspace_id:
+                          type: string
+                          description: Workspace ID
+                          example: "1234567890"
+
+/api/app-api/sip/platform/v2/workspace/list:
+  get:
+    summary: Get Workspace List
+    description: Get list of all workspaces for the current user
+    operationId: listWorkspaces
+    tags:
+      - Workspace Management
+    parameters:
+      - name: enterprise_id
+        in: query
+        description: Enterprise ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        schema:
+          type: integer
+          default: 1
+          example: 1
+      - name: page_size
+        in: query
+        description: Page size
+        required: false
+        schema:
+          type: integer
+          default: 20
+          example: 20
+    responses:
+      '200':
+        description: Successfully retrieved workspace list
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: Total number of workspaces
+                          example: 100
+                        page:
+                          type: integer
+                          description: Current page number
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: Page size
+                          example: 20
+                        workspaces:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/workspaces.yaml#/Workspace'
+
+/api/app-api/sip/platform/v2/workspace/get:
+  get:
+    summary: Get Workspace Details
+    description: Get detailed information of a workspace by workspace ID
+    operationId: getWorkspace
+    tags:
+      - Workspace Management
+    parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: Successfully retrieved workspace details
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '../components/schemas/workspaces.yaml#/Workspace'
+
+/api/app-api/sip/platform/v2/workspace/update:
+  post:
+    summary: Update Workspace
+    description: Update information of a specified workspace
+    operationId: updateWorkspace
+    tags:
+      - Workspace Management
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              name:
+                type: string
+                description: Workspace name
+                example: "My Workspace"
+                maxLength: 50
+              description:
+                type: string
+                description: Workspace description
+                example: "This is a workspace for invoice processing"
+                maxLength: 500
+              auth_scope:
+                type: integer
+                description: "Collaboration scope 0: Visible only to self 1: Visible to enterprise members"
+                example: 1
+                enum:
+                  - 0
+                  - 1
+              callback_url:
+                type: string
+                description: Callback URL
+                example: "https://example.com/callback"
+              callback_retry_time:
+                type: integer
+                description: Callback retry count
+                example: 3
+                minimum: 1
+                maximum: 3
+            required:
+              - workspace_id
+              - name
+              - auth_scope
+    responses:
+      '200':
+        description: Successfully updated workspace
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/workspace/delete:
+  post:
+    summary: Delete Workspace
+    description: Delete specified workspace(s)
+    operationId: deleteWorkspace
+    tags:
+      - Workspace Management
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_ids:
+                type: array
+                items:
+                  type: string
+                  description: Workspace ID
+                  example: "1234567890"
+                description: List of workspace IDs to delete
+            required:
+              - workspace_ids
+    responses:
+      '200':
+        description: Successfully deleted workspace
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'

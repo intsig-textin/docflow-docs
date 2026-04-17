@@ -1,0 +1,345 @@
+---
+title: "Quick Start"
+description: "Reference examples to quickly integrate document deletion functionality with API"
+---
+
+<Tip>
+  This document demonstrates how to delete file tasks in DocFlow through REST API. The deletion operation supports multiple condition combinations, and files matching any condition will be deleted.
+</Tip>
+
+DocFlow provides a flexible deletion interface that supports deleting files by batch number, task ID, file ID, or time range. The deletion operation is **irreversible**, please proceed with caution.
+
+## Delete by Batch Number
+
+Delete all files under specified batches:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "batch_number": ["202412190001", "202412190002"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_numbers = ["202412190001", "202412190002"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "batch_number": batch_numbers
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Deleted {result['result']['deleted_count']} files")
+```
+
+</CodeGroup>
+
+## Delete by Task ID
+
+Delete files corresponding to specified task IDs:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": ["1978297791713619968", "1978297791713619969"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_ids = ["1978297791713619968", "1978297791713619969"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_ids
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Deleted {result['result']['deleted_count']} files")
+```
+
+</CodeGroup>
+
+## Delete by File ID
+
+Delete files corresponding to specified file IDs:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "file_id": ["1978297792124661760", "1978297792124661761"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_ids = ["1978297792124661760", "1978297792124661761"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "file_id": file_ids
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Deleted {result['result']['deleted_count']} files")
+```
+
+</CodeGroup>
+
+## Delete by Time Range
+
+Delete files created within specified time range:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "start_time": 1760523600,
+    "end_time": 1760527200
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+from datetime import datetime
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+# Time range: 2025-12-19 00:00:00 to 2025-12-19 01:00:00
+start_time = int(datetime(2025, 12, 19, 0, 0, 0).timestamp())
+end_time = int(datetime(2025, 12, 19, 1, 0, 0).timestamp())
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "start_time": start_time,
+    "end_time": end_time
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Deleted {result['result']['deleted_count']} files")
+```
+
+</CodeGroup>
+
+## Combined Condition Deletion
+
+Multiple conditions can be used simultaneously for deletion. Files matching any condition will be deleted:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "batch_number": ["202412190001"],
+    "file_id": ["1978297792124661760"],
+    "start_time": 1760523600,
+    "end_time": 1760527200
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+from datetime import datetime
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+# Combined conditions: batch number + file ID + time range
+start_time = int(datetime(2025, 12, 19, 0, 0, 0).timestamp())
+end_time = int(datetime(2025, 12, 19, 1, 0, 0).timestamp())
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/delete"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "batch_number": ["202412190001"],
+    "file_id": ["1978297792124661760"],
+    "start_time": start_time,
+    "end_time": end_time
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Deleted {result['result']['deleted_count']} files")
+```
+
+</CodeGroup>
+
+## Parameter Description
+
+### Required Parameters
+
+- `workspace_id`: Workspace ID. Please refer to the [Get Workspace ID](../100-faq/get_workspace_id) documentation.
+
+### Optional Parameters
+
+Deletion conditions support the following parameters. **Files matching any condition will be deleted**:
+
+- `batch_number`: Batch number list, delete all files under specified batches
+- `task_id`: Task ID list, delete files corresponding to specified tasks
+- `file_id`: File ID list, delete specified files
+- `start_time`: Start time (epoch timestamp, unit: seconds)
+- `end_time`: End time (epoch timestamp, unit: seconds)
+
+### Response Description
+
+After successful deletion, the interface returns the number of deleted files:
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "deleted_count": 5
+  }
+}
+```
+
+- `deleted_count`: Actual number of deleted files
+
+## Important Notes
+
+<Warning>
+The deletion operation is **irreversible**. Once deleted, files cannot be recovered. Please ensure important data is backed up before deletion.
+</Warning>
+
+1. **Deletion Conditions**: The deletion interface supports multiple condition combinations. Files matching any condition will be deleted
+2. **Permission Control**: Only files belonging to the specified workspace can be deleted
+3. **Batch Operations**: Supports batch deletion, allowing multiple files to be deleted at once
+4. **Time Format**: Time parameters use epoch timestamp (in seconds)
+5. **Deletion Scope**: The deletion operation will simultaneously delete files and their related processing results, review records, and other data

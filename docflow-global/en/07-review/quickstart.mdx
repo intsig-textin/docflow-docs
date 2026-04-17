@@ -1,115 +1,375 @@
 ---
 title: "Quick Start"
-description: "Reference examples to quickly integrate document review functionality with APIs"
+description: "Learn how to use the intelligent review feature in the interface"
 ---
 
-This document provides an overview of the basic calling sequence for DocFlow review-related interfaces: get batch and task → query model fields → create/update rules → trial run → submit review task.
-
 <Tip>
-Review interfaces require additional parameters such as `workspaceIdNo`, `fileBatchNo`, etc., which usually come from page or preceding interface returns. Please first obtain them through "batch list" and "task category list" interfaces.
+  The intelligent review feature helps you automatically check the accuracy and compliance of document extraction results. This document introduces how to use the review feature in the interface, giving you a quick overview of the basic workflow.
 </Tip>
 
-## Get Batch List (Prerequisite)
+Intelligent review is an automated review feature provided by DocFlow. It automatically reviews document extraction results based on the review rules you configure, helping you quickly identify potential issues.
 
-```bash curl icon=terminal wrap
-curl \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listByFileBatchNo?workspaceIdNo=<workspaceIdNo>"
+## Review Feature Overview
+
+The core workflow of the intelligent review feature includes:
+
+1. **Configure Review Rules** - Create rule groups and rules in the rule repository to define review standards
+2. **Create Review Tasks** - Select extraction tasks that need to be reviewed and submit review tasks
+3. **View Review Results** - Get review results to see which rules passed, which failed, and the review reasoning
+
+## Interface Usage Workflow
+
+### Step 1: Create Rule Repository
+
+In the review management interface, you first need to create a **Rule Repository**. A rule repository is a container for review rules, used to organize and manage related review rules.
+
+- Click the "Create Rule Repository" button
+- Enter the repository name (e.g., "Invoice Review Rule Repository")
+- Save to get the repository ID
+
+### Step 2: Create Rule Group
+
+Create a **Rule Group** under the rule repository for categorized rule management.
+
+- Select the created rule repository
+- Click "Create Rule Group"
+- Enter the group name (e.g., "Invoice Compliance Check")
+- Save to get the group ID
+
+### Step 3: Create Review Rule
+
+Create specific **Review Rules** under the rule group to define specific review standards.
+
+When creating a rule, you need to configure:
+
+- **Rule Name**: The identifier name of the rule
+- **Rule Prompt**: A prompt describing the review rule, used to guide AI in making review judgments
+- **Applicable Categories**: Which document categories the rule applies to (e.g., invoice, contract, etc.)
+- **Risk Level**: The risk level of the rule (high risk, medium risk, low risk)
+- **Referenced Fields**: Extraction fields that the rule needs to reference, used to get field values during review
+
+Example rule:
+- Rule Name: "Invoice Amount Validation"
+- Rule Prompt: "Check if the invoice amount is greater than 0 and less than 1000000"
+- Applicable Category: Invoice
+- Risk Level: High Risk
+- Referenced Field: Invoice Amount
+
+### Step 4: Create Review Task
+
+When you have completed extraction tasks, you can create review tasks for review.
+
+- Select extraction tasks that need to be reviewed (extract_task_ids)
+- Select the rule repository to use (repo_id)
+- Enter the task name
+- Submit the review task
+
+The system will automatically match rules in the rule repository with extraction tasks and execute review for matched rules.
+
+### Step 5: View Review Results
+
+After submitting the review task, the system will automatically execute the review. You can view the review results:
+
+- **Task Status**: View the overall status of the review task (pending, in progress, successful, failed, etc.)
+- **Rule Group Results**: View the review status of each rule group
+- **Rule Results**: View the review result of each specific rule (passed/failed)
+- **Review Reasoning**: View the review reasoning given by AI to understand why it passed or failed
+- **Position Anchors**: View the position of review reasoning in the original text for easy problem location
+
+## Review Result Description
+
+Review results include the following information:
+
+- **Review Status**:
+  - `0`: Pending
+  - `1`: Approved
+  - `2`: Review failed
+  - `3`: Reviewing
+  - `4`: Rejected
+
+- **Review Reasoning**: The review reason given by AI, explaining why this review result was obtained
+
+- **Position Anchors**: Position coordinates of review reasoning in the original text, which can be used to highlight relevant areas in the document
+
+## Terminology
+
+This document introduces the core concepts of the intelligent review feature to help you better understand and use the review functionality.
+
+### Rule Repository Management
+
+Rule repository management uses a three-tier structure: **Rule Repository** → **Rule Group** → **Rule**
+
+#### Rule Repository
+
+A rule repository is the top-level container for review rules, used to organize and manage related review rules. A workspace can create multiple rule repositories, and each repository can contain multiple rule groups.
+
+**Features:**
+- Rule repositories are logical groupings of rules, making it easy to manage review rules for different business scenarios
+- When creating review tasks, you need to specify the rule repository to use
+- Rule repositories can be created, updated, and deleted independently
+
+**Examples:**
+- "Invoice Review Rule Repository" - Contains all invoice-related review rules
+- "Contract Review Rule Repository" - Contains all contract-related review rules
+
+#### Rule Group
+
+A rule group is a secondary classification under a rule repository, used for more granular rule grouping and management. A rule repository can contain multiple rule groups, and a rule group can contain multiple rules.
+
+**Features:**
+- Rule groups are used to categorize rules for easy searching and management
+- In review results, rule groups are one dimension of result display
+- Rule groups can be created, updated, and deleted independently
+
+**Examples:**
+Under "Invoice Review Rule Repository", you can create:
+- "Invoice Compliance Check" - Checks if invoices meet compliance requirements
+- "Invoice Amount Validation" - Checks the reasonableness of invoice amounts
+- "Invoice Date Validation" - Checks the validity of invoice dates
+
+#### Rule
+
+A rule is the smallest execution unit of review, defining specific review standards and logic. A rule group can contain multiple rules.
+
+**Rule Components:**
+
+1. **Rule Name**: The identifier name of the rule for easy identification and management
+2. **Rule Prompt**: A prompt describing the review rule, used to guide AI in making review judgments. This is the core of the rule and needs to clearly describe the review standards and logic
+3. **Applicable Categories (Category IDs)**: Which document categories the rule applies to. Only extraction tasks that match these categories will apply this rule
+4. **Risk Level**:
+   - `10`: High risk
+   - `20`: Medium risk
+   - `30`: Low risk
+5. **Referenced Fields**: Extraction fields that the rule needs to reference, used to get field values during review
+
+**Rule Example:**
+
+```json
+{
+  "name": "Invoice Amount Validation",
+  "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+  "category_ids": ["invoice_category_id"],
+  "risk_level": 10,
+  "referenced_fields": [
+    {
+      "category_id": "invoice_category_id",
+      "category_name": "Invoice",
+      "fields": [
+        {
+          "field_id": "amount_field_id",
+          "field_name": "Invoice Amount"
+        }
+      ]
+    }
+  ]
+}
 ```
 
-Get `fileBatchNo` from the response.
+### Review Object
 
-## Get Task Category List (Prerequisite)
+The review object is an **Extract Task**, which is a task that has completed document extraction.
 
-```bash curl icon=terminal wrap
-curl \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo?workspaceIdNo=<workspaceIdNo>&fileBatchNo=<fileBatchNo>"
+**Characteristics of Extract Tasks:**
+- Extract tasks are generated by document upload and extraction workflows
+- Each extract task corresponds to one or more files
+- Extract tasks contain extraction results, including fields, tables, stamps, and other information
+- Only tasks that have completed extraction can be used as review objects
+
+**Getting Extract Task IDs:**
+- From the `task_id` returned by the file upload interface
+- From the file query interface to get task IDs corresponding to files that have completed extraction
+
+### Review Task
+
+A review task (Review Task) is one execution of applying a rule repository to extraction tasks.
+
+**Components of a Review Task:**
+- **Task Name**: The identifier name of the review task
+- **Rule Repository ID**: Specifies the rule repository to use
+- **Extract Task ID List**: List of extraction task IDs that need to be reviewed
+
+**Review Task Execution Flow:**
+
+1. **Rule Matching**: The system matches rules in the rule repository with extraction task categories
+   - Matching criteria: All categories in the rule's `category_ids` must exist in the extraction task's category list
+   - Matching result: Only successfully matched rules will be executed
+2. **Field Retrieval**: For matched rules, if the rule has configured referenced fields, the system retrieves values of these fields from extraction results
+   - Referenced fields can be empty; if empty, only the original document content is used
+   - If fields are missing, those field values are empty, but review will still execute
+3. **AI Review**: Based on rule prompts and field values (if any), AI makes review judgments
+4. **Result Generation**: Generate review results, including review status, reasoning, position anchors, and other information
+
+### Matching Method Between Review Rules and Extraction Tasks
+
+The system matches review rules with extraction tasks through **category matching**. **Referenced fields are unrelated to rule matching**. Referenced fields only specify which fields to use when reviewing a category if extraction fields need to be used. Referenced fields can be empty.
+
+#### Matching Rules
+
+The criteria for rule matching:
+
+- Rules are configured with `category_ids` (applicable category list)
+- Extraction tasks contain one or more document categories
+- **If all categories in the rule's `category_ids` exist in the extraction task's category list, the rule matches successfully**
+- **If any category in the rule's `category_ids` is not in the extraction task's category list, the rule does not match**
+
+#### Matching Example
+
+Assume an extraction task to be reviewed contains three categories: **A, B, C**:
+
+- **Review Rule One**: Associated categories `["A", "B"]`
+- **Review Rule Two**: Associated category `["C"]`
+- **Review Rule Three**: Associated categories `["C", "D"]`
+
+Matching results:
+- ✅ **Review Rule One**: Match successful (both A and B are in the extraction task's category list)
+- ✅ **Review Rule Two**: Match successful (C is in the extraction task's category list)
+- ❌ **Review Rule Three**: Match failed (D is not in the extraction task's category list)
+
+#### Role of Referenced Fields
+
+**Important Note**: Referenced fields (`referenced_fields`) are unrelated to rule matching.
+
+The role of referenced fields:
+- When a rule matches successfully and the system needs to execute review, if the rule prompt needs to use extraction field values, they are retrieved from referenced fields
+- Referenced fields can be empty; if empty, only the original document content is used during review, without using extraction fields
+- If a rule references fields but those fields are missing in the extraction task, review will still execute, but those field values will be empty
+
+**Example:**
+
+```json
+{
+  "name": "Invoice Amount Validation",
+  "prompt": "Check if the invoice amount is greater than 0 and less than 1000000",
+  "category_ids": ["invoice"],
+  "referenced_fields": [
+    {
+      "category_id": "invoice",
+      "fields": [
+        {
+          "field_id": "amount_field_id",
+          "field_name": "Invoice Amount"
+        }
+      ]
+    }
+  ]
+}
 ```
 
-Get `taskClassificationIdNo` (classification id) from the response.
+In this example:
+- Rule matching: As long as the extraction task's categories include `invoice`, the rule will match
+- Referenced fields: If the rule matches successfully, the system will retrieve the "Invoice Amount" field value from extraction results during review for judgment
+- If the "Invoice Amount" field is missing, review will still execute, but that field value will be empty
 
-## Get Model Fields (For Rule Configuration)
+### Referenced Fields
 
-```bash curl icon=terminal wrap
-curl -X POST \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  -H "Content-Type: application/json" \
-  -d '{"classificationIdNoList": ["<taskClassificationIdNo>"]}' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList"
+Referenced fields (Referenced Fields) are used to specify which extraction field values should be used during review. **Referenced fields are unrelated to rule matching**. They only tell the system which field values to use when reviewing a category after a rule matches successfully.
+
+**Important Notes:**
+- Referenced fields can be empty; if empty, only the original document content is used during review
+- Referenced fields do not affect rule matching; rule matching is based only on categories (`category_ids`)
+- If referenced fields are missing in extraction results, review will still execute, but those field values will be empty
+
+**Structure of Referenced Fields:**
+
+Referenced fields are organized by category, and each category can contain:
+- **Regular Fields (Fields)**: Key-value pair fields in documents
+- **Table Fields (Tables)**: Table fields in documents
+
+**Role of Referenced Fields:**
+- When a rule matches successfully and review is executed, the system retrieves values of referenced fields from extraction results
+- Field values are provided to AI as context information, combined with rule prompts for review judgment
+- If field values are missing, review will still execute, but may affect review accuracy (depending on whether the rule prompt depends on those fields)
+
+**Referenced Fields Example:**
+
+```json
+{
+  "referenced_fields": [
+    {
+      "category_id": "invoice_category_id",
+      "category_name": "Invoice",
+      "fields": [
+        {
+          "field_id": "invoice_code_id",
+          "field_name": "Invoice Code"
+        },
+        {
+          "field_id": "invoice_amount_id",
+          "field_name": "Invoice Amount"
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "invoice_items_table_id",
+          "table_name": "Invoice Items",
+          "fields": [
+            {
+              "field_id": "item_name_id",
+              "field_name": "Item Name"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-The returned `data[]` contains information about fields, tables, and their coordinates.
+### Review Reasoning
 
-## Create Review Rule
+Review reasoning (Reasoning) is the review reason given by AI, explaining why this review result was obtained.
 
-```bash curl icon=terminal wrap
-curl -X POST \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ruleName": "Rule Name",
-    "rulePrompt": "Rule Prompt",
-    "classificationIdNoList": ["<taskClassificationIdNo>"],
-    "fileBatchNo": "<fileBatchNo>",
-    "workspaceIdNo": "<workspaceIdNo>"
-  }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/create"
+**Characteristics of Review Reasoning:**
+- Review reasoning is in text form, describing the review judgment process
+- Review reasoning will reference relevant field values or document content
+- Review reasoning helps users understand review results
+
+**Position Anchors:**
+
+Position anchors are position information of review reasoning in the original text, used to locate the specific position of review reasoning in the document.
+
+**Structure of Position Anchors:**
+
+```json
+{
+  "anchors": [
+    {
+      "start_pos": 0,      // Starting character position in reasoning
+      "end_pos": 10,       // Ending character position in reasoning
+      "text": "Original text",   // Original text content
+      "vertices": [        // Bounding quadrilateral coordinates of original text
+        0, 0, 100, 0, 100, 100, 0, 100
+      ],
+      "file_id": "file_id" // File ID
+    }
+  ]
+}
 ```
 
-The response returns `ruleIdNo`.
+**Role of Position Anchors:**
+- Can highlight the position of review reasoning in the document
+- Help users quickly locate problem areas
+- Provide visual display of review results
 
-## Update Review Rule (Optional)
+### Review Result Status
 
-```bash curl icon=terminal wrap
-curl -X POST \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ruleIdNo": "<ruleIdNo>",
-    "ruleName": "New Rule Name",
-    "rulePrompt": "New Rule Prompt"
-  }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/update"
-```
+Review results have multiple statuses, representing different stages and outcomes of review:
 
-## Trial Run Review Rule (Evaluation)
+- `0`: Pending
+- `1`: Approved
+- `2`: Review failed
+- `3`: Reviewing
+- `4`: Rejected
+- `5`: Recognizing
+- `6`: In Queue
+- `7`: Recognition Failed
 
-First get `executeTaskId` through `listTaskDetailInfoByClassificationIdNo`, then run the trial:
+### Summary
 
-```bash curl icon=terminal wrap
-curl -X POST \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ruleIdNo": "<ruleIdNo>",
-    "executeTaskIdList": ["<executeTaskId>"]
-  }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/runRule"
-```
+The intelligent review feature manages review standards through a three-tier structure of rule repository, rule group, and rule. It applies rules to extraction tasks through category matching and field association, uses AI for review judgment, and generates review results including reasoning and position anchors, helping users quickly identify potential issues in documents.
 
-Returns `evalResult`, `resultHighlights`, etc.
+## Next Steps
 
-## Submit Review Task
-
-After rule evaluation passes, you can submit a formal review task:
-
-```bash curl icon=terminal wrap
-curl -X POST \
-  -H "x-ti-app-id: <your-app-id>" \
-  -H "x-ti-secret-code: <your-secret-code>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ruleIdNoList": [<ruleIdNo>],
-    "executeTaskIdList": ["<executeTaskId>"]
-  }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/submitReviewTask"
-```
-
-The response returns a list of `reviewTaskId`.
+- Learn [Rule Repository Management via API](./rule_management) - Use REST API for rule repository management
+- Learn [Create Review Tasks via API](./create_task) - Use REST API to create review tasks
+- Learn [Get and Use Review Results](./get_result) - Use REST API to get and process review results

@@ -1,11 +1,17 @@
 ---
-title: "Quick Start"
-description: "Reference examples to quickly integrate workspace management functionality with APIs"
+title: "Quickstart"
+description: "Quick API integration of workspace management features"
 ---
 
-This document introduces how to use workspace-related interfaces: create, view, update, and delete.
+<Tip>
+  A Workspace is the basic unit in DocFlow for organizing and isolating document processing tasks. Each workspace can contain file categories, review rule repositories, and other resources, facilitating multi-tenant or multi-project management.
+</Tip>
+
+This guide introduces how to use workspace-related APIs: create, list, get, update, and delete.
 
 ## Create Workspace
+
+Create a new workspace:
 
 <CodeGroup>
 
@@ -14,33 +20,71 @@ curl -X POST \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
   -H "Content-Type: application/json" \
-  -d '{"name": "My Workspace", "description": "Workspace for demonstration"}' \
+  -d '{
+    "name": "My Workspace",
+    "description": "This is a workspace for processing invoices",
+    "enterprise_id": 12345,
+    "auth_scope": 1
+  }' \
   "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/create"
 ```
 
 ```python Python icon=python expandable lines
 import requests
 
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
 host = "https://docflow.textin.ai"
 url = "/api/app-api/sip/platform/v2/workspace/create"
 
-headers = {
-    "x-ti-app-id": "<your-app-id>",
-    "x-ti-secret-code": "<your-secret-code>",
-    "Content-Type": "application/json",
+payload = {
+    "name": "My Workspace",
+    "description": "This is a workspace for processing invoices",
+    "enterprise_id": 12345,
+    "auth_scope": 1  # 0: Private, 1: Enterprise-wide
 }
 
-resp = requests.post(f"{host}{url}", json={
-    "name": "My Workspace",
-    "description": "Workspace for demonstration"
-}, headers=headers, timeout=30)
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
 
-print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    workspace_id = result.get("result", {}).get("workspace_id")
+    print(f"Workspace created successfully, ID: {workspace_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
 ```
 
 </CodeGroup>
 
+**Request Parameters:**
+- `name` (required): Workspace name, max length 50
+- `description` (optional): Workspace description, max length 200
+- `enterprise_id` (required): Enterprise organization ID
+- `auth_scope` (required): Collaboration scope, 0: Private, 1: Enterprise-wide
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "workspace_id": "1234567890"
+  }
+}
+```
+
 ## List Workspaces
+
+Get all workspaces for the current user:
 
 <CodeGroup>
 
@@ -48,48 +92,251 @@ print(resp.status_code, resp.text)
 curl \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list?page=1&page_size=20"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list?enterprise_id=12345&page=1&page_size=20"
 ```
 
 ```python Python icon=python expandable lines
 import requests
 
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+enterprise_id = 12345
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/list"
+
 resp = requests.get(
-    "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list",
-    params={"page": 1, "page_size": 20},
-    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    url=f"{host}{url}",
+    params={
+        "enterprise_id": enterprise_id,
+        "page": 1,
+        "page_size": 20
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
     timeout=30,
 )
-print(resp.json())
+
+result = resp.json()
+if result.get("code") == 200:
+    workspaces = result.get("result", {}).get("workspaces", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} workspaces")
+    for workspace in workspaces:
+        print(f"Workspace ID: {workspace.get('workspace_id')}, Name: {workspace.get('name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
 ```
 
 </CodeGroup>
 
+**Request Parameters:**
+- `enterprise_id` (required): Enterprise ID
+- `page` (optional): Page number, default is 1
+- `page_size` (optional): Items per page, default is 20
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 10,
+    "page": 1,
+    "page_size": 20,
+    "workspaces": [
+      {
+        "workspace_id": "1234567890",
+        "name": "My Workspace",
+        "description": "This is a workspace for processing invoices",
+        "auth_scope": 1,
+        "manage_account_id": "admin_123456",
+        "manage_account_name": "John Doe",
+        "callback_url": "https://example.com/callback",
+        "callback_retry_time": 3
+      }
+    ]
+  }
+}
+```
+
 ## Get Workspace Details
+
+Get detailed information about a workspace by its ID:
+
+<CodeGroup>
 
 ```bash curl icon=terminal wrap
 curl \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/get?id=<your-workspace-id>"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/get?workspace_id=1234567890"
 ```
 
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "1234567890"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/get"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    workspace = result.get("result", {})
+    print(f"Workspace name: {workspace.get('name')}")
+    print(f"Description: {workspace.get('description')}")
+    print(f"Administrator: {workspace.get('manage_account_name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+
 ## Update Workspace
+
+Update information for a specified workspace:
+
+<CodeGroup>
 
 ```bash curl icon=terminal wrap
 curl -X POST \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
   -H "Content-Type: application/json" \
-  -d '{"id": "<your-workspace-id>", "name": "New Workspace Name", "description": "New description"}' \
+  -d '{
+    "workspace_id": "1234567890",
+    "name": "Updated Workspace Name",
+    "description": "Updated description",
+    "auth_scope": 1,
+    "callback_url": "https://example.com/callback",
+    "callback_retry_time": 3
+  }' \
   "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/update"
 ```
 
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "1234567890"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "name": "Updated Workspace Name",
+    "description": "Updated description",
+    "auth_scope": 1,
+    "callback_url": "https://example.com/callback",
+    "callback_retry_time": 3
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Workspace updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `name` (required): Workspace name, max length 50
+- `description` (optional): Workspace description, max length 200
+- `auth_scope` (required): Collaboration scope, 0: Private, 1: Enterprise-wide
+- `callback_url` (optional): Callback URL
+- `callback_retry_time` (optional): Number of callback retries, range 0-3
+
 ## Delete Workspace
 
+Delete specified workspace(s) (supports batch deletion):
+
+<CodeGroup>
+
 ```bash curl icon=terminal wrap
-curl -X DELETE \
+curl -X POST \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/delete?id=<your-workspace-id>"
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_ids": ["1234567890", "0987654321"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/delete"
 ```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/delete"
+
+payload = {
+    "workspace_ids": ["1234567890", "0987654321"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Workspace deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_ids` (required): Array of workspace IDs to delete
+
+<Warning>
+  Deleting a workspace will also delete all resources under it (including file categories, review rule repositories, etc.). Please proceed with caution.
+</Warning>
+
+## Next Steps
+
+- Learn [Category Management](../10-category-management/quickstart) - Create and manage file categories in workspace
+- Learn [Review Rule Management](../07-review/rule_management) - Create review rule repositories in workspace
+

@@ -1,0 +1,911 @@
+/api/app-api/sip/platform/v2/category/create:
+  post:
+    summary: Create File Category
+    description: Create a new file category in the specified workspace, requiring at least one sample file and at least one field configuration
+    operationId: createCategory
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              name:
+                type: string
+                description: File category name
+                example: "Invoice"
+                maxLength: 50
+              category_prompt:
+                type: string
+                description: Prompt for classification
+                example: "VAT invoice, including fields such as invoice code, invoice number, etc."
+                maxLength: 150
+              extract_model:
+                type: string
+                description: |
+                  Optional, extraction model, defaults to Model 1 if not specified
+                  - Model 1: Fast speed with stable extraction results
+                  - Model 2: Suitable for complex document understanding
+                  - Model 3: VLM, suitable for simple extraction
+                example: "Model 1"
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+              sample_files:
+                type: array
+                description: Sample file list, at least one sample file must be uploaded, a category can have at most 10 sample files
+                items:
+                  type: string
+                  format: binary
+                minItems: 1
+                maxItems: 10
+              fields:
+                type: array
+                description: Field configuration list, at least one field must be configured
+                items:
+                  allOf:
+                    - $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+                minItems: 1
+            required:
+              - workspace_id
+              - name
+              - extract_model
+              - sample_files
+              - fields
+    responses:
+      '200':
+        description: Successfully created file category
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        category_id:
+                          type: string
+                          description: File category ID
+                          example: "1234567890"
+
+/api/app-api/sip/platform/v2/category/list:
+  get:
+    summary: Get Workspace File Category List
+    tags:
+      - File Category
+    description: Get workspace file category list
+    operationId: listCategories
+    parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: Page size
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: enabled
+        in: query
+        description: |
+          Enabled status  
+          - all: All
+          - 1: Enabled
+          - 0: Disabled
+          - 2: Draft
+        required: false
+        schema:
+          type: string
+          default: "1"
+          enum:
+            - "all"
+            - "1"
+            - "0"
+            - "2"
+    responses:
+      '200':
+        description: Successfully retrieved workspace file category list
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: Total number of file categories
+                          example: 100
+                        page:
+                          type: integer
+                          description: Current page number
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: Page size
+                          example: 20
+                        categories:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/Category'
+
+/api/app-api/sip/platform/v2/category/update:
+  post:
+    summary: Update File Category
+    description: Update information of the specified file category
+    operationId: updateCategory
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              name:
+                type: string
+                description: File category name
+                example: "Invoice"
+                maxLength: 50
+              category_prompt:
+                type: string
+                description: Prompt for classification
+                example: "VAT invoice, including fields such as invoice code, invoice number, etc."
+                maxLength: 150
+              enabled:
+                $ref: '../components/schemas/categories.yaml#/EnabledStatus'
+              extract_model:
+                type: string
+                description: |
+                  Extraction model
+                  - Model 1: Fast speed with stable extraction results
+                  - Model 2: Suitable for complex document understanding
+                  - Model 3: VLM, suitable for simple extraction
+                example: "Model 1"
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+    responses:
+      '200':
+        description: Successfully updated file category
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/category/delete:
+  post:
+    summary: Delete File Category
+    description: Delete the specified file category
+    operationId: deleteCategory
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_ids:
+                type: array
+                items:
+                  type: string
+                description: List of file category IDs to delete
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_ids
+    responses:
+      '200':
+        description: Successfully deleted file category
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/category/fields/list:
+  get:
+    summary: Get File Category Fields List
+    description: Get file category fields list
+    operationId: listCategoryFields
+    tags:
+      - File Category
+    parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: File category ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: Successfully retrieved file category fields list
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        fields:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryField'
+                        tables:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: Table ID
+                                example: "1234567890"
+                              name:
+                                type: string
+                                description: Table name
+                                example: Table1
+                              description:
+                                type: string
+                                description: Table description
+                                example: Table description
+                              fields:
+                                type: array
+                                items:
+                                  $ref: '../components/schemas/categories.yaml#/CategoryField'
+
+/api/app-api/sip/platform/v2/category/fields/add:
+  post:
+    summary: Add File Category Field
+    description: Add a field to the specified file category, supporting both regular fields and table fields
+    operationId: addCategoryField
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: |
+                  Table ID
+                  - Not provided or empty: Create a regular field, result will appear in result.fields
+                  - Provided table ID: Create a table field under the corresponding table, result will appear in result.tables[].fields
+                example: "1234567890"
+              extract_model:
+                type: string
+                description: |
+                  Optional, field-level extraction model, only supported for regular fields (not table fields), defaults to Model 1 if not specified
+                  - Model 1: Fast speed with stable extraction results
+                  - Model 2: Suitable for complex document understanding
+                  - Model 3: VLM, suitable for simple extraction
+                example: "Model 1"
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+              - name
+    responses:
+      '200':
+        description: Successfully added file category field
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        field_id:
+                          type: string
+                          description: Newly created field ID
+                          example: "1234567890"
+
+/api/app-api/sip/platform/v2/category/fields/update:
+  post:
+    summary: Update File Category Field
+    description: Update information of the specified file category field, supporting both regular fields and table fields
+    operationId: updateCategoryField
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              field_id:
+                type: string
+                description: Field ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: |
+                  Table ID
+                  - Not required for regular fields
+                  - Required for table fields, need to provide the table ID it belongs to
+                example: "1234567890"
+              extract_model:
+                type: string
+                description: |
+                  Field-level extraction model
+                  - Model 1: Fast speed with stable extraction results
+                  - Model 2: Suitable for complex document understanding
+                  - Model 3: VLM, suitable for simple extraction
+                example: "Model 1"
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+              - field_id
+    responses:
+      '200':
+        description: Successfully updated file category field
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/category/fields/delete:
+  post:
+    summary: Delete File Category Fields
+    description: Delete the specified file category fields, supporting batch deletion of both regular fields and table fields
+    operationId: deleteCategoryFields
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              field_ids:
+                type: array
+                description: List of field IDs to delete
+                items:
+                  type: string
+                example: ["1234567890", "0987654321"]
+              table_id:
+                type: string
+                description: |
+                  Table ID
+                  - Not provided: Delete regular fields (fields in result.fields)
+                  - Provided table ID: Delete table fields under the corresponding table (fields in result.tables[].fields)
+                example: "1234567890"
+            required:
+              - workspace_id
+              - category_id
+              - field_ids
+    responses:
+      '200':
+        description: Successfully deleted file category fields
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+# Category table related endpoints
+/api/app-api/sip/platform/v2/category/tables/list:
+  get:
+    summary: Get File Category Tables List
+    description: Get all tables configured under the specified file category
+    operationId: listCategoryTables
+    tags:
+      - File Category
+    parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: File category ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: Successfully retrieved file category tables list
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        tables:
+                          type: array
+                          description: Tables list
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: Table ID
+                                example: "1234567890"
+                              name:
+                                type: string
+                                description: Table name
+                                example: "Table 1"
+                              prompt:
+                                type: string
+                                description: Table semantic extraction prompt
+                                example: "Extract name, quantity and amount for each row"
+                              collect_from_multi_table:
+                                  type: boolean
+                                  description: Merge multiple tables
+                                  example: true
+                              extract_model:
+                                type: string
+                                description: Table-level extraction model
+                                example: "Model 1"
+
+/api/app-api/sip/platform/v2/category/tables/add:
+  post:
+    summary: Add File Category Table
+    description: Add a table to the specified file category
+    operationId: addCategoryTable
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              name:
+                type: string
+                description: Table name
+                example: "Table 1"
+                maxLength: 50
+              prompt:
+                type: string
+                description: Table semantic extraction prompt
+                example: "Extract name, quantity and amount for each row"
+                maxLength: 200
+              collect_from_multi_table:
+                  type: boolean
+                  description: Merge multiple tables
+                  example: true
+              extract_model:
+                type: string
+                description: |
+                  Table-level extraction model
+                  - Model 1: Fast speed with stable extraction results
+                  - Model 2: Suitable for complex document understanding
+                  - Model 3: VLM, suitable for simple extraction
+                example: "Model 1"
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+              - name
+    responses:
+      '200':
+        description: Successfully added file category table
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        table_id:
+                          type: string
+                          description: Newly added table ID
+                          example: "1234567890"
+
+/api/app-api/sip/platform/v2/category/tables/update:
+  post:
+    summary: Update File Category Table
+    description: Update information of the specified file category table
+    operationId: updateCategoryTable
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: Table ID
+                example: "1234567890"
+              name:
+                type: string
+                description: Table name
+                example: "Table 1"
+                maxLength: 50
+              prompt:
+                type: string
+                description: Table semantic extraction prompt
+                example: "Extract name, quantity and amount for each row"
+                maxLength: 200
+              collect_from_multi_table:
+                  type: boolean
+                  description: Merge multiple tables
+                  example: true
+              extract_model:
+                type: string
+                description: |
+                  Table-level extraction model
+                  - Model 1: Fast speed with stable extraction results
+                  - Model 2: Suitable for complex document understanding
+                  - Model 3: VLM, suitable for simple extraction
+                example: "Model 1"
+                enum:
+                  - Model 1
+                  - Model 2
+                  - Model 3
+            required:
+              - workspace_id
+              - category_id
+              - table_id
+              - collect_from_multi_table
+    responses:
+      '200':
+        description: Successfully updated file category table
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/category/tables/delete:
+  post:
+    summary: Delete File Category Tables
+    description: Delete the specified file category tables, supporting batch deletion
+    operationId: deleteCategoryTables
+    tags:
+      - File Category
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              table_ids:
+                type: array
+                description: List of table IDs to delete
+                items:
+                  type: string
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_id
+              - table_ids
+    responses:
+      '200':
+        description: Successfully deleted file category tables
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+# Category sample related endpoints
+/api/app-api/sip/platform/v2/category/sample/upload:
+  post:
+    summary: Upload Category Sample
+    description: Upload a sample file for the specified file category
+    operationId: uploadCategorySample
+    tags:
+      - File Category Samples
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              file:
+                type: string
+                format: binary
+                description: Sample file
+            required:
+              - workspace_id
+              - category_id
+              - file
+    responses:
+      '200':
+        description: Successfully uploaded category sample
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        sample_id:
+                          type: string
+                          description: Sample ID
+                          example: "1234567890"
+
+/api/app-api/sip/platform/v2/category/sample/list:
+  get:
+    summary: Get Category Samples List
+    description: Get the list of samples for the specified file category
+    operationId: listCategorySamples
+    tags:
+      - File Category Samples
+    parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: File category ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: Page size
+        required: false
+        schema:
+          type: integer
+          default: 20
+    responses:
+      '200':
+        description: Successfully retrieved category samples list
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: Total number of samples
+                          example: 10
+                        page:
+                          type: integer
+                          description: Current page number
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: Page size
+                          example: 20
+                        samples:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategorySample'
+
+/api/app-api/sip/platform/v2/category/sample/download:
+  get:
+    summary: Download Category Sample
+    description: Download the specified category sample file
+    operationId: downloadCategorySample
+    tags:
+      - File Category Samples
+    parameters:
+      - name: workspace_id
+        in: query
+        description: Workspace ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: File category ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: sample_id
+        in: query
+        description: Sample ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: Successfully downloaded sample file
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+
+/api/app-api/sip/platform/v2/category/sample/delete:
+  post:
+    summary: Delete Category Samples
+    description: Delete the specified category samples
+    operationId: deleteCategorySample
+    tags:
+      - File Category Samples
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: Workspace ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: File category ID
+                example: "1234567890"
+              sample_ids:
+                type: array
+                items:
+                  type: string
+                description: List of sample IDs to delete
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_id
+              - sample_ids
+    responses:
+      '200':
+        description: Successfully deleted category samples
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'

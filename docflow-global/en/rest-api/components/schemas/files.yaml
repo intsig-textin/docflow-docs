@@ -1,0 +1,687 @@
+ExtractFieldReqVO:
+  type: object
+  properties:
+    key:
+      type: string
+      description: Field name
+      example: Invoice Code
+    prompt:
+      type: string
+      description: Field prompt
+      example: Only keep the year part
+    extract_model:
+      type: string
+      description: |
+        Field-level extraction model, defaults to Model 1 if not specified
+        - Model 1: Fast speed with stable extraction results
+        - Model 2: Suitable for complex document understanding
+        - Model 3: VLM, suitable for simple extraction
+        Note: For table fields, the extraction model is determined by the table-level extract_model, this field is ignored
+      example: "Model 1"
+      enum:
+        - Model 1
+        - Model 2
+        - Model 3
+
+TaskProcessResult:
+  type: object
+  properties:
+    result:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of files
+          example: 100
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        page_size:
+          type: integer
+          description: Number of items per page
+          example: 20
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: File ID
+                example: 202412190001
+              task_id:
+                type: string
+                description: Task ID
+                example: 202412190001
+              task_detail_url:
+                type: string
+                description: Task Details Page URL
+              task_type:
+                $ref: '#/TaskType'
+              batch_number:
+                type: string
+                description: Batch Number
+                example: 202412190001
+              name:
+                type: string
+                description: File Name
+                example: invoice.pdf
+              format:
+                type: string
+                description: File Format
+              recognition_status:
+                $ref: './common.yaml#/RecognitionStatus'
+              failure_causes:
+                type: string
+                description: |
+                  Task failure reason.  
+                  When recognition_status is 2, this field is present.
+              verification_status:
+                $ref: './common.yaml#/VerificationStatus'
+              category:
+                type: string
+                description: File Category
+                example: invoice
+              pages:
+                $ref: '#/PagesInfo'
+              data:
+                type: object
+                description: Processing result
+                properties:
+                  fields:
+                    description: Field list
+                    type: array
+                    items:
+                      $ref: '#/FieldRespKeyValue'
+                    example:
+                    - key: Invoice Code
+                      identifier: Invoice Code Identifier
+                      value: "3100231130"
+                      position:
+                      - page: 0
+                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                    - key: Invoice Number
+                      value: "28737000"
+                      identifier: Invoice Number Identifier
+                      position:
+                      - page: 0
+                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                  items:
+                    description: Table data list
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/KeyValue'
+                    example:
+                    - - key: Goods and Services Name
+                        value: ＊Electronic Computer＊Microcomputer Host
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - key: Specification Model
+                        value: DMS-SC68
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                    - - key: Goods and Services Name
+                        value: ＊Mechanical Computer＊Supercomputer Host
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - key: Specification Model
+                        value: AN/FSQ-7
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                  tables:
+                    description: Complete table data list (including system tables and manually configured tables)
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tableName:
+                          description: Table name
+                          type: string
+                          example: table1
+                        tableType:
+                          description: |
+                            Table type, 0: system configured, 1: manually added.
+                          type: string
+                          example: 0
+                        extractModel:
+                          description: Table-level extraction model
+                          type: string
+                        items:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/CommonFieldDetailRespVO'
+                  stamps:
+                    description: Stamp information
+                    type: array
+                    items:
+                      $ref: '#/StampValue'
+                    example:
+                      - angel: 0
+                        page: 0
+                        text: National Unified Invoice Supervision Seal
+                        type: Other
+                        color: Red
+                        shape: Oval Seal
+                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - angel: 0
+                        page: 0
+                        text: Tax Bureau Seal
+                        type: Other
+                        color: Red
+                        shape: Oval Seal
+                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  handwritings:
+                    description: Handwriting information
+                    type: array
+                    items:
+                      $ref: '#/HandWritingValue'
+                    example:
+                      - angel: 0
+                        page: 0
+                        text: March 1st
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - angel: 0
+                        page: 0
+                        text: Zhang San
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              document:
+                $ref: '#/Document'
+              child_files:
+                description: Sub-task information
+                type: array
+                items:
+                  $ref: '#/SubFileDetailInfo'
+              duration_ms:
+                type: integer
+                description: |
+                  Task processing time, unit: milliseconds
+                  Calculated from the start of the task to completion (success or failure), excluding queue waiting time.
+                example: 10000
+              total_page_num:
+                type: integer
+                description: Total number of pages in the current file
+                example: 10
+            required:
+              - id
+              - name
+              - format
+              - recognition_status
+              - verification_status
+              - category
+
+KeyValue:
+  type: object
+  properties:
+    key:
+      type: string
+      description: Field name
+    value:
+      type: string
+      description: Field value
+    position:
+      $ref: "#/KeyValuePosition"
+
+FieldRespKeyValue:
+  type: object
+  properties:
+    key:
+      type: string
+      description: Field name
+    identifier:
+      type: string
+      description: Identifier(from export field name)
+    value:
+      type: string
+      description: Field value
+    position:
+      $ref: "#/KeyValuePosition"
+    confidence:
+      type: number
+      format: float
+      description: Confidence score, range 0~1
+      example: 0.95
+    extract_model:
+      type: string
+      description: Actual extraction model used
+
+StampValue:
+  type: object
+  properties:
+    angel:
+      type: integer
+      description: Angle
+    page:
+      type: integer
+      description: Page number
+    text:
+      type: string
+      description: Stamp text content
+    type:
+      type: string
+      description: Stamp type
+    color:
+      type: string
+      description: Stamp color
+    shape:
+      type: string
+      description: Stamp shape
+    position:
+      type: array
+      description: Position information
+      items:
+        type: integer
+        example: 1
+
+HandWritingValue:
+  type: object
+  properties:
+    angel:
+      type: integer
+      description: Angle
+    page:
+      type: integer
+      description: Page number
+    text:
+      type: string
+      description: Handwriting text content
+    position:
+      $ref: "#/KeyValuePosition"
+
+KeyValuePosition:
+  description: Position of the field value. Field values may span pages or rows, so they are displayed as arrays.
+  type: array
+  items:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: Page where the field is located. It is the index of the pages array
+      vertices:
+        type: array
+        description: Bounding quadrilateral coordinates of the field value. The image uses the top-left as origin, array values are [top-left x, top-left y, top-right x, top-right y, bottom-right x, bottom-right y, bottom-left x, bottom-left y]
+        items:
+          type: integer
+        minItems: 8
+        maxItems: 8
+
+Document:
+  type: object
+  properties:
+    pages:
+      type: array
+      items:
+        type: object
+        properties:
+          angle:
+            type: integer
+            description: Page rotation angle
+          width:
+            type: integer
+            description: Page width
+          height:
+            type: integer
+            description: Page height
+          lines:
+            description: Page text line array
+            type: array
+            items:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Line text
+                position:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 8
+                  maxItems: 8
+                charPositions:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: integer
+                    minItems: 8
+                    maxItems: 8
+
+TaskCropResult:
+  type: object
+  properties:
+    page:
+      type: integer
+      description: Page index of the original file, 0 represents the first page of the source file
+    imageAngle:
+      type: string
+      description: Angle information of the cropped image
+
+CommonFieldDetailRespVO:
+  type: object
+  properties:
+    key:
+      type: string
+      description: Field key
+    identifier:
+      type: string
+      description: Identifier(from export field name)
+    value:
+      type: string
+      description: Field value
+    textInLines:
+      deprecated: true
+      type: array
+      description: |
+        **Deprecated**, please use position field instead
+        Field coordinates
+      items:
+        $ref: '#/TextInLines'
+    position:
+      $ref: "#/KeyValuePosition"
+    index:
+      type: integer
+      description: Index
+    confidence:
+      type: number
+      format: float
+      description: Confidence score, range 0~1
+      example: 0.95
+
+SubFileDetailInfo:
+  type: object
+  properties:
+    id:
+      type: string
+      description: File ID
+      example: 202412190001
+    task_id:
+      type: string
+      description: Task ID
+      example: 202412190001
+    task_detail_url:
+      type: string
+      description: File subtask details page URL
+    task_type:
+      $ref: '#/TaskType'
+    parent_task_id:
+      type: string
+      description: Parent task ID (meaningful when not 0)
+      example: 202412190001
+    batch_number:
+      type: string
+      description: Batch Number
+      example: 202412190001
+    name:
+      type: string
+      description: File Name
+      example: invoice.pdf
+    format:
+      type: string
+      description: File Format
+    recognition_status:
+      $ref: './common.yaml#/RecognitionStatus'
+    verification_status:
+      $ref: './common.yaml#/VerificationStatus'
+    category:
+      type: string
+      description: File Category
+      example: invoice
+    pages:
+      $ref: '#/PagesInfo'
+    data:
+      type: object
+      description: Processing result
+      properties:
+        fields:
+          description: Field list
+          type: array
+          items:
+            $ref: '#/FieldRespKeyValue'
+          example:
+            - key: Invoice Code
+              identifier: Invoice Code Identifier
+              value: "3100231130"
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - key: Invoice Number
+              identifier: Invoice Number Identifier
+              value: "28737000"
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        items:
+          description: Table data list
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/KeyValue'
+          example:
+            - - key: Goods and Services Name
+                value: ＊Electronic Computer＊Microcomputer Host
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              - key: Specification Model
+                value: DMS-SC68
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - - key: Goods and Services Name
+                value: ＊Mechanical Computer＊Supercomputer Host
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              - key: Specification Model
+                value: AN/FSQ-7
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        tables:
+          description: Complete table data list (including system tables and manually configured tables)
+          type: array
+          items:
+            type: object
+            properties:
+              tableName:
+                description: Table name
+                type: string
+                example: table1
+              tableType:
+                description: |
+                  Table type, 0: system configured, 1: manually added.
+                type: string
+                example: 0
+              extractModel:
+                description: Table-level extraction model
+                type: string
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    $ref: '#/CommonFieldDetailRespVO'
+        stamps:
+          description: Stamp information
+          type: array
+          items:
+            $ref: '#/StampValue'
+          example:
+            - angel: 0
+              page: 0
+              text: National Unified Invoice Supervision Seal
+              type: Other
+              color: Red
+              shape: Oval Seal
+              position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - angel: 0
+              page: 0
+              text: Tax Bureau Seal
+              type: Other
+              color: Red
+              shape: Oval Seal
+              position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        handwritings:
+          description: Handwriting information
+          type: array
+          items:
+            $ref: '#/HandWritingValue'
+          example:
+            - angel: 0
+              page: 0
+              text: March 1st
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - angel: 0
+              page: 0
+              text: Zhang San
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+    document:
+      $ref: '#/Document'
+    from_parent_position_list:
+      type: array
+      description: Coordinate position of cropping result in the original file
+      items:
+        type: integer
+        description: Position information
+        example: 1
+    crop_info:
+      $ref: '#/TaskCropResult'
+
+TextInLines:
+  type: object
+  properties:
+    angle:
+      type: string
+      description: Angle
+      example: 0
+    pos:
+      type: array
+      description: Coordinates
+      items:
+        type: integer
+        description: Coordinates
+        example: 1
+    page:
+      type: integer
+      description: Page number
+      example: 1
+    text:
+      type: string
+      description: Text
+      example: Text content
+    char_pos:
+      type: array
+      description: Character coordinates
+      items:
+        type: array
+        description: Character coordinates
+        items:
+          type: integer
+          description: Character coordinates
+          example: 1
+  description: Field coordinates
+
+TaskType:
+  type: integer
+  description: |
+    Task type
+    - 0: **File split subtask**: When a file task with "File split" switch enabled executes successfully, the subtasks generated by file split operations in that file batch task are split subtasks, divided according to the actual number of file sets under the file category
+    - 1: **Regular task**: File tasks without "File split" and "Multi-image crop" switches enabled
+    - 2: **Parent task**: After file tasks with "File split" or "Multi-image crop" switches enabled execute, each file in that file batch task becomes a parent task
+    - 3: **Crop subtask**: When a file task with "Multi-image crop" switch enabled executes successfully, the subtasks generated by multi-image crop operations in that file batch task are crop subtasks, divided according to the actual number of crop results under the file category
+  example: 1
+
+PagesInfo:
+  type: array
+  description: |
+    Data for rendering each page of the file.            Combined with the page and position fields in data.fields, you can accurately draw the position of fields on the page.
+  items:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: Page number, starting from 0
+        example: 1
+      angle:
+        type: integer
+        description: Rotation angle
+        enum:
+          - 0
+          - 90
+          - 180
+          - 270
+      width:
+        type: integer
+        description: Page width after correction
+        example: 1024
+      height:
+        type: integer
+        description: Page height after correction
+        example: 1024
+      dpi:
+        type: integer
+        description: Resolution when converting PDF to image. For non-PDF files, this value is 0.
+        example: 144
+
+DocumentParserParam:
+  type: object
+  properties:
+    formula_level:
+      type: integer
+      description: Formula recognition level (0 recognizes both display and inline formulas, 1 recognizes display formulas only, 2 recognizes no formulas)
+      example: 0
+    apply_merge:
+      type: integer
+      description: Merge cross-page paragraphs and tables (0 no, 1 yes)
+      example: 1
+    table_text_split_mode:
+      type: integer
+      description: Split text blocks crossed by table lines (0 no, 1 yes)
+      example: 0
+    crop_dewarp:
+      type: integer
+      description: Crop and dewarp (0 no, 1 yes)
+      example: 0
+    remove_watermark:
+      type: integer
+      description: Remove watermark (0 no, 1 yes)
+      example: 0
+    dpi:
+      type: integer
+      description: File resolution (144 default, 216 high precision)
+      example: 144
+      enum:
+        - 144
+        - 216
+
+TokenResult:
+  type: object
+  properties:
+    result:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Valid token for iframe scenarios
+          example: abcd
+        expiry:
+          type: integer
+          description: Expiration time (in epoch timestamp format, unit is seconds)
+          example: 1700000000

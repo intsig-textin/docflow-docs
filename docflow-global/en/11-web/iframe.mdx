@@ -1,0 +1,191 @@
+---
+title: "Frontend iframe Embedding"
+description: "Embed DocFlow pages into your own frontend via iframe for page integration"
+---
+
+<Tip>
+  By embedding DocFlow via iframe, you can display document lists, file details, review tasks, and other pages directly in your own system without requiring users to open DocFlow separately. Before integration, obtain a valid token via the API and include it in the iframe URL.
+</Tip>
+
+This document describes two integration approaches: **Quick Integration** (using the detail page URL returned by the API directly) and **General Integration** (constructing the URL yourself and carrying the token). It also explains `postMessage` communication between the parent page and the iframe, as well as the Token isolation mechanism when multiple iframes coexist.
+
+## Integration Overview
+
+- **Quick Integration**: Suitable for scenarios where you only need to display the "File Detail Page" or "Review Detail Page". Call the corresponding API to obtain `task_detail_url` and embed it directly in an iframe.
+- **General Integration**: Suitable for embedding any DocFlow page (home, workspace configuration, document list, etc.). You need to call the API to generate a user token first, then include the `token` parameter in the URL.
+
+---
+
+## Quick Integration
+
+For **File Detail Page** and **Review Detail Page**, an embeddable URL can be obtained directly via the API.
+
+1. Call the corresponding API to get the `task_detail_url` field:
+   - **File Detail Page**: See the [Get File Processing Result List](../../../api-reference/file-operations/getfiles#parameter-with-task-detail-url) endpoint, set `with_task_detail_url=true`.
+   - **Review Detail Page**: See the [Get Review Result](../../../api-reference/review-tasks/getreviewtaskresult#body-with-task-detail-url) endpoint, set `with_task_detail_url=true`.
+2. Use the returned `task_detail_url` as the `src` of your iframe directly.
+
+No separate token is required — the URL already contains authentication information.
+
+---
+
+## General Integration
+
+### Step 1: Generate User Token
+
+Call the [Generate Short-lived Token](../../../api-reference/authentication/gettoken) API to obtain a valid token for the current user.  
+See the REST API documentation for details.
+
+### Step 2: Access DocFlow Pages with Token
+
+When accessing DocFlow frontend pages via the iframe `src`, append `token=xxx` to the URL.  
+The following examples use the public cloud domain `https://docflow.textin.ai`. For on-premises deployments, replace with your actual domain.
+
+**Note**: All DocFlow frontend URLs support appending `token` as a query parameter for authentication.
+
+#### Access Home Page
+
+```html
+<iframe src="https://docflow.textin.ai?token=xxx" referrerpolicy="origin" />
+```
+
+#### Access a Specific Workspace
+
+```html
+<iframe src="https://docflow.textin.ai/workspace/configure?workspaceIdNo=xxx&token=xxx" referrerpolicy="origin" />
+```
+
+#### Access File Detail Page
+
+- Direct access:
+
+```html
+<iframe src="https://docflow.textin.ai/documents/detail-new?workspaceIdNo=xxx&id=xxx&resultId=xxx&token=xxx" referrerpolicy="origin" />
+```
+
+- Minimal mode (hides some navigation entries):
+
+```html
+<iframe src="https://docflow.textin.ai/documents/detail-new?workspaceIdNo=xxx&id=xxx&resultId=xxx&token=xxx&mode=minimal" referrerpolicy="origin" />
+```
+
+#### Access Review Task Detail Page
+
+- Direct access:
+
+```html
+<iframe src="https://docflow.textin.ai/review/task/task-detail?workspaceIdNo=xxx&id=xxx&token=xxx" referrerpolicy="origin" />
+```
+
+- Minimal mode (hides some navigation entries):
+
+```html
+<iframe src="https://docflow.textin.ai/review/task/task-detail?workspaceIdNo=xxx&id=xxx&token=xxx&mode=minimal" referrerpolicy="origin" />
+```
+
+---
+
+## Parent Page Integration Example
+
+Embed the iframe in the parent page and listen for `postMessage` events from DocFlow (such as token expiration, login, logout, insufficient permissions) to refresh the token or prompt the user.
+
+<CodeGroup>
+
+```html HTML icon=code
+<iframe
+  id="docflow-iframe"
+  src="https://your-domain.com/documents/list?token=YOUR_TOKEN"
+  allow="clipboard-read; clipboard-write"
+  referrerpolicy="origin"
+></iframe>
+
+<script>
+const iframeOrigin = 'https://your-domain.com';
+
+window.addEventListener('message', (event) => {
+  if (event.origin !== iframeOrigin) return;
+
+  const { type, data } = event.data || {};
+
+  switch (type) {
+    case 'tokenExpired':
+      console.warn('Token expired. Please refresh the token and reload the iframe.');
+      break;
+    case 'login':
+      console.log('User logged in');
+      break;
+    case 'logout':
+      console.warn('User logged out');
+      break;
+    case 'noPermission':
+      console.warn('Insufficient permissions');
+      break;
+    case 'error':
+      console.error('An error occurred', data);
+      break;
+  }
+});
+</script>
+```
+
+</CodeGroup>
+
+---
+
+## Additional Notes
+
+### postMessage Communication Protocol
+
+DocFlow pages inside the iframe will send the following types of messages to the parent window. The parent page can receive and handle them via `window.addEventListener('message', ...)`.
+
+| Message Type    | Description             | Triggered When                       |
+|-----------------|-------------------------|--------------------------------------|
+| `tokenExpired`  | Token has expired       | API returns 401                      |
+| `login`         | User logged in          | Token authentication succeeded       |
+| `logout`        | User logged out         | User actively logs out               |
+| `noPermission`  | Insufficient permissions| API returns a permission error       |
+| `error`         | An error occurred       | Generic error notification           |
+
+**Message format**:
+
+```ts
+interface IframeMessage {
+  type: 'tokenExpired' | 'login' | 'logout' | 'noPermission' | 'error';
+  data?: unknown;
+}
+```
+
+### Token Isolation Mechanism
+
+<Warning>
+When multiple DocFlow iframes embedded by different parent pages exist in the same browser, the system isolates user state by "origin" to avoid token conflicts. This mechanism relies on **Referrer** information (i.e., `document.referrer` or the parent page's origin). Integrators must meet **one** of the following:  
+1) The Referrer policy allows passing the origin; or  
+2) Use the same-origin policy (same origin for parent and child).
+</Warning>
+
+**Recommended configurations**:
+
+**Option 1: iframe attribute (recommended)**
+
+```html
+<iframe
+  src="https://docflow.textin.ai/documents/list?token=YOUR_TOKEN"
+  referrerpolicy="origin"
+></iframe>
+```
+
+**Option 2: HTML meta tag**
+
+Add to the `<head>` of the parent page:
+
+```html
+<meta name="referrer" content="origin">
+```
+
+**Option 3: HTTP response header**
+
+Set in the HTTP response of the parent page's domain:
+
+```
+Referrer-Policy: origin
+```

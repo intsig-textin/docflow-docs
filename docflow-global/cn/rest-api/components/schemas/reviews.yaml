@@ -1,0 +1,990 @@
+ApiRuleReviewUpdateReqVO:
+  required:
+    - ruleIdNo
+    - ruleName
+    - rulePrompt
+  type: object
+  properties:
+    ruleIdNo:
+      type: string
+      description: 审核规则唯一ID，含义同reviewRuleIdNo
+      example: 12345
+    ruleName:
+      maxLength: 255
+      minLength: 0
+      type: string
+      description: 审核规则名称
+      example: 规则名称
+    rulePrompt:
+      maxLength: 1000
+      minLength: 0
+      type: string
+      description: 审核规则提示
+      example: 规则提示
+    fields:
+      type: array
+      description: 关联字段信息
+      items:
+        $ref: './reviews.yaml#/Field'
+  description: 更新规则请求入参
+
+CommonResultApiRuleReviewUpdateRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      $ref: './reviews.yaml#/ApiRuleReviewUpdateRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 12345ABC
+
+Field:
+  type: object
+  description: 字段信息
+  properties:
+    classificationIdNo:
+      type: string
+      description: 分类id
+      example: 1234
+    classificationName:
+      type: string
+      description: 分类名称
+      example: 身份证
+    basicFields:
+      type: array
+      items:
+        $ref: './reviews.yaml#/BasicField'
+    tableFields:
+      type: array
+      items:
+        $ref: './reviews.yaml#/TableField'
+
+BasicField:
+  type: object
+  properties:
+    fieldId:
+      type: integer
+      description: 字段id
+      example: 1234
+    fieldName:
+      type: string
+      description: 字段名称
+      example: 卡号
+
+TableField:
+  type: object
+  properties:
+    tableId:
+      type: integer
+      description: 表格id
+      example: -1
+    tableName:
+      type: string
+      description: 表格名称
+      example: Table1
+    fields:
+      type: array
+      items:
+        $ref: './reviews.yaml#/BasicField'
+
+ApiRuleReviewUpdateRespVO:
+  type: object
+  properties:
+    version:
+      type: integer
+      description: 版本号
+      example: 1
+  description: 更新规则的返回结果VO
+
+ApiReviewTaskSubmitReqVO:
+  required:
+    - executeTaskIdList
+    - ruleIdNoList
+  type: object
+  properties:
+    ruleIdNoList:
+      type: array
+      description: 审核规则唯一ID列表
+      items:
+        type: integer
+        description: 审核规则唯一ID，含义同reviewRuleIdNo
+        example: 123
+    executeTaskIdList:
+      type: array
+      description: 任务ID列表
+      items:
+        type: string
+        description: 任务ID列表
+        example: 123
+  description: 提交审核任务 Request VO
+
+CommonResultListApiReviewTaskSubmitRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiReviewTaskSubmitRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234ABCD
+
+ApiReviewTaskSubmitRespVO:
+  type: object
+  properties:
+    reviewTaskId:
+      type: integer
+      description: 审核结果任务ID
+      example: 123
+    ruleIdNo:
+      type: integer
+      description: 审核规则唯一ID，含义同reviewRuleIdNo
+      example: 123
+  description: 任务提交审核结果VO
+
+ApiReviewRuleRunReqVO:
+  required:
+    - executeTaskIdList
+    - ruleIdNo
+  type: object
+  properties:
+    ruleIdNo:
+      type: string
+      description: 审核规则唯一ID，含义同reviewRuleIdNo
+      example: 123
+    executeTaskIdList:
+      type: array
+      description: 任务ID列表
+      items:
+        type: string
+        description: 任务ID列表
+        example: 123
+  description: 审核API - 单次运行审核规则 Request VO
+
+CommonResultApiReviewRuleTaskVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      $ref: './reviews.yaml#/ApiReviewRuleTaskVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234ABCD
+
+ApiReviewRuleTaskVO:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: 主键ID（此处无意义）
+      example: 1234
+    reviewRuleIdNo:
+      type: integer
+      description: 审核规则唯一id
+      example: 1234
+    reviewRuleVersion:
+      type: integer
+      description: 审核规则版本
+      example: 1
+    processStatus:
+      type: integer
+      description: 任务状态 (0:待审核 1:审核成功 2:审核失败 3:审核中)
+      example: 0
+    thinkOutput:
+      type: string
+      description: 思考输出
+      example: 思考输出内容
+    evalOutput:
+      type: string
+      description: 评估输出
+      example: 评估输出内容
+    bindingTaskIds:
+      type: array
+      description: 绑定任务ID列表
+      items:
+        type: integer
+        description: 绑定任务ID列表
+        example: 123
+    resultHighlights:
+      type: array
+      description: 结果高亮信息
+      items:
+        $ref: './reviews.yaml#/DocumentOcrPosition'
+    evalResult:
+      type: boolean
+      description: '评估结果 True: 通过 False: 不通过'
+      example: true
+    duration:
+      type: integer
+      description: 任务耗时（单位：毫秒）
+      example: 12345
+    eval:
+      type: boolean
+      description: '是否为测试运行 True: 是 False: 否'
+      example: true
+    manualAuditStatus:
+      type: integer
+      description: '评估结果人工确认 0: 未确认 1: 已确认'
+      example: 0
+    manualAuditMessage:
+      type: string
+      description: 人工批注
+      example: 批注内容
+  description: 审核任务VO
+
+DocumentOcrPosition:
+  type: object
+  properties:
+    fileId:
+      type: integer
+      description: 文件ID
+      example: 12345
+    taskId:
+      type: integer
+      description: 任务ID
+      example: 1234
+    text:
+      type: string
+      description: 文本
+      example: 文本内容
+    position:
+      type: array
+      description: 位置信息
+      items:
+        type: integer
+        description: 位置信息
+        example: 1
+    page:
+      type: integer
+      description: 页码
+      example: 0
+    angel:
+      type: integer
+      description: 旋转角度
+      example: 0
+    startPos:
+      type: integer
+      description: 起始位置
+      example: 0
+    endPos:
+      type: integer
+      description: 结束位置
+      example: 100
+
+ApiClassificationQueryReqVO:
+  required:
+    - fileBatchNo
+    - workspaceIdNo
+  type: object
+  properties:
+    classificationIdNoList:
+      type: array
+      description: 分类ID列表
+      items:
+        type: string
+        description: 分类ID
+        example: 123
+    workspaceIdNo:
+      type: string
+      description: 工作空间ID
+      example: 123
+    fileBatchNo:
+      type: string
+      description: 文件批次号
+      example: abcd
+  description: 根据分类ID返回任务队列信息列表-请求VO
+
+CommonResultListApiReviewRuleBindingTaskDetailRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiReviewRuleBindingTaskDetailRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiReviewRuleBindingTaskDetailRespVO:
+  type: object
+  properties:
+    executeTaskId:
+      type: integer
+      description: 任务ID
+      example: 1234
+  description: 审核规则绑定任务id详情响应VO
+
+ApiReviewRuleAndTaskReqVO:
+  required:
+    - fileBatchNo
+    - workspaceIdNo
+  type: object
+  properties:
+    workspaceIdNo:
+      type: string
+      description: 工作空间ID
+      example: 1234
+    fileBatchNo:
+      type: string
+      description: 文件批次ID
+      example: abcd
+    classificationIdNoList:
+      type: array
+      description: 分类ID列表
+      items:
+        type: string
+        description: 分类ID
+        example: 1234
+  description: 返回审核规则和任务列表 Request VO
+
+CommonResultListApiReviewRuleAndTaskRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiReviewRuleAndTaskRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiReviewRuleAndTaskRespVO:
+  type: object
+  properties:
+    reviewRule:
+      $ref: './reviews.yaml#/ReviewRuleDTO'
+    latestReviewRuleTask:
+      $ref: './reviews.yaml#/ReviewRuleTaskDO'
+  description: 规则和任务信息
+
+ReviewRuleDTO:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: 主键ID
+      example: 1
+    reviewRuleIdNo:
+      type: integer
+      description: 审核规则唯一id
+      example: 123
+    reviewRuleType:
+      type: string
+      description: 审核规则类型
+      example: single
+    reviewRulePrompt:
+      type: string
+      description: 审核规则提示
+      example: 审核规则提示内容
+    fileBatchNo:
+      type: string
+      description: 文件批次号
+      example: abcd
+    reviewRuleName:
+      type: string
+      description: 审核规则名称
+      example: 审核规则名称
+    workspaceIdNo:
+      type: integer
+      description: 工作空间唯一编号
+      example: 123456
+    classificationIdNoList:
+      type: array
+      description: 分类ID列表
+      items:
+        type: integer
+        description: 分类ID
+        example: 1234
+    version:
+      type: integer
+      description: 审核规则版本
+      example: 1
+    fieldInfoList:
+      type: array
+      description: 字段信息平铺列表
+      items:
+        $ref: './reviews.yaml#/ReviewRuleFieldDTO'
+  description: 规则审核DTO
+
+ReviewRuleFieldDTO:
+  type: object
+  properties:
+    fieldId:
+      type: integer
+      description: 字段ID
+      example: 1234
+    fieldName:
+      type: string
+      description: 字段名称
+      example: 名称
+    blockType:
+      type: integer
+      description: 字段类型 0:基本字段 1:表格字段
+      example: 0
+    tableId:
+      type: integer
+      description: 表格ID
+      example: -1
+    tableName:
+      type: string
+      description: 表格名称
+      example: Table1
+    classificationIdNo:
+      type: integer
+      description: 分类id
+      example: 123
+    classificationName:
+      type: string
+      description: 分类名称
+      example: 身份证
+  description: 审核规则字段信息DTO
+
+ReviewRuleTaskDO:
+  type: object
+  properties:
+    gmtCreate:
+      type: string
+    gmtModified:
+      type: string
+    creatorId:
+      type: integer
+      description: 创建人用户id
+      example: 1
+    operatorId:
+      type: integer
+      description: 操作人用户id
+      example: 1
+    deleted:
+      type: integer
+      description: 是否删除，0-未删除，1-已删除
+      example: 0
+    id:
+      type: integer
+      description: 审核规则任务唯一id
+      example: 1
+    reviewRuleIdNo:
+      type: integer
+      description: 审核规则唯一id
+      example: 1
+    reviewRuleVersion:
+      type: integer
+      description: 审核规则版本
+      example: 1
+    processStatus:
+      type: integer
+      description: 审核任务状态（0:待审核、1:审核成功、2:审核失败、3:审核中）
+      example: 1
+    thinkOutput:
+      type: string
+      description: 思考输出
+      example: 思考输出内容
+    evalOutput:
+      type: string
+      description: 评估输出
+      example: 评估输出内容
+    bindingTaskIds:
+      type: array
+      description: 绑定任务ID列表
+      items:
+        type: integer
+        description: 绑定任务ID
+        example: 1234
+    resultHighlights:
+      type: array
+      items:
+        $ref: './reviews.yaml#/DocumentOcrPosition'
+    evalResult:
+      type: boolean
+      description: 评估结果（true：通过、false：不通过）
+      example: true
+    duration:
+      type: integer
+      description: 任务耗时
+      example: 100
+    eval:
+      type: boolean
+      description: 是否为测试运行
+      example: false
+    manualAuditStatus:
+      type: integer
+      description: 评估结果人工确认
+      example: 0:未确认、1:已确认
+    manualAuditMessage:
+      type: string
+      description: 人工批注
+      example: 人工批注内容
+
+ApiClassificationIdNoListReqVO:
+  required:
+    - classificationIdNoList
+  type: object
+  properties:
+    classificationIdNoList:
+      type: array
+      description: 分类ID列表
+      example:
+        - 1
+        - 2
+        - 3
+      items:
+        type: string
+        description: 分类ID
+        example: 1
+  description: 分类ID列表请求VO
+
+CommonResultListApiModelFieldRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiModelFieldRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiModelFieldRespVO:
+  required:
+    - description
+    - fieldName
+    - id
+  type: object
+  properties:
+    id:
+      type: integer
+      description: 主键ID，此字段含义同fieldId
+      example: 29026
+    fieldName:
+      type: string
+      description: 字段名称
+      example: 赵六
+    description:
+      type: string
+      description: 字段描述
+      example: 赵六
+    fieldPrompt:
+      type: string
+      description: 字段提示
+      example: 赵六
+    modelIdNo:
+      type: string
+      description: 所属模型IdNo
+      example: '1024'
+    fieldCode:
+      type: string
+      description: 字段code
+      example: '1024'
+    sysFieldId:
+      type: string
+      description: 关联系统字段ID
+      example: '1024'
+    fieldType:
+      type: string
+      description: 字段类型
+      example: '1024'
+    fieldFormat:
+      type: string
+      description: 字段格式化格式
+      example: '1024'
+    blockType:
+      type: integer
+      description: 字段模块 0:基本字段 1:表格字段
+      example: 1024
+    tableIdNo:
+      type: integer
+      description: 表格ID
+      example: 1024
+    tableId:
+      type: integer
+      description: 表格ID，含义同tableIdNo
+      example: 1024
+    tableName:
+      type: string
+      description: 表格名称
+      example: Table Name
+    requiredStatus:
+      type: integer
+      description: 是否必填状态 0:选填字段 1:必填字段
+      example: 1024
+    sort:
+      type: integer
+      description: 排序
+      example: 1
+    textInLines:
+      type: array
+      description: 字段坐标
+      items:
+        $ref: './common.yaml#/TextInLines'
+    enableStatus:
+      type: integer
+      description: '是否启用 0：禁用  1；启用  2: 草稿'
+      example: 1
+    enableFlag:
+      type: string
+      description: 是否开启, Y:是, N:否
+      example: Y
+    classificationIdNo:
+      type: integer
+      description: 分类ID
+      example: 123
+  description: 模型基础字段表格信息 Response VO
+
+ApiRuleReviewCreateReqVO:
+  required:
+    - classificationIdNoList
+    - fileBatchNo
+    - ruleName
+    - rulePrompt
+    - workspaceIdNo
+  type: object
+  properties:
+    ruleName:
+      maxLength: 255
+      minLength: 0
+      type: string
+      description: 审核规则名称
+      example: 审核规则123
+    rulePrompt:
+      maxLength: 1000
+      minLength: 0
+      type: string
+      description: 审核规则提示
+      example: 审核规则提示内容
+    classificationIdNoList:
+      maxItems: 2147483647
+      minItems: 1
+      type: array
+      description: 分类ID列表
+      items:
+        type: string
+        description: 分类ID
+        example: 123
+    fileBatchNo:
+      type: string
+      description: 文件批次号
+      example: abcd
+    workspaceIdNo:
+      type: string
+      description: 工作空间ID
+      example: 123
+    fields:
+      type: array
+      description: 关联的字段信息
+      items:
+        $ref: './reviews.yaml#/Field'
+  description: 创建规则ReqVO
+
+CommonResultApiRuleReviewCreateRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      $ref: './reviews.yaml#/ApiRuleReviewCreateRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiRuleReviewCreateRespVO:
+  type: object
+  properties:
+    ruleIdNo:
+      type: integer
+      description: 审核规则唯一id，含义同reviewRuleIdNo
+      example: 1234
+  description: 创建规则返回结果VO
+
+CommonResultBoolean:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: boolean
+      description: 是否成功（true：成功、false：失败）
+      example: true
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiRuleReviewDeleteReqVO:
+  required:
+    - ruleIdNo
+  type: object
+  properties:
+    ruleIdNo:
+      type: string
+      description: 审核规则唯一id，含义同reviewRuleIdNo
+      example: 123
+  description: 删除审核规则请求参数
+
+CommonResultListApiFileBatchInfoRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiFileBatchInfoRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiFileBatchInfoRespVO:
+  type: object
+  properties:
+    fileBatchNo:
+      type: string
+      description: 文件批次号
+      example: abcd
+    uploadDate:
+      type: string
+      description: 上传日期
+    updateTime:
+      type: string
+      description: 修改时间
+    recognitionStatus:
+      type: integer
+      description: |
+        识别状态。
+        可选值：
+        - `0`: 识别中
+        - `1`: 识别完成
+        - `2`: 识别失败
+        - `10`: 分类成功(当upload接口的target_process为classify时才有此状态)
+        识别失败表示存在部分任务识别失败。
+      example: 1
+    recognitionSuccessCount:
+      type: integer
+      description: 识别成功数量
+      example: 10
+    recognitionFailCount:
+      type: integer
+      description: 识别失败数量
+      example: 2
+    taskCount:
+      type: integer
+      description: 任务数量
+      example: 3
+    reviewRuleCount:
+      type: integer
+      description: 包含规则数
+      example: 4
+    fileProcessStatus:
+      type: integer
+      description: 文件任务处理状态（0:无、1:通过、2:不通过、3:审核中、4:待审核）
+      example: 1
+    classificationVOList:
+      type: array
+      description: 分类信息
+      items:
+        $ref: './reviews.yaml#/ClassificationVO'
+    hasReviewRuleRepo:
+      type: boolean
+      description: 是否有可用规则库（true：有、false：没有）
+      example: true
+  description: 根据批次展示审核列表返回结果
+
+ClassificationVO:
+  type: object
+  properties:
+    classificationIdNo:
+      type: integer
+      description: 分类id
+      example: 1234
+    classificationName:
+      type: string
+      description: 分类名称
+      example: 身份证
+
+CommonResultListApiFileBatchExecuteTaskRespVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiFileBatchExecuteTaskRespVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 200
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiFileBatchExecuteTaskRespVO:
+  type: object
+  properties:
+    taskId:
+      type: integer
+      description: 任务ID
+      example: 123456
+    fileId:
+      type: integer
+      description: 文件ID
+      example: 123456
+    fileName:
+      type: string
+      description: 文件名称
+      example: 文件名称1
+    taskStatus:
+      type: integer
+      description: 任务状态 0待识别 1识别成功 2识别失败 3分类中 4抽取中 5准备中 6文件拆分中
+      example: 1
+    taskClassificationIdNo:
+      type: integer
+      description: 任务分类ID
+      example: 123456
+    taskClassificationName:
+      type: string
+      description: 任务分类名称
+      example: 身份证
+  description: 文件任务类别列表结果字段
+
+CommonResultListApiReviewRuleVO:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: 状态码
+      example: 200
+    data:
+      type: array
+      items:
+        $ref: './reviews.yaml#/ApiReviewRuleVO'
+    msg:
+      type: string
+      description: 状态信息
+      example: 成功
+    traceId:
+      type: string
+      description: 链路id
+      example: 1234abcd
+
+ApiReviewRuleVO:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: 主键ID
+      example: 1
+    reviewRuleIdNo:
+      type: integer
+      description: 审核规则唯一id
+      example: 1
+    reviewRuleType:
+      type: string
+      description: 审核规则类型 (single | multiple)
+      example: single
+    reviewRulePrompt:
+      type: string
+      description: 审核规则提示
+      example: 审核规则提示内容
+    fileBatchNo:
+      type: string
+      description: 文件批次号
+      example: abcd
+    reviewRuleName:
+      type: string
+      description: 审核规则名称
+      example: abcd
+    workspaceIdNo:
+      type: integer
+      description: 工作空间唯一编号
+      example: 1234
+    classificationIdNoList:
+      type: array
+      description: 分类ID列表
+      items:
+        type: integer
+        description: 分类ID
+        example: 1234
+    version:
+      type: integer
+      description: 审核规则版本
+      example: 1
+    fieldInfoList:
+      type: array
+      description: 字段信息平铺列表
+      items:
+        $ref: './reviews.yaml#/ReviewRuleFieldDTO'
+  description: 规则审核VO

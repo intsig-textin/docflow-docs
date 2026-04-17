@@ -1,0 +1,500 @@
+/api/app-api/sip/platform/v2/review/listByFileBatchNo:
+  get:
+    tags:
+      - File Review
+    summary: File Batch List
+    description: File batch list. The request parameter workspaceIdNo is obtained from the page.
+    operationId: listByFileBatchNo
+    parameters:
+      - name: workspaceIdNo
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Workspace ID
+          example: 123456
+      - name: fileBatchNo
+        in: query
+        required: false
+        schema:
+          type: string
+          description: File Batch Number
+          example: abcd
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiFileBatchInfoRespVO'
+/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo:
+  get:
+    tags:
+      - File Review
+    summary: File Task Category List
+    description: |-
+      File task category list. Request parameters need to be obtained from the prerequisite API.
+
+      > Prerequisite API: /api/app-api/sip/platform/v2/review/listByFileBatchNo
+      Purpose: Retrieve batch list information by workspaceIdNo (obtained from the page).
+      Key response field: fileBatchNo
+    operationId: listExecuteTasksByFileBatchNo
+    parameters:
+      - name: workspaceIdNo
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Workspace ID
+          example: 123
+      - name: fileBatchNo
+        in: query
+        required: true
+        schema:
+          type: string
+          description: File Batch Number
+          example: abcd
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiFileBatchExecuteTaskRespVO'
+/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo:
+  post:
+    tags:
+      - File Review
+    summary: Review Rules List
+    description: |-
+      Review rules list (typically called without a classification to get all rules under the batch). Some request parameters need to be obtained from the prerequisite API.
+
+      > Prerequisite API: /api/app-api/sip/platform/v2/review/listByFileBatchNo
+      Purpose: Retrieve batch list information by workspaceIdNo (obtained from the page).
+      Key response field: fileBatchNo
+    operationId: getRulesByClassificationIdNo
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiClassificationQueryReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiReviewRuleVO'
+/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo:
+  post:
+    tags:
+      - File Review
+    summary: File Task List
+    description: |-
+      File task list. Request parameters need to be obtained from the prerequisite API.
+
+      > Prerequisite API: /api/app-api/sip/platform/v2/review/listByFileBatchNo
+      Purpose: Retrieve batch list information by workspaceIdNo (obtained from the page).
+      Key response field: fileBatchNo
+    operationId: listTaskDetailInfoByClassificationIdNo
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiClassificationQueryReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiReviewRuleBindingTaskDetailRespVO'
+/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList:
+  post:
+    tags:
+      - File Review
+    summary: Model Field List
+    description: >-
+      Model field list. Request parameters need to be obtained from prerequisite APIs.
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
+
+      Purpose: Used as a prerequisite when creating rules to get all classification IDs under the batch. You can select the classifications needed for rule creation from the response.
+
+      Key response field: taskClassificationIdNo (classification ID)
+
+
+      > Prerequisite API: /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo
+
+      Purpose: Used as a prerequisite when updating rules to get the classification ID information of the rule.
+
+      Key response field: classificationIdNoList (list of classification IDs configured for the current rule)
+    operationId: listModelFieldInfoByClassificationIdNoList
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiClassificationIdNoListReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiModelFieldRespVO'
+/api/app-api/sip/platform/v2/review/create:
+  post:
+    tags:
+      - File Review
+    summary: Create Review Rule
+    description: >-
+      Create a review rule. Some prerequisite APIs need to be called before invoking this API.
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
+
+      Purpose: Get all classification IDs under the batch.
+
+      Key response field: taskClassificationIdNo (classification ID)
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList
+
+      Purpose: Get field information under the classifications.
+
+      Key response fields: id (equivalent to fieldId), fieldName, blockType (distinguishes basic fields from table fields), classificationIdNo (indicates which classification the field belongs to),
+      tableIdNo (table ID, if the field is a table field), tableName (table name, if the field is a table field)
+    operationId: createReviewRule
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiRuleReviewCreateReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultApiRuleReviewCreateRespVO'
+/api/app-api/sip/platform/v2/review/update:
+  post:
+    tags:
+      - File Review
+    summary: Update Review Rule
+    description: >-
+      Update a review rule. Some prerequisite APIs need to be called before invoking this API.
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList
+
+      Purpose: Get field information under the classifications.
+
+      Key response fields: id (equivalent to fieldId), fieldName, blockType (distinguishes basic fields from table fields), classificationIdNo (indicates which classification the field belongs to),
+      tableIdNo (table ID, if the field is a table field), tableName (table name, if the field is a table field)
+
+
+      > Prerequisite API: /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo
+
+      Purpose: Get all review rules under the current batch by workspaceIdNo and fileBatchNo.
+
+      Key response fields: classificationIdNoList (list of classification IDs configured for the current rule), fieldInfoList (list of field information configured for the current rule), reviewRuleIdNo (review rule ID)
+    operationId: updateReviewRule
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiRuleReviewUpdateReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultApiRuleReviewUpdateRespVO'
+/api/app-api/sip/platform/v2/review/delete:
+  post:
+    tags:
+      - File Review
+    summary: Delete Review Rule
+    operationId: deleteReviewRule
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiRuleReviewDeleteReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultBoolean'
+/api/app-api/sip/platform/v2/review/runRule:
+  post:
+    tags:
+      - File Review
+    summary: Trial Run Review Rule
+    description: >-
+      Trial run a review rule. Some request parameters need to be obtained from the prerequisite API.
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo
+
+      Purpose: Get the task ID.
+
+      Key response field: executeTaskId (task ID)
+    operationId: runRule
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiReviewRuleRunReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultApiReviewRuleTaskVO'
+/api/app-api/sip/platform/v2/review/submitReviewTask:
+  post:
+    tags:
+      - File Review
+    summary: Submit Review Task
+    description: >-
+      Submit a review task. Some request parameters need to be obtained from the prerequisite API.
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo
+
+      Purpose: Get the task ID.
+
+      Key response field: executeTaskId (task ID)
+    operationId: submitReviewTask
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiReviewTaskSubmitReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiReviewTaskSubmitRespVO'
+/api/app-api/sip/platform/v2/review/listReviewRuleAndTask:
+  post:
+    tags:
+      - File Review
+    summary: Review Rule and Task List
+    description: >-
+      Review rule and task list. Request parameters need to be obtained from prerequisite APIs.
+
+
+      > Prerequisite API: /api/app-api/sip/platform/v2/review/listByFileBatchNo
+
+      Purpose: Retrieve batch list information by workspaceIdNo (obtained from the page).
+
+      Key response field: fileBatchNo
+
+
+      >
+      Prerequisite API: /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo
+
+      Purpose: Get all classification IDs under the batch.
+
+      Key response field: taskClassificationIdNo (classification ID)
+    operationId: listReviewRuleAndTask
+    parameters:
+      - name: x-ti-app-id
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-app-id
+          example: 1234abcd
+      - name: x-ti-secret-code
+        in: header
+        required: true
+        schema:
+          type: string
+          description: x-ti-secret-code
+          example: 1234abcd
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/reviews.yaml#/ApiReviewRuleAndTaskReqVO'
+      required: true
+    responses:
+      '200':
+        description: OK
+        content:
+          '*/*':
+            schema:
+              $ref: '../components/schemas/reviews.yaml#/CommonResultListApiReviewRuleAndTaskRespVO'

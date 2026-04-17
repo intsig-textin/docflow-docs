@@ -1,0 +1,359 @@
+---
+title: "Quickstart"
+description: "Quick API integration of file category management features"
+---
+
+<Tip>
+  File Category is a core concept in DocFlow for organizing and defining document types. Each file category can be configured with fields, tables, samples, etc., for document classification and intelligent extraction.
+</Tip>
+
+## Core Concepts
+
+Before using the file category APIs, understanding the following core concepts will help you better comprehend how the system works:
+
+### Sample Files
+
+Sample files are typical example documents of the file category. DocFlow uses these samples to:
+- **Train classification models**: Help the system identify and distinguish different types of documents
+- **Optimize extraction performance**: Improve field extraction accuracy by learning format and layout patterns from samples
+- **Establish recognition templates**: Provide reference benchmarks for automatically recognizing similar documents
+
+**Requirements**: Each file category requires at least 1 sample file, with a maximum of 10. We recommend uploading 3-5 representative samples for best results.
+
+### Regular Fields
+
+Regular fields refer to key information that exists in the document in **non-table format**. Each field contains a field name (key) and corresponding value. Fields may span across pages or rows.
+
+**Extraction Result Location**: Field information is located at `result.files[].data.fields[]` in the extraction result, with each field containing:
+- `key`: Field name (e.g., "Invoice Code", "Issue Date")
+- `value`: Field value (extracted text content)
+- `position[]`: Position coordinate information in the document
+
+**Typical use cases**:
+- Invoice category: Invoice code, invoice number, issue date, buyer name, total amount
+- Contract category: Contract number, party A name, party B name, signing date, contract amount
+- ID card category: Name, gender, ethnicity, date of birth, ID number
+
+**Purpose of configuring fields**:
+- Explicitly tell the system which information to extract from documents
+- Guide AI models for precise extraction through field descriptions and prompts
+- Define data formats and validation rules for fields
+
+### Table Fields
+
+Table fields refer to **structured data in table format**. DocFlow can recognize table structures in documents and convert table content into structured data format. Tables consist of multiple rows and columns, and each table can be configured with multiple fields (columns).
+
+**Extraction Result Location**: Table information is located at `result.files[].data.items[][]` in the extraction result, using a two-dimensional array structure:
+- Outer array: Represents table rows
+- Inner array: Represents cells within a row
+- Each cell contains `key` (column name), `value` (cell value), and `position` (position coordinates)
+
+**Typical use cases**:
+- Invoice category: Item details table (goods/services name, specification, unit, quantity, unit price, amount)
+- Reimbursement form: Expense details table (expense item, date, amount, remarks)
+- Order category: Order details table (product name, quantity, unit price, subtotal)
+
+**Difference between table fields and regular fields**:
+- **Regular fields**: Non-table key-value pairs, returned in `result.files[].data.fields[]`, typically single information points in the document
+- **Table fields**: Structured table data, returned in `result.files[].data.items[][]`, supporting extraction of multiple rows at once
+- **Use cases**: Regular fields are suitable for fixed information in document headers and footers; table fields are suitable for detail lists with repetitive structured information
+
+## Getting Started
+
+This guide introduces how to use file category-related APIs: create, list, update, and delete.
+
+## Create File Category
+
+Create a new file category by uploading at least one sample file and configuring at least one field:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "workspace_id=<your-workspace-id>" \
+  -F "name=Invoice" \
+  -F "category_prompt=VAT invoice with fields such as invoice code, invoice number, etc." \
+  -F "extract_model=llm" \
+  -F "sample_files=@/path/to/invoice_sample.pdf" \
+  -F 'fields=[{"name":"Invoice Code","description":"Invoice code description","prompt":"Please extract the invoice code"}]' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/create"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/create"
+
+# Prepare sample file
+files = {
+    'sample_files': open('/path/to/invoice_sample.pdf', 'rb')
+}
+
+# Prepare form data
+data = {
+    'workspace_id': workspace_id,
+    'name': 'Invoice',
+    'category_prompt': 'VAT invoice with fields such as invoice code, invoice number, etc.',
+    'extract_model': 'llm',
+    'fields': '[{"name":"Invoice Code","description":"Invoice code description","prompt":"Please extract the invoice code"}]'
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    category_id = result.get("result", {}).get("category_id")
+    print(f"File category created successfully, ID: {category_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `name` (required): File category name, max length 50
+- `category_prompt` (optional): Prompt for classification, max length 500
+- `extract_model` (required): Extraction model, options: `llm`, `vlm`
+- `sample_files` (required): Sample file list, at least one sample file required; maximum 10 sample files per category
+- `fields` (required): Field configuration list (JSON string), at least one field required, table fields can only be configured in the default table (table_id=-1)
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "category_id": "1234567890"
+  }
+}
+```
+
+## List File Categories
+
+Get all file categories in a workspace:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/list?workspace_id=<your-workspace-id>&page=1&page_size=20&enabled=1"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "page": 1,
+        "page_size": 20,
+        "enabled": "1"  # all: All, 1: Enabled, 0: Disabled, 2: Draft
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    categories = result.get("result", {}).get("categories", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} file categories")
+    for category in categories:
+        print(f"Category ID: {category.get('id')}, Name: {category.get('name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `page` (optional): Page number, default is 1
+- `page_size` (optional): Items per page, default is 1000
+- `enabled` (optional): Status filter, options: `all` (All), `1` (Enabled), `0` (Disabled), `2` (Draft), default is `1`
+
+**Response Example:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 10,
+    "page": 1,
+    "page_size": 20,
+    "categories": [
+      {
+        "id": "1234567890",
+        "name": "Invoice",
+        "category_prompt": "VAT invoice with fields such as invoice code, invoice number, etc.",
+        "extract_model": "llm",
+        "enabled": 1
+      }
+    ]
+  }
+}
+```
+
+## Update File Category
+
+Update information for a specified file category:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "1234567890",
+    "name": "Updated Category Name",
+    "category_prompt": "Updated prompt",
+    "enabled": 1
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/update"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "1234567890"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "name": "Updated Category Name",
+    "category_prompt": "Updated prompt",
+    "enabled": 1  # 0: Disabled, 1: Enabled, 2: Draft
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("File category updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_id` (required): File category ID
+- `name` (optional): File category name, max length 50
+- `category_prompt` (optional): Prompt for classification, max length 500
+- `enabled` (optional): Status, 0: Disabled, 1: Enabled, 2: Draft
+
+## Delete File Category
+
+Delete specified file category(s) (supports batch deletion):
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_ids": ["1234567890", "0987654321"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_ids": ["1234567890", "0987654321"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("File category deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**Request Parameters:**
+- `workspace_id` (required): Workspace ID
+- `category_ids` (required): Array of file category IDs to delete
+
+<Warning>
+  Deleting a file category will also delete all its fields, tables, and samples. Please proceed with caution.
+</Warning>
+
+## Next Steps
+
+- Learn [Fields Management](./fields_management) - Manage fields under file categories
+- Learn [Tables Management](./tables_management) - Manage tables under file categories
+- Learn [Samples Management](./samples_management) - Manage sample files for file categories

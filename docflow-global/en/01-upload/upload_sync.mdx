@@ -1,0 +1,335 @@
+---
+title: "Synchronous Upload"
+description: "Upload file synchronously and wait for processing to complete, returning processing results directly"
+---
+
+<Tip>
+  This document demonstrates how to upload files to DocFlow through REST API using the synchronous upload interface.  
+  The synchronous upload interface waits for file processing to complete before returning results, suitable for scenarios that require immediate access to processing results.
+</Tip>
+
+DocFlow provides a synchronous upload interface `/api/app-api/sip/platform/v2/file/upload/sync`. The difference between this interface and the regular upload interface `/api/app-api/sip/platform/v2/file/upload` is:
+
+- **Regular Upload Interface**: Returns immediately after uploading the file, requires subsequent querying of processing results through the `/file/fetch` interface
+- **Synchronous Upload Interface**: Waits for processing to complete after uploading the file, directly returns complete processing results without additional queries
+
+<Warning>
+  The synchronous upload interface waits for file processing to complete. Processing time depends on file size and complexity.  
+  For large files or complex documents, it may require a longer waiting time. It is recommended to set an appropriate timeout.
+</Warning>
+
+## 01 Upload Single File Synchronously
+
+Upload file using `multipart/form-data` format:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,  # Synchronous interface requires longer timeout
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    for f in files:
+        print(f"File ID: {f['id']}, File Name: {f.get('name')}, Status: {f.get('recognition_status')}")
+        # Can directly access processing results
+        if f.get("data"):
+            print(f"Extracted fields: {f['data'].get('fields', [])}")
+```
+
+</CodeGroup>
+
+## 02 Upload Multiple Files Synchronously
+
+You can upload multiple files in one request. The system will wait for all files to be processed before returning:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/1.pdf" \
+  -F "file=@/path/to/2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>&batch_number=202412190001"
+```
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepaths = ["/path/to/file1.pdf", "/path/to/file2.pdf"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+fields = []
+for filepath in filepaths:
+    mime_type = "application/pdf"
+    if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+        mime_type = "image/jpeg"
+    fields.append(("file", (os.path.basename(filepath), open(filepath, "rb"), mime_type)))
+
+payload = MultipartEncoder(fields=fields)
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "202412190001",
+        "category": "invoice"
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    print(f"Processing completed, {len(files)} files")
+    for f in files:
+        print(f"File: {f.get('name')}, Status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## 03 Upload via URL Synchronously
+
+The synchronous upload interface also supports uploading via file URLs:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com/document.pdf"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_url = "https://example.com/document.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+payload = {
+    "urls": [file_url]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    for f in files:
+        print(f"File ID: {f['id']}, Processing Status: {f.get('recognition_status')}")
+        # Directly access processing results
+        if f.get("data") and f.get("data").get("fields"):
+            for field in f["data"]["fields"]:
+                print(f"  {field.get('key')}: {field.get('value')}")
+```
+
+</CodeGroup>
+
+## 04 Parameter Description
+
+The parameters of the synchronous upload interface are exactly the same as the regular upload interface:
+
+### Required Parameters
+
+- `workspace_id`: Workspace ID. You can refer to the [Get Workspace ID](../100-faq/get_workspace_id) documentation.
+
+### Optional Parameters
+
+Can be added in URL query parameters as needed:
+
+- `category`: File category (e.g., invoice)
+- `batch_number`: Batch number, automatically generated by the system if not provided
+- `split_flag`: Whether to perform file splitting, default false (see [File Splitting](../05-split/split) section)
+- `crop_flag`: Whether to perform multi-image cropping, default false (see [Multi-image Cropping](../05-split/crop) section)
+- `target_process`: Target processing type, optional `classify` or `extract`.\
+  Docflow will perform the complete process of parsing->classification->extraction by default. When `target_process` is `classify`, the process ends after classification
+
+### Request Body Parameters
+
+Supports two methods:
+
+1. **File Upload**: Use `multipart/form-data` format, field name is `file` (can be repeated multiple times)
+2. **URL Upload**: Use `application/json` format, contains `urls` array (up to 10 URLs)
+
+## 05 Response Format
+
+The response format returned by the synchronous upload interface is the same as the `/file/fetch` interface, containing complete processing results:
+
+```json expandable
+{
+   "code": 200,
+   "msg": "Success",
+   "result": {
+      "total": 1,
+      "page": 1,
+      "page_size": 20,
+      "files": [
+         {
+            "id": "1955840505753140508",
+            "task_id": "1955840505753140509",
+            "task_type": 1,
+            "batch_number": "202412190001",
+            "name": "invoice.pdf",
+            "format": "pdf",
+            "recognition_status": 1,
+            "verification_status": 0,
+            "category": "invoice",
+            "pages": [
+               {
+                  "page": 0,
+                  "angle": 0,
+                  "width": 1024,
+                  "height": 1448,
+                  "dpi": 144
+               }
+            ],
+            "data": {
+               "fields": [
+                  {
+                     "key": "Invoice Code",
+                     "identifier": "Invoice Code Identifier",
+                     "value": "3100231130",
+                     "position": [
+                        {
+                           "page": 0,
+                           "vertices": [100, 200, 300, 200, 300, 250, 100, 250]
+                        }
+                     ]
+                  },
+                  {
+                     "key": "Invoice Number",
+                     "identifier": "Invoice Number Identifier",
+                     "value": "28737000",
+                     "position": [
+                        {
+                           "page": 0,
+                           "vertices": [350, 200, 500, 200, 500, 250, 350, 250]
+                        }
+                     ]
+                  }
+               ],
+               "items": [],
+               "tables": [],
+               "stamps": [],
+               "handwritings": []
+            },
+            "duration_ms": 5000
+         }
+      ]
+   }
+}
+```
+
+Key fields in the response:
+
+- `result.files[]`: File list, each file contains complete processing results
+- `result.files[].data.fields[]`: Extracted field list
+- `result.files[].data.items[]`: Table data list
+- `result.files[].data.tables[]`: All table data list
+- `result.files[].data.stamps[]`: Stamp information
+- `result.files[].data.handwritings[]`: Handwriting information
+- `result.files[].recognition_status`: Recognition status (1 indicates success)
+- `result.files[].duration_ms`: Processing time (milliseconds)
+
+## 06 Use Cases
+
+### Scenarios Suitable for Synchronous Upload
+
+- Scenarios that require immediate access to processing results
+- Single file or small number of files processing
+- File processing time is short (usually seconds to tens of seconds)
+- Simplify code logic, avoid polling queries
+
+### Scenarios Not Suitable for Synchronous Upload
+
+- Batch processing of large numbers of files
+- File processing time is long (exceeding 1 minute)
+- Scenarios requiring asynchronous processing
+- Unstable network or scenarios requiring resumable uploads
+
+<Info>
+  For scenarios not suitable for synchronous upload, it is recommended to use the regular upload interface `/file/upload` with the `/file/fetch` query interface to implement an asynchronous processing workflow.
+</Info>
+
+## 07 Notes
+
+1. **Timeout Settings**: The synchronous upload interface needs to wait for processing to complete. It is recommended to set a longer timeout (at least 300 seconds)
+2. **Processing Time**: Processing time depends on file size, number of pages, and complexity. Large files may require longer processing time
+3. **Error Handling**: If processing fails, the response will contain error information. `recognition_status` of 2 indicates failure
+4. **Batch Processing**: When uploading multiple files at once, it will wait for all files to be processed, which may result in longer total processing time
+5. **Network Stability**: Since a long connection needs to be maintained, ensure network connection stability
+

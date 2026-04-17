@@ -1,0 +1,47 @@
+---
+title: "企业多租户"
+description: "企业多租户场景下的API调用说明"
+---
+
+## 01 企业多租户说明
+
+当用户属于多个企业账号，并且要对指定企业账号下的内容进行操作或访问时，需要在 HTTP header 添加 `x-ti-enterprise-id` 指定企业ID。
+
+如果用户只属于一个企业(这是默认情况)，则不需要添加这个 HTTP 头。
+
+## 02 使用方法
+
+### 2.1 多企业场景
+
+当用户属于多个企业时，需要在请求头中添加 `x-ti-enterprise-id` 来指定要操作的企业：
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "x-ti-enterprise-id: <your-enterprise-id>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+### 2.2 单企业场景
+
+如果用户只属于一个企业，则不需要添加 `x-ti-enterprise-id` 头：
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+## 03 获取企业ID
+
+如需获取企业ID，请参考[如何获取企业ID](../100-faq/get_enterprise_id)文档。

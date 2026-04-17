@@ -1,21 +1,21 @@
 openapi: 3.0.0
 info:
   title: DocFlow API
-  description: DocFlow REST API, providing file upload and file processing result retrieval capabilities
-  version: 2.0.0
+  description: DocFlow REST API，提供文件上传和获取文件处理结果能力
+  version: 2.4.0
 servers:
-- url: https://docflow.textin.ai
-  
+  - url: https://docflow.textin.ai
+
 x-codeSamples: custom
 
 paths:
   /api/app-api/sip/platform/v2/workspace/create:
     post:
-      summary: Create Workspace
-      description: Create a new workspace
+      summary: 创建空间
+      description: 创建一个新的工作空间
       operationId: createWorkspace
       tags:
-        - Workspace Management
+        - 空间管理
       requestBody:
         required: true
         content:
@@ -25,22 +25,22 @@ paths:
               properties:
                 name:
                   type: string
-                  description: Workspace name
-                  example: "My Workspace"
+                  description: 空间名称
+                  example: "我的工作空间"
                   maxLength: 50
                 description:
                   type: string
-                  description: Workspace description
-                  example: "This is a workspace for processing invoices"
+                  description: 空间描述
+                  example: "这是一个用于处理发票的工作空间"
                   maxLength: 200
                 enterprise_id:
                   type: integer
                   format: int64
-                  description: Enterprise organization ID
+                  description: 企业组织ID
                   example: 12345
                 auth_scope:
                   type: integer
-                  description: "Auth scope 0: visible only to self 1: visible to enterprise members"
+                  description: "协作范围 0:仅自己可见 1:企业成员可见"
                   example: 1
                   enum:
                     - 0
@@ -51,7 +51,7 @@ paths:
                 - auth_scope
       responses:
         '200':
-          description: Successfully created workspace
+          description: 成功创建空间
           content:
             application/json:
               schema:
@@ -64,16 +64,16 @@ paths:
                         properties:
                           workspace_id:
                             type: string
-                            description: Workspace ID
+                            description: 空间ID
                             example: "1234567890"
 
   /api/app-api/sip/platform/v2/category/create:
     post:
-      summary: Create File Category
-      description: Create a new file category in the specified workspace, requires uploading at least one sample file and configuring at least one field
+      summary: 创建文件类别
+      description: 在指定空间中创建一个新的文件类别，需要上传至少一个样本文件并配置至少一个字段
       operationId: createCategory
       tags:
-        - File Category
+        - 文件类别
       requestBody:
         required: true
         content:
@@ -83,34 +83,34 @@ paths:
               properties:
                 workspace_id:
                   type: string
-                  description: Workspace ID
+                  description: 空间ID
                   example: "1234567890"
                 name:
                   type: string
-                  description: File category name
-                  example: "Invoice"
+                  description: 文件类别名称
+                  example: "发票"
                   maxLength: 50
                 category_prompt:
                   type: string
-                  description: Prompt for classification
-                  example: "VAT invoice, including invoice code, invoice number and other fields"
+                  description: 用于分类的提示词
+                  example: "增值税发票，包含发票代码、发票号码等字段"
                   maxLength: 500
                 extract_model:
-                  description: Extraction model
+                  description: 抽取模型
                   example: "llm"
                   enum:
                     - llm
                     - vlm
                 sample_files:
                   type: array
-                  description: Sample file list, at least one sample file must be uploaded
+                  description: 样本文件列表，至少上传一个样本文件
                   items:
                     type: string
                     format: binary
                   minItems: 1
                 fields:
                   type: array
-                  description: Field configuration list, at least one field must be configured
+                  description: 字段配置列表，至少配置一个字段
                   items:
                     allOf:
                       - $ref: '#/components/schemas/CategoryFieldConfig'
@@ -123,7 +123,7 @@ paths:
                 - fields
       responses:
         '200':
-          description: Successfully created file category
+          description: 成功创建文件类别
           content:
             application/json:
               schema:
@@ -136,16 +136,16 @@ paths:
                         properties:
                           category_id:
                             type: string
-                            description: File category ID
+                            description: 文件类别ID
                             example: "1234567890"
 
   /api/app-api/sip/platform/v2/category/fields/add:
     post:
-      summary: Add File Category Field
-      description: Add a field under the specified file category, supports adding regular fields and table fields
+      summary: 新增文件类别字段
+      description: 在指定文件类别下新增一个字段，支持新增普通字段和表格字段
       operationId: addCategoryField
       tags:
-        - File Category
+        - 文件类别
       requestBody:
         required: true
         content:
@@ -157,18 +157,18 @@ paths:
               properties:
                 workspace_id:
                   type: string
-                  description: Workspace ID
+                  description: 空间ID
                   example: "1234567890"
                 category_id:
                   type: string
-                  description: File category ID
+                  description: 文件类别ID
                   example: "1234567890"
                 table_id:
                   type: string
                   description: |
-                    Table ID
-                    - Not passed or empty: Create a regular field, the result will appear in result.fields
-                    - Passed table ID: Create a table field under the corresponding table, the result will appear in result.tables[].fields
+                    表格ID
+                    - 不传或为空：创建普通字段，结果会出现在 result.fields 中
+                    - 传入表格ID：创建对应表格下的表格字段，结果会出现在 result.tables[].fields 中
                   example: "1234567890"
               required:
                 - workspace_id
@@ -176,7 +176,7 @@ paths:
                 - name
       responses:
         '200':
-          description: Successfully added file category field
+          description: 成功新增文件类别字段
           content:
             application/json:
               schema:
@@ -189,25 +189,25 @@ paths:
                         properties:
                           field_id:
                             type: string
-                            description: Newly created field ID
+                            description: 新创建的字段ID
                             example: "1234567890"
 
   /api/app-api/sip/platform/v2/file/upload:
     post:
-      summary: Upload File
+      summary: 上传文件
       description: ""
       operationId: uploadFile
       parameters:
         - name: workspace_id
           in: query
-          description: Workspace ID
+          description: 空间ID
           required: true
           schema:
             type: string
             example: 1234567890
         - name: category
           in: query
-          description: File Category
+          description: 文件类别
           required: false
           schema:
             type: string
@@ -215,21 +215,30 @@ paths:
         - name: batch_number
           in: query
           description: |
-            Batch Number.            You can upload multiple times with the same batch number, and later retrieve processing results for multiple files in that batch using the batch number.            If the value is empty, the system automatically generates a string up to 20 characters long.
+            批次编号。  
+            可以用同一个批次编号上传多次，后续可以用批次编号获取该批次多个文件处理结果。  
+            如果值为空，则系统自动生成最长20位字符串
           required: false
           schema:
             type: string
             example: 202412190001
+        - name: auto_verify_vat
+          in: query
+          description: 是否自动进行发票验真
+          required: false
+          schema:
+            type: boolean
+            default: false
         - name: split_flag
           in: query
-          description: Whether to perform file splitting
+          description: 是否进行文件拆分
           required: false
           schema:
             type: boolean
             default: false
         - name: crop_flag
           in: query
-          description: Whether to perform multi-image cropping
+          description: 是否进行多图切分
           required: false
           schema:
             type: boolean
@@ -237,13 +246,52 @@ paths:
         - name: target_process
           in: query
           description: |
-            Target processing type.            Optional values:            - classify: Classification            - extract: Extraction          required: false
+            目标处理类型。
+            可选值：
+            - `classify`: 分类
+            - `extract`: 抽取
+          required: false
           schema:
             type: string
             enum:
               - classify
               - extract
             example: classify
+        - name: parser_remove_watermark
+          in: query
+          description: '是否去水印（0:不去水印、1:去水印）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_crop_dewarp
+          in: query
+          description: '是否进行切边矫正（0:不进行切边矫正、1:进行切边矫正）'
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_apply_merge
+          in: query
+          description: '是否进行跨页段落表格合并（0:不合并、1:合并）'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: parser_formula_level
+          in: query
+          description: 公式识别等级(0 行间公式和行内公式都识别、1 仅识别行间公式，行内公式不识别、2 不识别公式)
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: parser_table_text_split_mode
+          in: query
+          description: '表格线是否分割ocr文本（0:不切割、1:切割）'
+          required: false
+          schema:
+            type: integer
+            default: 0
       requestBody:
         required: true
         content:
@@ -254,9 +302,26 @@ paths:
                 file:
                   type: string
                   format: binary
+          application/json:
+            schema:
+              type: object
+              properties:
+                urls:
+                  description: |
+                    文件URL列表
+                    一次最多支持上传10个文件URL，每个文件最大不超过50MB
+                  type: array
+                  items:
+                    type: string
+                    description: 文件URL
+                    example: 'https://example.com/file.pdf'
+                    pattern: '^https?://.*$'
+                  maxItems: 10
+              required:
+                - urls
       responses:
         '200':
-          description: File upload successful
+          description: 文件上传成功
           content:
             application/json:
               schema:
@@ -269,24 +334,28 @@ paths:
                       properties:
                         batch_number:
                           type: string
-                          description: Batch Number
+                          description: 批次编号
                           example: 202412190001
                         files:
-                          type: array                          
+                          type: array
                           items:
                             type: object
                             properties:
                               id:
                                 type: string
-                                description: File ID
+                                description: 文件ID
                                 example: 202412190001
+                              task_id:
+                                type: string
+                                description: 任务ID
+                                example: '1981692246135111700'
                               name:
                                 type: string
-                                description: File Name
+                                description: 文件名
                                 example: invoice.pdf
                               format:
                                 type: string
-                                description: File Format
+                                description: 文件格式
                                 example: pdf
                             required:
                             - id
@@ -298,7 +367,7 @@ paths:
       x-codeSamples:
         - lang: 'bash'
           label: cURL
-          source: |
+          source: | 
             curl -X POST \
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
@@ -308,63 +377,63 @@ paths:
 
   /api/app-api/sip/platform/v2/file/fetch:
     get:
-      summary: Get File Processing Result List
+      summary: 获取文件处理结果列表
       description: ""
       operationId: getFiles
       parameters:
         - name: page
           in: query
-          description: Page number, default 1
+          description: 页码，默认1
           required: false
           schema:
             type: integer
             default: 1
         - name: page_size
           in: query
-          description: Number of items per page, default 1000
+          description: 每页数量，默认1000
           required: false
           schema:
             type: integer
             default: 1000
         - name: workspace_id
           in: query
-          description: Workspace ID
+          description: 空间ID
           required: true
           schema:
             type: string
         - name: batch_number
           in: query
-          description: Batch Number
+          description: 批次编号
           required: false
           schema:
             type: string
         - name: file_id
           in: query
-          description: File ID
+          description: 文件ID
           required: false
           schema:
             type: string
         - name: category
           in: query
-          description: File Category
+          description: 文件类别
           required: false
           schema:
             type: string
         - name: recognition_status
           in: query
-          description: "File recognition status 0: Pending recognition 1: Recognition successful 2: Recognition failed"
+          description: "文件识别状态 0: 待识别 1: 识别成功 2: 识别失败"
           required: false
           schema:
             $ref: '#/components/schemas/RecognitionStatus'
         - name: verification_status
           in: query
-          description: "File verification status 0: Pending verification 2: Confirmed 3: Rejected 4: Deleted 5: Deferred processing"
+          description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
           required: false
           schema:
             $ref: '#/components/schemas/VerificationStatus'
         - name: start_time
           in: query
-          description: Start time for search by update time, RFC3339 format (YYYY-MM-DDTHH:MM:SSZ)
+          description: 以更新时间搜索的开始时间, RFC3339格式(YYYY-MM-DDTHH:MM:SSZ)
           required: false
           schema:
             type: string
@@ -372,7 +441,7 @@ paths:
             example: 2024-01-01T00:00:00Z
         - name: end_time
           in: query
-          description: End time for search by update time, RFC3339 format (YYYY-MM-DDTHH:MM:SSZ)
+          description: 以更新时间搜索的结束时间, RFC3339格式(YYYY-MM-DDTHH:MM:SSZ)
           required: false
           schema:
             type: string
@@ -380,240 +449,27 @@ paths:
             example: 2024-01-01T10:00:00Z
         - name: with_document
           in: query
-          description: Whether to return the complete text recognition result of the document
+          description: 是否返回文档的全部文字识别结果
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: with_task_detail_url
+          in: query
+          description: 是否返回任务详情页URL
           required: false
           schema:
             type: boolean
             default: false
       responses:
         '200':
-          description: Successfully retrieved file list
+          description: 成功获取文件列表
           content:
             application/json:
               schema:
                 allOf:
                 - $ref: '#/components/schemas/CodeMessage'
-                - type: object
-                  properties:
-                    result:
-                      type: object
-                      properties:
-                        total:
-                          type: integer
-                          description: Total number of files
-                          example: 100
-                        page:
-                          type: integer
-                          description: Current page number
-                          example: 1
-                        page_size:
-                          type: integer
-                          description: Number of items per page
-                          example: 20
-                        files:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: string
-                                description: File ID
-                                example: 202412190001
-                              task_id:
-                                type: string
-                                description: Task ID
-                                example: 202412190001
-                              task_type:
-                                $ref: '#/components/schemas/TaskType'
-                              batch_number:
-                                type: string
-                                description: Batch Number
-                                example: 202412190001
-                              name:
-                                type: string
-                                description: File Name
-                                example: invoice.pdf
-                              format:
-                                type: string
-                                description: File Format
-                              recognition_status:
-                                $ref: '#/components/schemas/RecognitionStatus'
-                              verification_status:
-                                $ref: '#/components/schemas/VerificationStatus'
-                              category:
-                                type: string
-                                description: File Category
-                                example: invoice
-                              pages:
-                                type: array
-                                description: |
-                                  Data for rendering each page of the file.                                  Combined with the page and position fields in data.fields, you can accurately draw the position of fields on the page.
-                                items:
-                                  type: object
-                                  properties:
-                                    angle:
-                                      type: integer
-                                      description: Rotation angle
-                                      enum:
-                                        - 0
-                                        - 90
-                                        - 180
-                                        - 270
-                                    width:
-                                      type: integer
-                                      description: Page width after correction
-                                      example: 1024
-                                    height:
-                                      type: integer
-                                      description: Page height after correction
-                                      example: 1024
-                                    dpi:
-                                      type: integer
-                                      description: Resolution when converting PDF to image. For non-PDF files, this value is 0.
-                                      example: 144
-                              data:
-                                type: object
-                                description: Processing result
-                                properties:
-                                  fields:
-                                    description: Field list
-                                    type: array
-                                    items:
-                                      $ref: '#/components/schemas/KeyValue'
-                                    example:
-                                    - key: Invoice Code
-                                      value: "3100231130"
-                                      position:
-                                      - page: 0
-                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                    - key: Invoice Number
-                                      value: "28737000"
-                                      position:
-                                      - page: 0
-                                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                  items:
-                                    description: Table data list
-                                    type: array
-                                    items:
-                                      type: array
-                                      items:
-                                        $ref: '#/components/schemas/KeyValue'
-                                    example:
-                                    - - key: Goods and Services Name
-                                        value: ＊Electronic Computer＊Microcomputer Host
-                                        position:
-                                        - page: 0
-                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                      - key: Specification Model
-                                        value: DMS-SC68
-                                        position:
-                                        - page: 0
-                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                    - - key: Goods and Services Name
-                                        value: ＊Mechanical Computer＊Supercomputer Host
-                                        position:
-                                        - page: 0
-                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                      - key: Specification Model
-                                        value: AN/FSQ-7
-                                        position:
-                                        - page: 0
-                                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                                  tables:
-                                    description: Complete table data list (including system tables and manually configured tables)
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        tableName:
-                                          description: Table name
-                                          type: string
-                                          example: table1
-                                        tableType:
-                                          description: |
-                                            Table type, 0: system configured, 1: manually added.
-                                          type: string
-                                          example: 0
-                                        items:
-                                          type: array
-                                          items:
-                                            type: array
-                                            items:
-                                              $ref: '#/components/schemas/CommonFieldDetailRespVO'
-                                  stamps:
-                                    description: Stamp information
-                                    type: array
-                                    items:
-                                      $ref: '#/components/schemas/StampValue'
-                                    example:
-                                      - angel: 0
-                                        page: 0
-                                        text: National Unified Invoice Supervision Seal
-                                        type: Other
-                                        color: Red
-                                        shape: Oval Seal
-                                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                      - angel: 0
-                                        page: 0
-                                        text: Tax Bureau Seal
-                                        type: Other
-                                        color: Red
-                                        shape: Oval Seal
-                                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                  handwritings:
-                                    description: Handwriting information
-                                    type: array
-                                    items:
-                                      $ref: '#/components/schemas/HandWritingValue'
-                                    example:
-                                      - angel: 0
-                                        page: 0
-                                        text: March 1st
-                                        position:
-                                          - page: 0
-                                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                      - angel: 0
-                                        page: 0
-                                        text: Zhang San
-                                        position:
-                                          - page: 0
-                                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                                  invoiceVerifyResult:
-                                    description: Invoice verification result
-                                    type: object
-                                    properties:
-                                      invoiceVerifyStatus:
-                                        type: integer
-                                        description: |
-                                          Whether invoice verification is successful (0: No, 1: Yes, null: Not verified)
-                                        example: 0
-                                      invoiceVerifyErrorCode:
-                                        type: integer
-                                        description: Invoice verification error code
-                                        example: 0
-                                      invoiceVerifyCanRetry:
-                                        type: integer
-                                        description: |
-                                          Whether invoice verification can be retried/initiated (0: No, 1: Yes)
-                                        example: 0
-                                      invoiceVerifyFailMsg:
-                                        type: string
-                                        description: Invoice verification failure reason
-                                        example: Exceeded daily limit
-                              document:
-                                $ref: '#/components/schemas/Document'
-                              child_files:
-                                description: Sub-task information
-                                type: array
-                                items:
-                                  $ref: '#/components/schemas/SubFileDetailInfo'
-                            required:
-                              - id
-                              - name
-                              - format
-                              - recognition_status
-                              - verification_status
-                              - category
+                - $ref: '#/components/schemas/TaskProcessResult'
       x-codeSamples:
         - lang: 'bash'
           label: cURL
@@ -624,8 +480,8 @@ paths:
             'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=1234567890&batch_number=202412190001'
   /api/app-api/sip/platform/v2/file/update:
     post:
-      summary: Update File Processing Result
-      description: Update file processing result. Usually used after manual review and proofreading to upload modified key-value pairs, overriding automatically recognized results.
+      summary: 更新文件处理结果
+      description: 更新文件处理结果。通常用于人工审核校对后，上传修改后的key-value，覆盖自动识别的结果。
       operationId: updateFile
       requestBody:
         required: true
@@ -638,20 +494,20 @@ paths:
                 properties:
                   workspace_id:
                     type: string
-                    description: Workspace ID
+                    description: 空间ID
                     example: 1234567890
                   file_id:
                     type: string
-                    description: File ID
+                    description: 文件ID
                     example: 202412190001
                   data:
                     description: |
-                      Full field update.  
-                      Note: Even if only updating partial fields, all fields must be included.  
-                      If the incoming fields are more than the original fields, the additional fields will be added.  
-                      If the incoming fields are fewer than the original fields, the missing fields will be deleted.  
-                      If the incoming field values differ from the original field values, the field values will be updated.  
-                      If the incoming fields are identical to the original fields, the fields will be preserved.
+                      全量更新字段。  
+                      注意，即使只更新部分字段，也必须包含所有字段。  
+                      如果传入的字段较原字段多，则多出的字段会被添加。  
+                      如果传入的字段较原字段少，则缺少的字段会被删除。  
+                      如果传入的字段值较原字段值有变化，则字段值会被更新。  
+                      如果传入的字段与原字段完全相同，则字段会被保留。
                     type: object
                     properties:
                       fields:
@@ -659,12 +515,12 @@ paths:
                         items:
                           $ref: '#/components/schemas/KeyValue'
                         example:
-                        - key: Invoice Code
+                        - key: 发票代码
                           value: "3100231130"
                           position:
                           - page: 0
                             vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                        - key: Invoice Number
+                        - key: 发票号码
                           value: "28737000"
                           position:
                           - page: 0
@@ -676,22 +532,22 @@ paths:
                           items:
                             $ref: '#/components/schemas/KeyValue'
                         example:
-                        - - key: Goods and Services Name
-                            value: ＊Electronic Computer＊Microcomputer Host
+                        - - key: 货物劳务名称
+                            value: ＊电子计算机＊微型计算机主机
                             position:
                             - page: 0
                               vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                          - key: Specification Model
+                          - key: 规格型号
                             value: DMS-SC68
                             position:
                             - page: 0
-                              vertices: [0, 0, 100, 0, 100, 0, 100, 0, 100]
-                        - - key: Goods and Services Name
-                            value: ＊Mechanical Computer＊Supercomputer Host
+                              vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - - key: 货物劳务名称
+                            value: ＊机械计算机＊巨型计算机主机
                             position:
                             - page: 0
                               vertices: [0, 0, 100, 0, 100, 100, 0, 100]
-                          - key: Specification Model
+                          - key: 规格型号
                             value: AN/FSQ-7
                             position:
                             - page: 0
@@ -702,7 +558,7 @@ paths:
                 - data
       responses:
         '200':
-          description: Successfully updated file processing result
+          description: 成功更新文件处理结果
           content:
             application/json:
               schema:
@@ -714,34 +570,34 @@ paths:
                       type: object
                       properties:
                         files:
-                          description: Updated file list
+                          description: 更新后的文件列表
                           type: array
                           items:
                             type: object
                             properties:
                               workspace_id:
                                 type: string
-                                description: Workspace ID
+                                description: 空间ID
                                 example: 1234567890
                               id:
                                 type: string
-                                description: File ID
+                                description: 文件ID
                                 example: 202412190001
       x-codeSamples:
         - lang: 'bash'
           label: cURL
-          source: |
+          source: | 
             curl -X POST \
             -H 'x-ti-app-id: 1234567890' \
             -H 'x-ti-secret-code: 1234567890' \
-            -d '[{"workspace_id": "1234567890", "file_id": "202412190001", "data": {"fields": [{"key": "Invoice Code", "value": "3100231130"}]}}]' \
+            -d '[{"workspace_id": "1234567890", "file_id": "202412190001", "data": {"fields": [{"key": "发票代码", "value": "3100231130"}]}}]' \
             'https://docflow.textin.ai/api/app-api/sip/platform/v2/file/update'
   /api/app-api/sip/platform/v2/review/listByFileBatchNo:
     get:
       tags:
-        - File Review
-      summary: File Batch List
-      description: File batch list, request parameter workspaceIdNo is obtained from the page
+        - 文件审核
+      summary: 文件批次列表
+      description: 文件批次列表，请求参数workspaceIdNo从页面获取
       operationId: listByFileBatchNo
       parameters:
         - name: workspaceIdNo
@@ -749,14 +605,14 @@ paths:
           required: true
           schema:
             type: string
-            description: Workspace unique number
+            description: 工作空间唯一编号
             example: 123456
         - name: fileBatchNo
           in: query
           required: false
           schema:
             type: string
-            description: File batch number
+            description: 文件批次号
             example: abcd
         - name: x-ti-app-id
           in: header
@@ -782,15 +638,16 @@ paths:
   /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo:
     get:
       tags:
-        - File Review
-      summary: File Task Category List
+        - 文件审核
+      summary: 文件任务类别列表
       description: |
-        File task category list, request parameters need to be obtained from the prerequisite interface. 
+        文件任务类别列表，请求参数需从前置接口获取。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **Purpose**: Get batch list information based on workspaceIdNo, workspaceIdNo is obtained from the page  
-        **Key return result field**: 
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
+        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
+        **关键返回结果字段**: 
         >- fileBatchNo
+
       operationId: listExecuteTasksByFileBatchNo
       parameters:
         - name: workspaceIdNo
@@ -798,14 +655,14 @@ paths:
           required: true
           schema:
             type: string
-            description: Workspace ID
+            description: 工作空间ID
             example: 123
         - name: fileBatchNo
           in: query
           required: true
           schema:
             type: string
-            description: File Batch Number
+            description: 文件批次号
             example: abcd
         - name: x-ti-app-id
           in: header
@@ -831,15 +688,16 @@ paths:
   /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo:
     post:
       tags:
-        - File Review
-      summary: Review Rule List
+        - 文件审核
+      summary: 审核规则列表
       description: |
-        Review rule list, some request parameters need to be obtained from the prerequisite interface. 
+        审核规则列表，部分请求参数需从前置接口获取。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **Purpose**: Get batch list information based on workspaceIdNo, workspaceIdNo is obtained from the page  
-        **Key return result field**: 
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
+        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
+        **关键返回结果字段**: 
         >- fileBatchNo
+
       operationId: getRulesByClassificationIdNo
       parameters:
         - name: x-ti-app-id
@@ -872,15 +730,16 @@ paths:
   /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo:
     post:
       tags:
-        - File Review
-      summary: File Task List
+        - 文件审核
+      summary: 文件任务列表
       description: |
-        File task list, request parameters need to be obtained from the prerequisite interface. 
+        文件任务列表，请求参数需从前置接口获取。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **Purpose**: Get batch list information based on workspaceIdNo, workspaceIdNo is obtained from the page  
-        **Key return result field**: 
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
+        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
+        **关键返回结果字段**: 
         >- fileBatchNo
+
       operationId: listTaskDetailInfoByClassificationIdNo
       parameters:
         - name: x-ti-app-id
@@ -913,22 +772,21 @@ paths:
   /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList:
     post:
       tags:
-        - File Review
-      summary: Model Field List
+        - 文件审核
+      summary: 模型字段列表
       description: |
-        Model field list, request parameters need to be obtained from the prerequisite interface. 
-
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo  
-        **Purpose**: Prerequisite interface for creating rules, get all classification IDs under the batch, can select classifications needed for creating rules from the return results  
-        **Key return result field**: 
-        >- taskClassificationIdNo: classification ID
+        模型字段列表，请求参数需从前置接口获取。 
 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo  
-        **Purpose**: Prerequisite interface for modifying rules, get classification ID information of the rules  
-        **Key return result field**: 
-        >- classificationIdNoList: list of classification IDs currently configured in the rules
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo  
+        **作用**: 用于创建规则时的前置接口，获取批次下的所有分类id，可以从返回结果中选择需要用于创建规则的分类  
+        **关键返回结果字段**: 
+        >- taskClassificationIdNo: 分类id
 
+        >**前置接口**:/api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo  
+        **作用**: 用于修改规则时的前置接口，获取规则的分类id信息  
+        **关键返回结果字段**: 
+        >- classificationIdNoList: 当前规则配置的分类id列表
       operationId: listModelFieldInfoByClassificationIdNoList
       parameters:
         - name: x-ti-app-id
@@ -961,23 +819,25 @@ paths:
   /api/app-api/sip/platform/v2/review/create:
     post:
       tags:
-        - File Review
-      summary: Create Review Rule
+        - 文件审核
+      summary: 创建审核规则
       description: |
-        Create review rule, need to call some prerequisite interfaces before calling this interface. 
+        创建审核规则，调用接口前需要调用一些前置接口。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo  
-        >**Purpose**: Get all classification IDs under the batch  
-        >**Key return result field**: taskClassificationIdNo (classification ID)
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo  
+        **作用**: 获取批次下的所有分类id  
+        **关键返回结果字段**: 
+        >- taskClassificationIdNo: 分类id
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList  
-        >**Purpose**: Get field information under the classification  
-        >**Key return result field**:
-        > - id: same meaning as fieldId
-        > - fieldName, blockType: distinguish between regular fields and table fields
-        > - classificationIdNo: distinguish which classification the field belongs to  
-        > - tableIdNo: table ID, if the field is a table field
-        > - tableName: table name, if the field is a table field
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList  
+        **作用**: 获取分类下的字段信息  
+        **关键返回结果字段**: 
+        >- id: 含义同fieldId
+        >- fieldName: 字段名称
+        >- blockType: 区分是普通字段还是表格字段
+        >- classificationIdNo: 区分字段属于哪个分类
+        >- tableIdNo: 表格id，如果字段是表格字段
+        >- tableName: 表格名称，如果字段是表格字段
       operationId: createReviewRule
       parameters:
         - name: x-ti-app-id
@@ -1010,27 +870,27 @@ paths:
   /api/app-api/sip/platform/v2/review/update:
     post:
       tags:
-        - File Review
-      summary: Update Review Rule
+        - 文件审核
+      summary: 更新审核规则
       description: |
-        Update review rule, need to call some prerequisite interfaces before calling this interface. 
+        更新审核规则，调用接口前需要调用一些前置接口。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList  
-        >**Purpose**: Get field information under the classification  
-        >**Key return result field**:
-        >- id: same meaning as fieldId
-        >- fieldName, blockType: distinguish between regular fields and table fields
-        >- classificationIdNo: distinguish which classification the field belongs to
-        >- tableIdNo: table ID, if the field is a table field
-        >- tableName: table name, if the field is a table field
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listModelFieldInfoByClassificationIdNoList  
+        **作用**: 获取分类下的字段信息  
+        **关键返回结果字段**: 
+        >- id: 含义同fieldId
+        >- fieldName: 字段名称
+        >- blockType: 区分是普通字段还是表格字段
+        >- classificationIdNo: 区分字段属于哪个分类
+        >- tableIdNo: 表格id，如果字段是表格字段
+        >- tableName: 表格名称，如果字段是表格字段
 
-
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo  
-        >**Purpose**: Get all review rules of the current batch based on workspaceIdNo and fileBatchNo  
-        >**Key return result field**:
-        >- classificationIdNoList: list of classification IDs currently configured in the rules
-        >- fieldInfoList: list of field information currently configured in the rules
-        >- reviewRuleIdNo: review rule ID
+        >**前置接口**: /api/app-api/sip/platform/v2/review/getRulesByClassificationIdNo  
+        **作用**: 根据workspaceIdNo和fileBatchNo获取当前批次的所有审核规则  
+        **关键返回结果字段**: 
+        >- classificationIdNoList: 当前规则配置的分类id列表
+        >- fieldInfoList: 当前规则配置的字段信息列表
+        >- reviewRuleIdNo: 审核规则id
       operationId: updateReviewRule
       parameters:
         - name: x-ti-app-id
@@ -1063,8 +923,8 @@ paths:
   /api/app-api/sip/platform/v2/review/delete:
     post:
       tags:
-        - File Review
-      summary: Delete Review Rule
+        - 文件审核
+      summary: 删除审核规则
       operationId: deleteReviewRule
       parameters:
         - name: x-ti-app-id
@@ -1097,15 +957,15 @@ paths:
   /api/app-api/sip/platform/v2/review/runRule:
     post:
       tags:
-        - File Review
-      summary: Test Run Review Rule
+        - 文件审核
+      summary: 试运行审核规则
       description: |
-        Test run review rule, some request parameters need to be obtained from the prerequisite interface. 
+        试运行审核规则，部分请求参数需从前置接口获取。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo  
-        **Purpose**: Get task ID  
-        **Key return result field**: 
-        >- executeTaskId: task ID
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+        **作用**: 获取任务id  
+        **关键返回结果字段**: 
+        >- executeTaskId: 任务id
       operationId: runRule
       parameters:
         - name: x-ti-app-id
@@ -1138,15 +998,15 @@ paths:
   /api/app-api/sip/platform/v2/review/submitReviewTask:
     post:
       tags:
-        - File Review
-      summary: Submit Review Task
+        - 文件审核
+      summary: 提交审核任务
       description: |
-        Submit review task, some request parameters need to be obtained from the prerequisite interface.
+        提交审核任务，部分请求参数需从前置接口获取。
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo  
-        **Purpose**: Get task ID  
-        **Key return result field**:
-        >- executeTaskId: task ID
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listTaskDetailInfoByClassificationIdNo 
+        **作用**: 获取任务id  
+        **关键返回结果字段**: 
+        >- executeTaskId: 任务id
       operationId: submitReviewTask
       parameters:
         - name: x-ti-app-id
@@ -1163,13 +1023,6 @@ paths:
             type: string
             description: x-ti-secret-code
             example: 1234abcd
-        - name: Lang
-          in: header
-          required: true
-          schema:
-            type: string
-            description: Lang
-            example: en_US
       requestBody:
         content:
           application/json:
@@ -1186,20 +1039,22 @@ paths:
   /api/app-api/sip/platform/v2/review/listReviewRuleAndTask:
     post:
       tags:
-        - File Review
-      summary: Review Rule Task List
+        - 文件审核
+      summary: 审核规则任务列表
       description: |
-        Review rule task list, request parameters need to be obtained from the prerequisite interface. 
+        审核规则任务列表，请求参数需从前置接口获取。 
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listByFileBatchNo  
-        **Purpose**: Get batch list information based on workspaceIdNo, workspaceIdNo is obtained from the page  
-        **Key return result field**:
+
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listByFileBatchNo  
+        **作用**: 根据workspaceIdNo获取批次列表信息，workspaceIdNo从页面获取  
+        **关键返回结果字段**: 
         >- fileBatchNo
 
-        >**Prerequisite interface**: /api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
-        **Purpose**: Get all classification IDs under the batch 
-        **Key return result field**:
-        >- taskClassificationIdNo: classification ID
+        >**前置接口**:/api/app-api/sip/platform/v2/review/listExecuteTasksByFileBatchNo 
+        **作用**: 获取批次下的所有分类id  
+        **关键返回结果字段**: 
+        >- taskClassificationIdNo: 分类id
+
       operationId: listReviewRuleAndTask
       parameters:
         - name: x-ti-app-id
@@ -1230,23 +1085,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommonResultListApiReviewRuleAndTaskRespVO'
 components:
-  schemas:
+  schemas: 
     RecognitionStatus:
       type: integer
-      description: "File recognition status 0: Pending recognition 1: Recognition successful 2: Recognition failed 3: Classifying 4: Extracting 5: Preparing 6: File splitting 7: Image cropping 10: Classification completed (only available when upload interface target_process is classify)"
+      description: |
+        文件识别状态:
+        - 0: 待识别
+        - 1: 识别成功
+        - 2: 识别失败
+        - 3: 分类中
+        - 4: 抽取中
+        - 5: 准备中
+        - 6: 文件拆分中
+        - 7: 切图中
+        - 10: 分类完成(当upload接口的target_process为classify时才有此状态)
+        - 20: 解析中
       enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 10
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 10
+        - 20
     VerificationStatus:
       type: integer
-      description: "File verification status 0: Pending verification 2: Confirmed 3: Rejected 4: Deleted 5: Deferred processing"
+      description: "文件核对状态 0: 待核对 2: 已确认 3: 已拒绝 4: 已删除 5: 推迟处理"
       enum:
         - 0
         - 2
@@ -1258,11 +1125,11 @@ components:
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         msg:
           type: string
-          description: Status description
+          description: 状态描述
       required:
       - code
       - msg
@@ -1271,22 +1138,22 @@ components:
       properties:
         key:
           type: string
-          description: Field name
+          description: 字段名
         value:
           type: string
-          description: Field value
+          description: 字段值
         position:
-          description: Position of the field value. Field values may span pages or rows, so they are displayed as arrays.
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
           type: array
           items:
             type: object
             properties:
               page:
                 type: integer
-                description: Page where the field is located. It is the index of the pages array
+                description: 字段所在页。是`pages`数组的索引
               vertices:
                 type: array
-                description: Bounding quadrilateral coordinates of the field value. The image uses the top-left as origin, array values are [top-left x, top-left y, top-right x, top-right y, bottom-right x, bottom-right y, bottom-left x, bottom-left y]
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
                 items:
                   type: integer
                 minItems: 8
@@ -1296,25 +1163,25 @@ components:
       properties:
         angel:
           type: integer
-          description: Angle
+          description: 角度
         page:
           type: integer
-          description: Page number
+          description: 页码
         text:
           type: string
-          description: Stamp text content
+          description: 印章文本内容
         type:
           type: string
-          description: Stamp type
+          description: 印章类型
         color:
           type: string
-          description: Stamp color
+          description: 印章颜色
         shape:
           type: string
-          description: Stamp shape
+          description: 印章形状
         position:
           type: array
-          description: Position information
+          description: 位置信息
           items:
             type: integer
             example: 1
@@ -1323,25 +1190,25 @@ components:
       properties:
         angel:
           type: integer
-          description: Angle
+          description: 角度
         page:
           type: integer
-          description: Page number
+          description: 页码
         text:
           type: string
-          description: Handwriting text content
+          description: 印章文本内容
         position:
-          description: Position of the field value. Field values may span pages or rows, so they are displayed as arrays.
+          description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
           type: array
           items:
             type: object
             properties:
               page:
                 type: integer
-                description: Page where the field is located. It is the index of the pages array
+                description: 字段所在页。是`pages`数组的索引
               vertices:
                 type: array
-                description: Bounding quadrilateral coordinates of the field value. The image uses the top-left as origin, array values are [top-left x, top-left y, top-right x, top-right y, bottom-right x, bottom-right y, bottom-left x, bottom-left y]
+                description: 字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y, 左下角x, 左下角y]
                 items:
                   type: integer
                 minItems: 8
@@ -1356,22 +1223,22 @@ components:
             properties:
               angle:
                 type: integer
-                description: Page rotation angle
+                description: 页面的旋转角度
               width:
                 type: integer
-                description: Page width
+                description: 页面的宽度
               height:
                 type: integer
-                description: Page height
+                description: 页面的高度
               lines:
-                description: Page text line array
+                description: 页面的文本行数组
                 type: array
                 items:
                   type: object
                   properties:
                     text:
                       type: string
-                      description: Line text
+                      description: 行文本
                     position:
                       type: array
                       items:
@@ -1386,158 +1253,161 @@ components:
                           type: integer
                           minItems: 8
                           maxItems: 8
-    CommonFieldDetailRespVO:
-      type: object
-      properties:
-        key:
-          type: string
-          description: Field key
-        value:
-          type: string
-          description: Field value
-        textInLines:
-          type: array
-          description: Field coordinates
-          items:
-            $ref: '#/components/schemas/TextInLines'
-        index:
-          type: integer
-          description: Index
     TaskCropResult:
       type: object
       properties:
         page:
           type: integer
-          description: Page index of the original file, 0 represents the first page of the source file
+          description: 所属原文件的页索引，0代表源文件的第一页
         imageAngle:
           type: string
-          description: Angle information of the cropped image
+          description: 切分图片的角度信息
+    CommonFieldDetailRespVO:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段key
+        identifier:
+          type: string
+          description: 导出字段名
+        value:
+          type: string
+          description: 字段值
+        textInLines:
+          deprecated: true
+          type: array
+          description: |
+            **已废弃**，请使用position字段替代
+            字段坐标
+          items:
+            $ref: '#/components/schemas/TextInLines'
+        position:
+          $ref: '#/components/schemas/KeyValuePosition'
+        index:
+          type: integer
+          description: 索引
+        confidence:
+          type: number
+          format: float
+          description: 置信度分值，取值范围 0~1
+          example: 0.95
     SubFileDetailInfo:
       type: object
       properties:
         id:
           type: string
-          description: File ID
+          description: 文件ID
           example: 202412190001
         task_id:
           type: string
-          description: Task ID
+          description: 任务ID
           example: 202412190001
+        task_detail_url:
+          type: string
+          description: 文件任务详情页URL
         task_type:
           $ref: '#/components/schemas/TaskType'
         parent_task_id:
           type: string
-          description: Parent task ID (meaningful when not 0)
+          description: 父任务ID（不为0时有意义）
           example: 202412190001
         batch_number:
           type: string
-          description: Batch Number
+          description: 批次编号
           example: 202412190001
         name:
           type: string
-          description: File Name
+          description: 文件名
           example: invoice.pdf
         format:
           type: string
-          description: File Format
+          description: 文件格式
         recognition_status:
           $ref: '#/components/schemas/RecognitionStatus'
+        failure_causes:
+          type: string
+          description: |
+            任务失败原因。
+            当recognition_status为2时，有此字段。
         verification_status:
           $ref: '#/components/schemas/VerificationStatus'
         category:
           type: string
-          description: File Category
+          description: 文件类别
           example: invoice
         pages:
-          type: array
-          description: |
-            Data for rendering each page of the file.            Combined with the page and position fields in data.fields, you can accurately draw the position of fields on the page.
-          items:
-            type: object
-            properties:
-              angle:
-                type: integer
-                description: Rotation angle
-                enum:
-                  - 0
-                  - 90
-                  - 180
-                  - 270
-              width:
-                type: integer
-                description: Page width after correction
-                example: 1024
-              height:
-                type: integer
-                description: Page height after correction
-                example: 1024
-              dpi:
-                type: integer
-                description: Resolution when converting PDF to image. For non-PDF files, this value is 0.
-                example: 144
+          $ref: '#/components/schemas/PagesInfo'
         data:
           type: object
-          description: Processing result
+          description: 处理结果
           properties:
             fields:
-              description: Field list
+              description: 字段列表
               type: array
               items:
-                $ref: '#/components/schemas/KeyValue'
+                $ref: '#/components/schemas/FieldRespKeyValue'
               example:
-                - key: Invoice Code
+                - key: 发票代码
+                  identifier: 发票代码标识
                   value: "3100231130"
                   position:
                     - page: 0
                       vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                - key: Invoice Number
+                - key: 发票号码
+                  identifier: 发票号码标识
                   value: "28737000"
                   position:
                     - page: 0
                       vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
             items:
-              description: Table data list
+              description: 表格数据列表
               type: array
               items:
                 type: array
                 items:
                   $ref: '#/components/schemas/KeyValue'
               example:
-                - - key: Goods and Services Name
-                    value: ＊Electronic Computer＊Microcomputer Host
+                - - key: 货物劳务名称
+                    value: ＊电子计算机＊微型计算机主机
                     position:
                       - page: 0
                         vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                  - key: Specification Model
+                  - key: 规格型号
                     value: DMS-SC68
                     position:
                       - page: 0
                         vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                - - key: Goods and Services Name
-                    value: ＊Mechanical Computer＊Supercomputer Host
+                - - key: 货物劳务名称
+                    value: ＊机械计算机＊巨型计算机主机
                     position:
                       - page: 0
                         vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
-                  - key: Specification Model
+                  - key: 规格型号
                     value: AN/FSQ-7
                     position:
                       - page: 0
                         vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
             tables:
-              description: Complete table data list (including system tables and manually configured tables)
+              description: 全部表格数据列表（含系统表格和手动配置表格）
               type: array
               items:
                 type: object
                 properties:
                   tableName:
-                    description: Table name
+                    description: 表格名称
                     type: string
                     example: table1
                   tableType:
-                    description: |
-                      Table type, 0: system configured, 1: manually added.
+                    description: 表格类型， 0， 系统配置， 1 手动添加。
                     type: string
                     example: 0
+                  usePrompt:
+                    description: 是否使用语意抽取
+                    type: boolean
+                  extractModel:
+                    description: 整表抽取模型
+                    type: string
                   items:
                     type: array
                     items:
@@ -1545,80 +1415,408 @@ components:
                       items:
                         $ref: '#/components/schemas/CommonFieldDetailRespVO'
             stamps:
-              description: Stamp information
+              description: 印章信息
               type: array
               items:
                 $ref: '#/components/schemas/StampValue'
               example:
                 - angel: 0
                   page: 0
-                  text: National Unified Invoice Supervision Seal
-                  type: Other
-                  color: Red
-                  shape: Oval Seal
+                  text: 全国统一发票监制章
+                  type: 其他
+                  color: 红色
+                  shape: 椭圆章
                   position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
                 - angel: 0
                   page: 0
-                  text: Tax Bureau Seal
-                  type: Other
-                  color: Red
-                  shape: Oval Seal
+                  text: 税务局章
+                  type: 其他
+                  color: 红色
+                  shape: 椭圆章
                   position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
             handwritings:
-              description: Handwriting information
+              description: 手写体信息
               type: array
               items:
                 $ref: '#/components/schemas/HandWritingValue'
               example:
                 - angel: 0
                   page: 0
-                  text: March 1st
+                  text: 3月1日
                   position:
                     - page: 0
                       vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
                 - angel: 0
                   page: 0
-                  text: Zhang San
+                  text: 张三
                   position:
                     - page: 0
                       vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
             invoiceVerifyResult:
-              description: Invoice verification result
+              description: 发票验真结果
               type: object
               properties:
                 invoiceVerifyStatus:
                   type: integer
-                  description: |
-                    Whether invoice verification is successful (0: No, 1: Yes, null: Not verified)
+                  description: 发票验真是否成功(0:否,1:是, null:未验真)
                   example: 0
                 invoiceVerifyErrorCode:
                   type: integer
-                  description: Invoice verification error code
+                  description: 发票验真错误码
                   example: 0
                 invoiceVerifyCanRetry:
                   type: integer
-                  description: |
-                    Whether invoice verification can be retried/initiated (0: No, 1: Yes)
+                  description: 发票验真是否可以重试/发起(0:否,1:是)
                   example: 0
                 invoiceVerifyFailMsg:
                   type: string
-                  description: Invoice verification failure reason
-                  example: Exceeded daily limit
+                  description: 发票验真失败原因
+                  example: 超过当天次数上限
         document:
           $ref: '#/components/schemas/Document'
+        child_files:
+          description: 子任务信息
+          type: array
+          items:
+            $ref: '#/components/schemas/SubFileDetailInfo'
+        duration_ms:
+          type: integer
+          description: |
+            任务处理时间，单位：毫秒
+            计算的是从任务开始至完成(成功或失败)的时间，不包括排队等待时间。
+          example: 10000
+        total_page_num:
+          type: integer
+          description: 当前文件总页数
+          example: 10
         from_parent_position_list:
           type: array
-          description: Coordinate position of cropping result in the original file
+          description: 切图结果在原文件中的坐标位置
           items:
             type: integer
-            description: Position information
+            description: 位置信息
             example: 1
         crop_info:
-          description: Detailed information of multi-image cropping
           $ref: '#/components/schemas/TaskCropResult'
+    TaskType:
+      type: integer
+      description: >
+        任务类型
+
+        - `0`:
+        **文件拆分子任务**：打开"文件拆分"开关的文件任务执行成功后，该文件批次任务中因文件拆分操作产生的子任务即为拆分子任务，按照文件类别下实际文件套数区分子任务
+
+        - `1`: **普通任务**：未打开"文件拆分"和"多图切分"开关的文件任务
+
+        - `2`: **父任务**：打开"文件拆分"或"多图切分"开关的文件任务执行后，该文件批次任务中的每份文件即为父任务
+
+        - `3`:
+        **切图子任务**：打开"多图切分"开关的文件任务执行成功后，该文件批次任务中因多图切分操作产生的子任务即为切分子任务，按照文件类别下实际切图结果数量区分子任务
+      example: 1
+    PagesInfo:
+      type: array
+      description: |
+        文件每页用于渲染的数据。
+        配合`data.fields`中的`page`和`position`字段，可以准确画出字段在页面上的位置。
+      items:
+        type: object
+        properties:
+          page:
+            type: integer
+            description: '页码,从0开始'
+            example: 1
+          angle:
+            type: integer
+            description: 旋转角度
+            enum:
+              - 0
+              - 90
+              - 180
+              - 270
+          width:
+            type: integer
+            description: 转正后的页宽
+            example: 1024
+          height:
+            type: integer
+            description: 转正后的页高
+            example: 1024
+          dpi:
+            type: integer
+            description: PDF转图片时的分辨率。非PDF文件该值为`0`.
+            example: 144
+    KeyValuePosition:
+      description: 字段值的位置。字段值可能跨页或跨行，因此用数组展示。
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: integer
+            description: 字段所在页。是`pages`数组的索引
+          vertices:
+            type: array
+            description: >-
+              字段值的外接四边形坐标。图像以左上为原点，数组值为 [左上角x, 左上角y, 右上角x, 右上角y, 右下角x, 右下角y,
+              左下角x, 左下角y]
+            items:
+              type: integer
+            minItems: 8
+            maxItems: 8
+    FieldRespKeyValue:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 字段名
+        identifier:
+          type: string
+          description: 导出字段名
+        value:
+          type: string
+          description: 字段值
+        position:
+          $ref: '#/components/schemas/KeyValuePosition'
+        confidence:
+          type: number
+          format: float
+          description: 置信度分值，取值范围 0~1
+          example: 0.95
+        extract_model:
+          type: string
+          description: 实际使用的抽取模型
+    TaskProcessResult:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: 文件总数
+              example: 100
+            page:
+              type: integer
+              description: 当前页码
+              example: 1
+            page_size:
+              type: integer
+              description: 每页数量
+              example: 20
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: 文件ID
+                    example: 202412190001
+                  task_id:
+                    type: string
+                    description: 任务ID
+                    example: 202412190001
+                  task_detail_url:
+                    type: string
+                    description: 文件任务详情页URL
+                  task_type:
+                    $ref: '#/components/schemas/TaskType'
+                  batch_number:
+                    type: string
+                    description: 批次编号
+                    example: 202412190001
+                  name:
+                    type: string
+                    description: 文件名
+                    example: invoice.pdf
+                  format:
+                    type: string
+                    description: 文件格式
+                  recognition_status:
+                    $ref: '#/components/schemas/RecognitionStatus'
+                  failure_causes:
+                    type: string
+                    description: |
+                      任务失败原因。
+                      当recognition_status为2时，有此字段。
+                  verification_status:
+                    $ref: '#/components/schemas/VerificationStatus'
+                  category:
+                    type: string
+                    description: 文件类别
+                    example: invoice
+                  pages:
+                    $ref: '#/components/schemas/PagesInfo'
+                  data:
+                    type: object
+                    description: 处理结果
+                    properties:
+                      fields:
+                        description: 字段列表
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FieldRespKeyValue'
+                        example:
+                          - key: 发票代码
+                            identifier: 发票代码标识
+                            value: '3100231130'
+                            position:
+                              - page: 0
+                                vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                          - key: 发票号码
+                            identifier: 发票号码标识
+                            value: '28737000'
+                            position:
+                              - page: 0
+                                vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      items:
+                        description: 表格数据列表
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/KeyValue'
+                        example:
+                          - - key: 货物劳务名称
+                              value: ＊电子计算机＊微型计算机主机
+                              position:
+                                - page: 0
+                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                            - key: 规格型号
+                              value: DMS-SC68
+                              position:
+                                - page: 0
+                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                          - - key: 货物劳务名称
+                              value: ＊机械计算机＊巨型计算机主机
+                              position:
+                                - page: 0
+                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                            - key: 规格型号
+                              value: AN/FSQ-7
+                              position:
+                                - page: 0
+                                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      tables:
+                        description: 全部表格数据列表（含系统表格和手动配置表格）
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tableName:
+                              description: 表格名称
+                              type: string
+                              example: table1
+                            tableType:
+                              description: 表格类型， 0， 系统配置， 1 手动添加。
+                              type: string
+                              example: 0
+                            usePrompt:
+                              description: 是否使用语意抽取
+                              type: boolean
+                            extractModel:
+                              description: 整表抽取模型
+                              type: string
+                            items:
+                              type: array
+                              items:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/CommonFieldDetailRespVO'
+                      stamps:
+                        description: 印章信息
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StampValue'
+                        example:
+                          - angel: 0
+                            page: 0
+                            text: 全国统一发票监制章
+                            type: 其他
+                            color: 红色
+                            shape: 椭圆章
+                            position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                          - angel: 0
+                            page: 0
+                            text: 税务局章
+                            type: 其他
+                            color: 红色
+                            shape: 椭圆章
+                            position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      handwritings:
+                        description: 手写体信息
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HandWritingValue'
+                        example:
+                          - angel: 0
+                            page: 0
+                            text: 3月1日
+                            position:
+                              - page: 0
+                                vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                          - angel: 0
+                            page: 0
+                            text: 张三
+                            position:
+                              - page: 0
+                                vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      invoiceVerifyResult:
+                        description: 发票验真结果
+                        type: object
+                        properties:
+                          invoiceVerifyStatus:
+                            type: integer
+                            description: '发票验真是否成功(0:否,1:是, null:未验真)'
+                            example: 0
+                          invoiceVerifyErrorCode:
+                            type: integer
+                            description: 发票验真错误码
+                            example: 0
+                          invoiceVerifyCanRetry:
+                            type: integer
+                            description: '发票验真是否可以重试/发起(0:否,1:是)'
+                            example: 0
+                          invoiceVerifyFailMsg:
+                            type: string
+                            description: 发票验真失败原因
+                            example: 超过当天次数上限
+                  document:
+                    $ref: '#/components/schemas/Document'
+                  child_files:
+                    description: 子任务信息
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubFileDetailInfo'
+                  duration_ms:
+                    type: integer
+                    description: |
+                      任务处理时间，单位：毫秒
+                      计算的是从任务开始至完成(成功或失败)的时间，不包括排队等待时间。
+                    example: 10000
+                  total_page_num:
+                    type: integer
+                    description: 当前文件总页数
+                    example: 10
+                  from_parent_position_list:
+                    type: array
+                    description: 切图结果在原文件中的坐标位置
+                    items:
+                      type: integer
+                      description: 位置信息
+                      example: 1
+                  crop_info:
+                    $ref: '#/components/schemas/TaskCropResult'
+                required:
+                  - id
+                  - name
+                  - format
+                  - recognition_status
+                  - verification_status
+                  - category
     WorkspaceId:
       type: string
-      description: Workspace ID
+      description: 空间ID
       example: "1234567890"
     WorkspaceItem:
       type: object
@@ -1627,27 +1825,27 @@ components:
           $ref: '#/components/schemas/WorkspaceId'
         name:
           type: string
-          description: Workspace name
-          example: My Workspace
+          description: 工作空间名称
+          example: 我的工作空间
         description:
           type: string
-          description: Workspace description
-          example: My workspace description
+          description: 工作空间描述
+          example: 我的工作空间描述
     CategoryId:
       type: string
-      description: File category ID
+      description: 文件类别ID
       example: "1234567890"
     CategoryField:
       type: object
       properties:
         key:
           type: string
-          description: Field name
-          example: Invoice Code
+          description: 字段名
+          example: 发票代码
         description:
           type: string
-          description: Field description
-          example: Invoice code description
+          description: 字段描述
+          example: 发票代码描述
     CategoryListItem:
       type: object
       properties:
@@ -1655,15 +1853,15 @@ components:
           $ref: '#/components/schemas/CategoryId'
         name:
           type: string
-          description: File category name
-          example: Invoice
+          description: 文件类别名称
+          example: 发票
         description:
           type: string
-          description: File category description
-          example: Invoice category description
+          description: 文件类别描述
+          example: 发票分类描述
         enabled:
           type: integer
-          description: "Enable status 0: Disabled 1: Enabled 2: Draft"
+          description: "启用状态 0: 禁用 1: 启用 2: 草稿"
           example: 1
           enum:
             - 0
@@ -1686,7 +1884,7 @@ components:
               $ref: '#/components/schemas/CategoryField'
     CategorySampleId:
       type: string
-      description: Sample ID
+      description: 样本ID
       example: "1234567890"
     CategorySampleListItem:
       type: object
@@ -1695,11 +1893,11 @@ components:
           $ref: '#/components/schemas/CategorySampleId'
         name:
           type: string
-          description: Sample file name
-          example: sample.pdf
+          description: 样本文件名
+          example: 样本.pdf
         format:
           type: string
-          description: Sample file format
+          description: 样本文件格式
           example: pdf
     ApiRuleReviewUpdateReqVO:
       required:
@@ -1710,55 +1908,55 @@ components:
       properties:
         ruleIdNo:
           type: string
-          description: Review rule unique ID, same meaning as reviewRuleIdNo
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
           example: 12345
         ruleName:
           maxLength: 255
           minLength: 0
           type: string
-          description: Review rule name
-          example: Rule name
+          description: 审核规则名称
+          example: 规则名称
         rulePrompt:
           maxLength: 1000
           minLength: 0
           type: string
-          description: Review rule prompt
-          example: Rule prompt
+          description: 审核规则提示
+          example: 规则提示
         fields:
           type: array
-          description: Associated field information
+          description: 关联字段信息
           items:
             $ref: '#/components/schemas/Field'
-      description: Update rule request input parameters
+      description: 更新规则请求入参
     CommonResultApiRuleReviewUpdateRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           $ref: '#/components/schemas/ApiRuleReviewUpdateRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 12345ABC
     Field:
       type: object
-      description: Field information
+      description: 字段信息
       properties:
         classificationIdNo:
           type: string
-          description: Classification ID
+          description: 分类id
           example: 1234
         classificationName:
           type: string
-          description: Classification name
-          example: ID Card
+          description: 分类名称
+          example: 身份证
         basicFields:
           type: array
           items:
@@ -1772,22 +1970,22 @@ components:
       properties:
         fieldId:
           type: integer
-          description: Field ID
+          description: 字段id
           example: 1234
         fieldName:
           type: string
-          description: Field name
-          example: Card Number
+          description: 字段名称
+          example: 卡号
     TableField:
       type: object
       properties:
         tableId:
           type: integer
-          description: Table ID
+          description: 表格id
           example: -1
         tableName:
           type: string
-          description: Table name
+          description: 表格名称
           example: Table1
         fields:
           type: array
@@ -1798,9 +1996,9 @@ components:
       properties:
         version:
           type: integer
-          description: Version number
+          description: 版本号
           example: 1
-      description: Update rule response result VO
+      description: 更新规则的返回结果VO
     ApiReviewTaskSubmitReqVO:
       required:
         - executeTaskIdList
@@ -1809,25 +2007,25 @@ components:
       properties:
         ruleIdNoList:
           type: array
-          description: Review rule unique ID list
+          description: 审核规则唯一ID列表
           items:
             type: integer
-            description: Review rule unique ID, same meaning as reviewRuleIdNo
+            description: 审核规则唯一ID，含义同reviewRuleIdNo
             example: 123
         executeTaskIdList:
           type: array
-          description: Task ID list
+          description: 任务ID列表
           items:
             type: string
-            description: Task ID list
+            description: 任务ID列表
             example: 123
-      description: Submit review task Request VO
+      description: 提交审核任务 Request VO
     CommonResultListApiReviewTaskSubmitRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -1835,24 +2033,24 @@ components:
             $ref: '#/components/schemas/ApiReviewTaskSubmitRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234ABCD
     ApiReviewTaskSubmitRespVO:
       type: object
       properties:
         reviewTaskId:
           type: integer
-          description: Review result task ID
+          description: 审核结果任务ID
           example: 123
         ruleIdNo:
           type: integer
-          description: Review rule unique ID, same meaning as reviewRuleIdNo
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
           example: 123
-      description: Task submit review result VO
+      description: 任务提交审核结果VO
     ApiReviewRuleRunReqVO:
       required:
         - executeTaskIdList
@@ -1861,132 +2059,130 @@ components:
       properties:
         ruleIdNo:
           type: string
-          description: Review rule unique ID, same meaning as reviewRuleIdNo
+          description: 审核规则唯一ID，含义同reviewRuleIdNo
           example: 123
         executeTaskIdList:
           type: array
-          description: Task ID list
+          description: 任务ID列表
           items:
             type: string
-            description: Task ID list
+            description: 任务ID列表
             example: 123
-      description: Review API - Single run review rule Request VO
+      description: 审核API - 单次运行审核规则 Request VO
     CommonResultApiReviewRuleTaskVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           $ref: '#/components/schemas/ApiReviewRuleTaskVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234ABCD
     ApiReviewRuleTaskVO:
       type: object
       properties:
         id:
           type: integer
-          description: Primary key ID (no meaning here)
+          description: 主键ID（此处无意义）
           example: 1234
         reviewRuleIdNo:
           type: integer
-          description: Review rule unique ID
+          description: 审核规则唯一id
           example: 1234
         reviewRuleVersion:
           type: integer
-          description: Review rule version
+          description: 审核规则版本
           example: 1
         processStatus:
           type: integer
-          description: |
-            Task status (0: Pending review 1: Review successful 2: Review failed 3: Reviewing)
+          description: 任务状态 (0:待审核 1:审核成功 2:审核失败 3:审核中)
           example: 0
         thinkOutput:
           type: string
-          description: Thinking output
-          example: Thinking output content
+          description: 思考输出
+          example: 思考输出内容
         evalOutput:
           type: string
-          description: Evaluation output
-          example: Evaluation output content
+          description: 评估输出
+          example: 评估输出内容
         bindingTaskIds:
           type: array
-          description: Binding task ID list
+          description: 绑定任务ID列表
           items:
             type: integer
-            description: Binding task ID list
+            description: 绑定任务ID列表
             example: 123
         resultHighlights:
           type: array
-          description: Result highlight information
+          description: 结果高亮信息
           items:
             $ref: '#/components/schemas/DocumentOcrPosition'
         evalResult:
           type: boolean
-          description: 'Evaluation result True: Pass False: Fail'
+          description: '评估结果 True: 通过 False: 不通过'
           example: true
         duration:
           type: integer
-          description: |
-            Task duration (unit: milliseconds)
+          description: 任务耗时（单位：毫秒）
           example: 12345
         eval:
           type: boolean
-          description: 'Whether it is a test run True: Yes False: No'
+          description: '是否为测试运行 True: 是 False: 否'
           example: true
         manualAuditStatus:
           type: integer
-          description: 'Evaluation result manual confirmation 0: Not confirmed 1: Confirmed'
+          description: '评估结果人工确认 0: 未确认 1: 已确认'
           example: 0
         manualAuditMessage:
           type: string
-          description: Manual annotation
-          example: Annotation content
-      description: Review task VO
+          description: 人工批注
+          example: 批注内容
+      description: 审核任务VO
     DocumentOcrPosition:
       type: object
       properties:
         fileId:
           type: integer
-          description: File ID
+          description: 文件ID
           example: 12345
         taskId:
           type: integer
-          description: Task ID
+          description: 任务ID
           example: 1234
         text:
           type: string
-          description: Text
-          example: Text content
+          description: 文本
+          example: 文本内容
         position:
           type: array
-          description: Position information
+          description: 位置信息
           items:
             type: integer
-            description: Position information
+            description: 位置信息
             example: 1
         page:
           type: integer
-          description: Page number
+          description: 页码
           example: 0
         angel:
           type: integer
-          description: Rotation angle
+          description: 旋转角度
           example: 0
         startPos:
           type: integer
-          description: Start position
+          description: 起始位置
           example: 0
         endPos:
           type: integer
-          description: End position
+          description: 结束位置
           example: 100
     ApiClassificationQueryReqVO:
       required:
@@ -1996,26 +2192,26 @@ components:
       properties:
         classificationIdNoList:
           type: array
-          description: Classification ID list
+          description: 分类ID列表
           items:
             type: string
-            description: Classification ID
+            description: 分类ID
             example: 123
         workspaceIdNo:
           type: string
-          description: Workspace ID
+          description: 工作空间ID
           example: 123
         fileBatchNo:
           type: string
-          description: File batch number
+          description: 文件批次号
           example: abcd
-      description: Return task queue information list based on classification ID - Request VO
+      description: 根据分类ID返回任务队列信息列表-请求VO
     CommonResultListApiReviewRuleBindingTaskDetailRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -2023,20 +2219,20 @@ components:
             $ref: '#/components/schemas/ApiReviewRuleBindingTaskDetailRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiReviewRuleBindingTaskDetailRespVO:
       type: object
       properties:
         executeTaskId:
           type: integer
-          description: Task ID
+          description: 任务ID
           example: 1234
-      description: Review rule binding task ID detail response VO
+      description: 审核规则绑定任务id详情响应VO
     ApiReviewRuleAndTaskReqVO:
       required:
         - fileBatchNo
@@ -2045,26 +2241,26 @@ components:
       properties:
         workspaceIdNo:
           type: string
-          description: Workspace ID
+          description: 工作空间ID
           example: 1234
         fileBatchNo:
           type: string
-          description: File Batch ID
+          description: 文件批次ID
           example: abcd
         classificationIdNoList:
           type: array
-          description: Classification ID List
+          description: 分类ID列表
           items:
             type: string
-            description: Classification ID
+            description: 分类ID
             example: 1234
-      description: Return review rule and task list Request VO
+      description: 返回审核规则和任务列表 Request VO
     CommonResultListApiReviewRuleAndTaskRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -2072,11 +2268,11 @@ components:
             $ref: '#/components/schemas/ApiReviewRuleAndTaskRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiReviewRuleAndTaskRespVO:
       type: object
@@ -2085,88 +2281,87 @@ components:
           $ref: '#/components/schemas/ReviewRuleDTO'
         latestReviewRuleTask:
           $ref: '#/components/schemas/ReviewRuleTaskDO'
-      description: Rule and task information
+      description: 规则和任务信息
     ReviewRuleDTO:
       type: object
       properties:
         id:
           type: integer
-          description: Primary key ID
+          description: 主键ID
           example: 1
         reviewRuleIdNo:
           type: integer
-          description: Review rule unique ID
+          description: 审核规则唯一id
           example: 123
         reviewRuleType:
           type: string
-          description: Review rule type
+          description: 审核规则类型
           example: single
         reviewRulePrompt:
           type: string
-          description: Review rule prompt
-          example: Review rule prompt content
+          description: 审核规则提示
+          example: 审核规则提示内容
         fileBatchNo:
           type: string
-          description: File batch number
+          description: 文件批次号
           example: abcd
         reviewRuleName:
           type: string
-          description: Review rule name
-          example: Review rule name
+          description: 审核规则名称
+          example: 审核规则名称
         workspaceIdNo:
           type: integer
-          description: Workspace unique number
+          description: 工作空间唯一编号
           example: 123456
         classificationIdNoList:
           type: array
-          description: Classification ID list
+          description: 分类ID列表
           items:
             type: integer
-            description: Classification ID
+            description: 分类ID
             example: 1234
         version:
           type: integer
-          description: Review rule version
+          description: 审核规则版本
           example: 1
         fieldInfoList:
           type: array
-          description: Field information flat list
+          description: 字段信息平铺列表
           items:
             $ref: '#/components/schemas/ReviewRuleFieldDTO'
-      description: Rule review DTO
+      description: 规则审核DTO
     ReviewRuleFieldDTO:
       type: object
       properties:
         fieldId:
           type: integer
-          description: Field ID
+          description: 字段ID
           example: 1234
         fieldName:
           type: string
-          description: Field name
-          example: Name
+          description: 字段名称
+          example: 名称
         blockType:
           type: integer
-          description: |
-            Field type 0: Basic field 1: Table field
+          description: 字段类型 0:基本字段 1:表格字段
           example: 0
         tableId:
           type: integer
-          description: Table ID
+          description: 表格ID
           example: -1
         tableName:
           type: string
-          description: Table name
+          description: 表格名称
           example: Table1
         classificationIdNo:
           type: integer
-          description: Classification ID
+          description: 分类id
           example: 123
         classificationName:
           type: string
-          description: Classification name
-          example: ID Card
-      description: Review rule field information DTO
+          description: 分类名称
+          example: 身份证
+      description: 审核规则字段信息DTO
     ReviewRuleTaskDO:
       type: object
       properties:
@@ -2176,47 +2371,46 @@ components:
           type: string
         creatorId:
           type: integer
-          description: Creator user ID
+          description: 创建人用户id
           example: 1
         operatorId:
           type: integer
-          description: Operator user ID
+          description: 操作人用户id
           example: 1
         deleted:
           type: integer
-          description: Whether deleted, 0-Not deleted, 1-Deleted
+          description: 是否删除，0-未删除，1-已删除
           example: 0
         id:
           type: integer
-          description: Review rule task unique ID
+          description: 审核规则任务唯一id
           example: 1
         reviewRuleIdNo:
           type: integer
-          description: Review rule unique ID
+          description: 审核规则唯一id
           example: 1
         reviewRuleVersion:
           type: integer
-          description: Review rule version
+          description: 审核规则版本
           example: 1
         processStatus:
           type: integer
-          description: |
-            Review task status (0: Pending review, 1: Review successful, 2: Review failed, 3: Reviewing)
+          description: 审核任务状态（0:待审核、1:审核成功、2:审核失败、3:审核中）
           example: 1
         thinkOutput:
           type: string
-          description: Thinking output
-          example: Thinking output content
+          description: 思考输出
+          example: 思考输出内容
         evalOutput:
           type: string
-          description: Evaluation output
-          example: Evaluation output content
+          description: 评估输出
+          example: 评估输出内容
         bindingTaskIds:
           type: array
-          description: Binding task ID list
+          description: 绑定任务ID列表
           items:
             type: integer
-            description: Binding task ID
+            description: 绑定任务ID
             example: 1234
         resultHighlights:
           type: array
@@ -2224,25 +2418,24 @@ components:
             $ref: '#/components/schemas/DocumentOcrPosition'
         evalResult:
           type: boolean
-          description: |
-            Evaluation result (true: Pass, false: Fail)
+          description: 评估结果（true：通过、false：不通过）
           example: true
         duration:
           type: integer
-          description: Task duration
+          description: 任务耗时
           example: 100
         eval:
           type: boolean
-          description: Whether it is a test run
+          description: 是否为测试运行
           example: false
         manualAuditStatus:
           type: integer
-          description: Evaluation result manual confirmation
-          example: 0
+          description: 评估结果人工确认
+          example: 0:未确认、1:已确认
         manualAuditMessage:
           type: string
-          description: Manual annotation
-          example: Manual annotation content
+          description: 人工批注
+          example: 人工批注内容
     ApiClassificationIdNoListReqVO:
       required:
         - classificationIdNoList
@@ -2250,22 +2443,22 @@ components:
       properties:
         classificationIdNoList:
           type: array
-          description: Classification ID list
+          description: 分类ID列表
           example:
             - 1
             - 2
             - 3
           items:
             type: string
-            description: Classification ID
+            description: 分类ID
             example: 1
-      description: Classification ID list request VO
+      description: 分类ID列表请求VO
     CommonResultListApiModelFieldRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -2273,11 +2466,11 @@ components:
             $ref: '#/components/schemas/ApiModelFieldRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiModelFieldRespVO:
       required:
@@ -2288,124 +2481,121 @@ components:
       properties:
         id:
           type: integer
-          description: Primary key ID, this field has the same meaning as fieldId
+          description: 主键ID，此字段含义同fieldId
           example: 29026
         fieldName:
           type: string
-          description: Field name
-          example: Zhao Liu
+          description: 字段名称
+          example: 赵六
         description:
           type: string
-          description: Field description
-          example: Zhao Liu
+          description: 字段描述
+          example: 赵六
         fieldPrompt:
           type: string
-          description: Field prompt
-          example: Zhao Liu
+          description: 字段提示
+          example: 赵六
         modelIdNo:
           type: string
-          description: Belonging model IdNo
+          description: 所属模型IdNo
           example: '1024'
         fieldCode:
           type: string
-          description: Field code
+          description: 字段code
           example: '1024'
         sysFieldId:
           type: string
-          description: Associated system field ID
+          description: 关联系统字段ID
           example: '1024'
         fieldType:
           type: string
-          description: Field type
+          description: 字段类型
           example: '1024'
         fieldFormat:
           type: string
-          description: Field format format
+          description: 字段格式化格式
           example: '1024'
         blockType:
           type: integer
-          description: |
-            Field module 0: Basic field 1: Table field
+          description: 字段模块 0:基本字段 1:表格字段
           example: 1024
         tableIdNo:
           type: integer
-          description: Table ID
+          description: 表格ID
           example: 1024
         tableId:
           type: integer
-          description: Table ID, same meaning as tableIdNo
+          description: 表格ID，含义同tableIdNo
           example: 1024
         tableName:
           type: string
-          description: Table name
+          description: 表格名称
           example: Table Name
         requiredStatus:
           type: integer
-          description: |
-            Required status 0: Optional field 1: Required field
+          description: 是否必填状态 0:选填字段 1:必填字段
           example: 1024
         sort:
           type: integer
-          description: Sort order
+          description: 排序
           example: 1
         textInLines:
           type: array
-          description: Field coordinates
+          description: 字段坐标
           items:
             $ref: '#/components/schemas/TextInLines'
         enableStatus:
           type: integer
-          description: 'Enable status 0: Disabled 1: Enabled 2: Draft'
+          description: '是否启用 0：禁用  1；启用  2: 草稿'
           example: 1
         enableFlag:
           type: string
-          description: |
-            Whether enabled, Y: Yes, N: No
+          description: 是否开启, Y:是, N:否
           example: Y
         classificationIdNo:
           type: integer
-          description: Classification ID
+          description: 分类ID
           example: 123
-      description: Model basic field table information Response VO
+      description: 模型基础字段表格信息 Response VO
     TextInLines:
       type: object
       properties:
         angle:
           type: string
-          description: Angle
+          description: 角度
           example: 0
         pos:
           type: array
-          description: Coordinates
+          description: 坐标
           items:
             type: integer
-            description: Coordinates
+            description: 坐标
             example: 1
         page:
           type: integer
-          description: Page number
+          description: 页码
           example: 1
         text:
           type: string
-          description: Text
-          example: Text content
+          description: 文本
+          example: 文本内容
         char_pos:
           type: array
-          description: Character coordinates
+          description: 字符坐标
           items:
             type: array
-            description: Character coordinates
+            description: 字符坐标
             items:
               type: integer
-              description: Character coordinates
+              description: 字符坐标
               example: 1
-      description: Field coordinates
+      description: 字段坐标
     CommonResultListApiReviewRuleVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -2413,60 +2603,60 @@ components:
             $ref: '#/components/schemas/ApiReviewRuleVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiReviewRuleVO:
       type: object
       properties:
         id:
           type: integer
-          description: Primary key ID
+          description: 主键ID
           example: 1
         reviewRuleIdNo:
           type: integer
-          description: Review rule unique ID
+          description: 审核规则唯一id
           example: 1
         reviewRuleType:
           type: string
-          description: Review rule type (single | multiple)
+          description: 审核规则类型 (single | multiple)
           example: single
         reviewRulePrompt:
           type: string
-          description: Review rule prompt
-          example: Review rule prompt content
+          description: 审核规则提示
+          example: 审核规则提示内容
         fileBatchNo:
           type: string
-          description: File batch number
+          description: 文件批次号
           example: abcd
         reviewRuleName:
           type: string
-          description: Review rule name
+          description: 审核规则名称
           example: abcd
         workspaceIdNo:
           type: integer
-          description: Workspace unique number
+          description: 工作空间唯一编号
           example: 1234
         classificationIdNoList:
           type: array
-          description: Classification ID list
+          description: 分类ID列表
           items:
             type: integer
-            description: Classification ID
+            description: 分类ID
             example: 1234
         version:
           type: integer
-          description: Review rule version
+          description: 审核规则版本
           example: 1
         fieldInfoList:
           type: array
-          description: Field information flat list
+          description: 字段信息平铺列表
           items:
             $ref: '#/components/schemas/ReviewRuleFieldDTO'
-      description: Rule review VO
+      description: 规则审核VO
     ApiRuleReviewDeleteReqVO:
       required:
         - ruleIdNo
@@ -2474,28 +2664,27 @@ components:
       properties:
         ruleIdNo:
           type: string
-          description: Review rule unique ID, same meaning as reviewRuleIdNo
+          description: 审核规则唯一id，含义同reviewRuleIdNo
           example: 123
-      description: Delete review rule request parameters
+      description: 删除审核规则请求参数
     CommonResultBoolean:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: boolean
-          description: |
-            Whether successful (true: Success, false: Failure)
+          description: 是否成功（true：成功、false：失败）
           example: true
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiRuleReviewCreateReqVO:
       required:
@@ -2510,68 +2699,68 @@ components:
           maxLength: 255
           minLength: 0
           type: string
-          description: Review rule name
-          example: Review rule 123
+          description: 审核规则名称
+          example: 审核规则123
         rulePrompt:
           maxLength: 1000
           minLength: 0
           type: string
-          description: Review rule prompt
-          example: Review rule prompt content
+          description: 审核规则提示
+          example: 审核规则提示内容
         classificationIdNoList:
           maxItems: 2147483647
           minItems: 1
           type: array
-          description: Classification ID list
+          description: 分类ID列表
           items:
             type: string
-            description: Classification ID
+            description: 分类ID
             example: 123
         fileBatchNo:
           type: string
-          description: File batch number
+          description: 文件批次号
           example: abcd
         workspaceIdNo:
           type: string
-          description: Workspace ID
+          description: 工作空间ID
           example: 123
         fields:
           type: array
-          description: Associated field information
+          description: 关联的字段信息
           items:
             $ref: '#/components/schemas/Field'
-      description: Create rule ReqVO
+      description: 创建规则ReqVO
     CommonResultApiRuleReviewCreateRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           $ref: '#/components/schemas/ApiRuleReviewCreateRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiRuleReviewCreateRespVO:
       type: object
       properties:
         ruleIdNo:
           type: integer
-          description: Review rule unique ID, same meaning as reviewRuleIdNo
+          description: 审核规则唯一id，含义同reviewRuleIdNo
           example: 1234
-      description: Create rule response result VO
+      description: 创建规则返回结果VO
     CommonResultListApiFileBatchExecuteTaskRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -2579,47 +2768,46 @@ components:
             $ref: '#/components/schemas/ApiFileBatchExecuteTaskRespVO'
         msg:
           type: string
-          description: Status message
+          description: 状态信息
           example: 200
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiFileBatchExecuteTaskRespVO:
       type: object
       properties:
         taskId:
           type: integer
-          description: Task ID
+          description: 任务ID
           example: 123456
         fileId:
           type: integer
-          description: File ID
+          description: 文件ID
           example: 123456
         fileName:
           type: string
-          description: File name
-          example: File name 1
+          description: 文件名称
+          example: 文件名称1
         taskStatus:
           type: integer
-          description: |
-            Task status 0: Pending recognition 1: Recognition successful 2: Recognition failed 3: Classifying 4: Extracting 5: Preparing 6: File splitting
+          description: 任务状态 0待识别 1识别成功 2识别失败 3分类中 4抽取中 5准备中 6文件拆分中
           example: 1
         taskClassificationIdNo:
           type: integer
-          description: Task classification ID
+          description: 任务分类ID
           example: 123456
         taskClassificationName:
           type: string
-          description: Task classification name
-          example: ID Card
-      description: File task category list result fields
+          description: 任务分类名称
+          example: 身份证
+      description: 文件任务类别列表结果字段
     CommonResultListApiFileBatchInfoRespVO:
       type: object
       properties:
         code:
           type: integer
-          description: Status code
+          description: 状态码
           example: 200
         data:
           type: array
@@ -2627,173 +2815,162 @@ components:
             $ref: '#/components/schemas/ApiFileBatchInfoRespVO'
         msg:
           type: string
-          description: Status message
-          example: Success
+          description: 状态信息
+          example: 成功
         traceId:
           type: string
-          description: Trace ID
+          description: 链路id
           example: 1234abcd
     ApiFileBatchInfoRespVO:
       type: object
       properties:
         fileBatchNo:
           type: string
-          description: File batch number
+          description: 文件批次号
           example: abcd
         uploadDate:
           type: string
-          description: Upload date
+          description: 上传日期
         updateTime:
           type: string
-          description: Update time
+          description: 修改时间
         recognitionStatus:
           type: integer
           description: |
-            Recognition status.  
-            Optional values:  
-            - `0`: Recognition in progress  
-            - `1`: Recognition completed  
-            - `2`: Recognition failed  
-            - `10`: Classification successful (only available when upload interface target_process is classify)  
-            Recognition failure indicates that some tasks failed recognition.  
+            识别状态。  
+            可选值：  
+            - `0`: 识别中  
+            - `1`: 识别完成  
+            - `2`: 识别失败  
+            - `10`: 分类成功(当upload接口的target_process为classify时才有此状态)  
+            识别失败表示存在部分任务识别失败。  
           example: 1
         recognitionSuccessCount:
           type: integer
-          description: Recognition success count
+          description: 识别成功数量
           example: 10
         recognitionFailCount:
           type: integer
-          description: Recognition failure count
+          description: 识别失败数量
           example: 2
         taskCount:
           type: integer
-          description: Task count
+          description: 任务数量
           example: 3
         reviewRuleCount:
           type: integer
-          description: Included rule count
+          description: 包含规则数
           example: 4
         fileProcessStatus:
           type: integer
-          description: |
-            File task processing status (0: None, 1: Pass, 2: Fail, 3: Reviewing, 4: Pending review)
+          description: 文件任务处理状态（0:无、1:通过、2:不通过、3:审核中、4:待审核）
           example: 1
         classificationVOList:
           type: array
-          description: Classification information
+          description: 分类信息
           items:
             $ref: '#/components/schemas/ClassificationVO'
         hasReviewRuleRepo:
           type: boolean
-          description: |
-            Whether there are available rule repositories (true: Yes, false: No)
+          description: 是否有可用规则库（true：有、false：没有）
           example: true
-      description: Return results for displaying review list based on batch
+      description: 根据批次展示审核列表返回结果
     ClassificationVO:
       type: object
       properties:
         classificationIdNo:
           type: integer
-          description: Classification ID
+          description: 分类id
           example: 1234
         classificationName:
           type: string
-          description: Classification name
-          example: ID Card
-    TaskType:
-      type: integer
-      description: |
-        Task type
-        - 0: **File split subtask**: When a file task with "File split" switch enabled executes successfully, the subtasks generated by file split operations in that file batch task are split subtasks, divided according to the actual number of file sets under the file category
-        - 1: **Regular task**: File tasks without "File split" and "Multi-image crop" switches enabled
-        - 2: **Parent task**: After file tasks with "File split" or "Multi-image crop" switches enabled execute, each file in that file batch task becomes a parent task
-        - 3: **Crop subtask**: When a file task with "Multi-image crop" switch enabled executes successfully, the subtasks generated by multi-image crop operations in that file batch task are crop subtasks, divided according to the actual number of crop results under the file category
-      example: 1
+          description: 分类名称
+          example: 身份证
 
     CategoryFieldConfig:
       type: object
       properties:
         name:
           type: string
-          description: Field name
-          example: Invoice Code
+          description: 字段名称
+          example: 发票代码
         description:
           type: string
-          description: Field description
-          example: Invoice code description
+          description: 字段描述
+          example: 发票代码描述
         prompt:
           type: string
-          description: Semantic extraction prompt
+          description: 语义抽取提示词
         use_prompt:
           type: boolean
-          description: Whether to use semantic prompt
+          description: 是否使用语义提示词
         alias:
           type: array
-          description: Field aliases
+          description: 字段别名
           items:
             type: string
         identity:
           type: string
-          description: Export field name
+          description: 导出字段名
         multi_value:
           type: boolean
-          description: Whether to extract multiple values
+          description: 是否多值抽取
         duplicate_value_distinct:
           type: boolean
-          description: Whether to deduplicate duplicate values, only effective when multi_value is true
+          description: 是否重复值去重，仅当 multi_value 为 true 时有效
         transform_settings:
           type: object
-          description: Transformation configuration
+          description: 转换配置
           properties:
             type:
               type: string
-              description: Transformation type
+              description: 转换类型
               enum:
                 - datetime
                 - enumerate
                 - regex
             datetime_settings:
               type: object
-              description: Datetime type transformation configuration
+              description: 时间类型转换配置
               properties:
                 format:
                   type: string
-                  description: Date time format, refer to DocFlow date format guide (https://docflow.textin.com/markdown?key=dateFormatGuide)
+                  description: 日期时间格式，参考 DocFlow 日期格式说明 (https://docflow.textin.com/markdown?key=dateFormatGuide)
                   example: yyyy-MM-dd HH:mm:ss
             enumerate_settings:
               type: object
-              description: Enumerate type transformation configuration
+              description: 枚举类型转换配置
               properties:
                 items:
                   type: array
-                  description: Optional enumeration value list
+                  description: 可选枚举值列表
                   items:
                     type: string
             regex_settings:
               type: object
-              description: Regex type transformation configuration
+              description: 正则类型转换配置
               properties:
                 match:
                   type: string
-                  description: Regular expression for matching
+                  description: 匹配用的正则表达式
                   example: ^\d{4}-\d{2}-\d{2}$
                 replace:
                   type: string
-                  description: Regular expression for replacement
+                  description: 替换用的正则表达式
                   example: $1-$2-$3
             mismatch_action:
               type: object
-              description: Action when field value does not match
+              description: 字段值不匹配时的处理动作
               properties:
                 mode:
                   type: string
-                  description: Processing mode when mismatch occurs
+                  description: 不匹配时的处理模式
                   enum:
                     - default
                     - warning
                 default_value:
                   type: string
-                  description: Default value when mode is default
+                  description: 当模式为 default 时使用的默认值
 
   securitySchemes:
     ApiId: # arbitrary name for the security scheme

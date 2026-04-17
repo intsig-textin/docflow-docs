@@ -1,0 +1,191 @@
+---
+title: "前端 iframe 嵌入"
+description: "在自有前端页面中通过 iframe 嵌入 DocFlow 页面，实现页面集成"
+---
+
+<Tip>
+  通过 iframe 嵌入 DocFlow 后，您可以在自己的系统中直接展示文档列表、文件详情、审核任务等页面，无需用户单独打开 DocFlow。接入前请先通过 API 获取有效的 token，并在 iframe 的 URL 中携带。
+</Tip>
+
+本文介绍两种接入方式：**快捷接入**（直接使用接口返回的详情页 URL）和**通用接入**（自行拼接 URL 并携带 token）。同时说明父页面与 iframe 的 postMessage 通信、以及多 iframe 场景下的 Token 隔离机制。
+
+## 接入流程概览
+
+- **快捷接入**：适用于只需展示「文件详情页」或「审核详情页」的场景，调用接口获取 `task_detail_url` 后直接嵌入 iframe。
+- **通用接入**：适用于需要嵌入首页、空间配置、文档列表等任意 DocFlow 页面的场景，需先调用接口生成用户 token，再在访问地址中携带 `token` 参数。
+
+---
+
+## 快捷接入方式
+
+针对**文件详情页**和**审核详情页**，支持通过接口直接获取可嵌入的 URL。
+
+1. 调用对应接口获取 `task_detail_url` 字段：
+   - **文件详情页**：参见 REST API 文档中[获取文件详情页 URL](../../../api-reference/%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6%E5%A4%84%E7%90%86%E7%BB%93%E6%9E%9C%E5%88%97%E8%A1%A8#parameter-with-task-detail-url)相关接口。
+   - **审核详情页**：参见 REST API 文档中[获取审核详情页 URL](../../../api-reference/%E6%99%BA%E8%83%BD%E5%AE%A1%E6%A0%B8/%E8%8E%B7%E5%8F%96%E5%AE%A1%E6%A0%B8%E7%BB%93%E6%9E%9C#body-with-task-detail-url)相关接口。
+2. 将返回的 `task_detail_url` 作为 iframe 的 `src` 即可嵌入使用。
+
+无需再单独传 token，该 URL 已包含鉴权信息。
+
+---
+
+## 通用接入方式
+
+### 第一步：生成用户 Token
+
+通过调用[生成短时间有效 token](../../../api-reference/%E7%94%9F%E6%88%90%E7%9F%AD%E6%97%B6%E9%97%B4%E6%9C%89%E6%95%88%E7%9A%84token) API，获取当前用户的有效 token。  
+接口说明请参见 REST API 文档。
+
+### 第二步：携带 Token 访问 DocFlow 页面
+
+在 iframe 的 `src` 中访问 DocFlow 前端页面时，在 URL 上加上 `token=xxx` 参数。  
+以下以公有云域名 `https://docflow.textin.ai` 为例，私有化部署请替换为实际域名。
+
+**注意**：所有 DocFlow 前端 URL 均支持在查询参数中追加 `token`，用于身份校验。
+
+#### 访问首页
+
+```html
+<iframe src="https://docflow.textin.ai?token=xxx" referrerpolicy="origin" />
+```
+
+#### 访问指定空间
+
+```html
+<iframe src="https://docflow.textin.ai/workspace/configure?workspaceIdNo=xxx&token=xxx" referrerpolicy="origin" />
+```
+
+#### 访问文件详情页
+
+- 直接访问：
+
+```html
+<iframe src="https://docflow.textin.ai/documents/detail-new?workspaceIdNo=xxx&id=xxx&resultId=xxx&token=xxx" referrerpolicy="origin" />
+```
+
+- 精简模式（隐藏部分跳转入口）：
+
+```html
+<iframe src="https://docflow.textin.ai/documents/detail-new?workspaceIdNo=xxx&id=xxx&resultId=xxx&token=xxx&mode=minimal" referrerpolicy="origin" />
+```
+
+#### 访问审核任务详情页
+
+- 直接访问：
+
+```html
+<iframe src="https://docflow.textin.ai/review/task/task-detail?workspaceIdNo=xxx&id=xxx&token=xxx" referrerpolicy="origin" />
+```
+
+- 精简模式（隐藏部分跳转入口）：
+
+```html
+<iframe src="https://docflow.textin.ai/review/task/task-detail?workspaceIdNo=xxx&id=xxx&token=xxx&mode=minimal" referrerpolicy="origin" />
+```
+
+---
+
+## 父页面集成示例
+
+在父页面中嵌入 iframe，并监听来自 DocFlow 的 postMessage 事件（如 token 过期、登录、退出、权限不足等），便于刷新 token 或提示用户。
+
+<CodeGroup>
+
+```html HTML icon=code
+<iframe
+  id="docflow-iframe"
+  src="https://your-domain.com/documents/list?token=YOUR_TOKEN"
+  allow="clipboard-read; clipboard-write"
+  referrerpolicy="origin"
+></iframe>
+
+<script>
+const iframeOrigin = 'https://your-domain.com';
+
+window.addEventListener('message', (event) => {
+  if (event.origin !== iframeOrigin) return;
+
+  const { type, data } = event.data || {};
+
+  switch (type) {
+    case 'tokenExpired':
+      console.warn('Token 已过期，请重新获取并刷新 iframe');
+      break;
+    case 'login':
+      console.log('用户已登录');
+      break;
+    case 'logout':
+      console.warn('用户已退出登录');
+      break;
+    case 'noPermission':
+      console.warn('权限不足');
+      break;
+    case 'error':
+      console.error('发生错误', data);
+      break;
+  }
+});
+</script>
+```
+
+</CodeGroup>
+
+---
+
+## 附加说明
+
+### postMessage 通信协议
+
+iframe 内的 DocFlow 页面会向父窗口发送以下类型的消息，父页面可通过 `window.addEventListener('message', ...)` 接收并处理。
+
+| 消息类型        | 说明           | 触发时机               |
+|----------------|----------------|------------------------|
+| `tokenExpired` | Token 已失效   | API 返回 401 时        |
+| `login`        | 用户登录成功   | Token 认证成功时       |
+| `logout`       | 用户退出登录   | 用户主动退出时        |
+| `noPermission` | 权限不足       | API 返回权限错误时     |
+| `error`        | 发生错误       | 通用错误通知           |
+
+**消息格式**：
+
+```ts
+interface IframeMessage {
+  type: 'tokenExpired' | 'login' | 'logout' | 'noPermission' | 'error';
+  data?: unknown;
+}
+```
+
+### Token 隔离机制
+
+<Warning>
+当同一浏览器中存在多个不同父页面嵌入的 DocFlow iframe 时，系统会按「来源」隔离各自的用户状态，避免 Token 冲突。该机制依赖 **Referrer** 信息（即 `document.referrer` 或父页面的 origin）。接入方必须满足以下**二选一**：  
+1）Referrer 策略允许传递 origin；或  
+2）使用同源策略（父子同源）。
+</Warning>
+
+**推荐配置方式**：
+
+**方式一：iframe 属性（推荐）**
+
+```html
+<iframe
+  src="https://docflow.textin.ai/documents/list?token=YOUR_TOKEN"
+  referrerpolicy="origin"
+></iframe>
+```
+
+**方式二：HTML meta 标签**
+
+在父页面 `<head>` 中添加：
+
+```html
+<meta name="referrer" content="origin">
+```
+
+**方式三：HTTP 响应头**
+
+在父页面所在域名的 HTTP 响应中设置：
+
+```
+Referrer-Policy: origin
+```

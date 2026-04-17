@@ -1,0 +1,112 @@
+---
+title: "快速启动"
+description: "参考示例，快速用API集成文档重试功能"
+---
+
+<Tip>
+  本文演示如何通过 REST API 重新处理 DocFlow 中的文件任务。当文件处理失败或需要重新处理时，可以使用重试接口。
+</Tip>
+
+DocFlow 提供文件重试接口，支持对指定任务进行重新处理。重试操作会重新执行文件的解析、分类、拆分、提取等处理流程。
+
+<Warning>
+**重要限制**: 只有抽取成功或抽取失败，且为主任务或父任务时，才可以重试。子任务不支持重试操作。
+</Warning>
+
+## 重试文件处理
+
+重新处理指定任务ID对应的文件：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "1978297791713619968"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "1978297791713619968"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/retry"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    print("文件重试成功")
+else:
+    print(f"重试失败: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+## 参数说明
+
+### 必填参数
+
+- `workspace_id`: 空间ID。可以参考[获取工作空间ID](../100-faq/get_workspace_id)文档。
+- `task_id`: 任务ID。可以通过文件上传接口的响应获取，或通过查询接口获取。
+
+### 响应说明
+
+成功重试后，接口返回标准响应：
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+- `code`: 响应状态码，200 表示成功
+- `msg`: 响应消息
+
+## 使用场景
+
+重试接口适用于以下场景：
+
+1. **处理失败重试**: 当文件处理失败时，可以调用重试接口重新处理
+2. **配置更新后重试**: 当更新了分类、提取等配置后，可以对已处理的文件重新处理以应用新配置
+
+## 注意事项
+
+<Warning>
+**重试限制**: 只有抽取成功或抽取失败，且为主任务或父任务时，才可以重试。子任务不支持重试操作。
+</Warning>
+
+1. **任务状态**: 重试操作会重新处理文件，原有的处理结果可能会被覆盖
+2. **处理时间**: 重试操作需要重新执行处理流程，可能需要一定时间，建议通过查询接口检查任务状态
+3. **任务类型限制**: 只有主任务或父任务可以重试，子任务不支持重试
+4. **抽取状态限制**: 只有抽取成功或抽取失败的任务才可以重试
+

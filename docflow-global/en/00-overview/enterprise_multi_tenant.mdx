@@ -1,0 +1,47 @@
+---
+title: "Enterprise Multi-Tenant"
+description: "API call instructions for enterprise multi-tenant scenarios"
+---
+
+## 01 Enterprise Multi-Tenant Overview
+
+When a user belongs to multiple enterprise accounts and needs to operate or access content under a specific enterprise account, it is necessary to add `x-ti-enterprise-id` in the HTTP header to specify the enterprise ID.
+
+If the user only belongs to one enterprise, this HTTP header is not required.
+
+## 02 Usage
+
+### 2.1 Multiple Enterprises Scenario
+
+When a user belongs to multiple enterprises, it is necessary to add `x-ti-enterprise-id` in the request header to specify the enterprise to operate:
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "x-ti-enterprise-id: <your-enterprise-id>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+### 2.2 Single Enterprise Scenario
+
+If the user only belongs to one enterprise, it is not necessary to add the `x-ti-enterprise-id` header:
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+## 03 Get Enterprise ID
+
+To obtain the enterprise ID, please refer to the [How to Get Enterprise ID](../100-faq/get_enterprise_id) documentation.

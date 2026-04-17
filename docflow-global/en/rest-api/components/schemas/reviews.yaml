@@ -1,0 +1,173 @@
+ReviewTaskStatus:
+  type: integer
+  description: |
+    Task status
+    - 0: Pending
+    - 1: Approved
+    - 2: Review failed
+    - 3: Reviewing
+    - 4: Rejected
+    - 5: Recognizing
+    - 6: In Queue
+    - 7: Recognition Failed
+  enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+
+ReviewRuleProperties:
+  type: object
+  properties:
+    group_id:
+      type: string
+      description: Review rule group ID
+      example: "31415926"
+    name:
+      type: string
+      description: Rule name
+      example: "Review Rule 1"
+    prompt:
+      type: string
+      description: Rule prompt
+      example: "Review rule prompt"
+    category_ids:
+      type: array
+      items:
+        type: string
+        description: Category ID
+        example: "1234567890"
+    risk_level:
+      $ref: '#/RiskLevel'
+    referenced_fields:
+      type: array
+      items:
+        $ref: '#/ReviewRuleReferencedField'
+
+ReviewRuleReferencedField:
+  type: object
+  properties:
+    category_id:
+      type: string
+      description: Category ID
+      example: "1234567890"
+    category_name:
+      type: string
+      description: Category name
+      example: "Invoice"
+    fields:
+      type: array
+      items:
+        $ref: '#/ReviewRuleField'
+    tables:
+      type: array
+      items:
+        type: object
+        properties:
+          table_id:
+            type: string
+            description: Table ID
+            example: "1234567890"
+          table_name:
+            type: string
+            description: Table name
+            example: "Invoice Table"
+          fields:
+            type: array
+            items:
+              $ref: '#/ReviewRuleField'
+
+RiskLevel:
+  type: integer
+  description: |
+    Risk level
+    - 10: High risk
+    - 20: Medium risk
+    - 30: Low risk
+  enum:
+    - 10
+    - 20
+    - 30
+
+ReviewRuleField:
+  type: object
+  properties:
+    field_id:
+      type: string
+      description: Field ID
+      example: "1234567890"
+    field_name:
+      type: string
+      description: Field name
+      example: "Invoice Code"
+
+ReviewRuleRepo:
+  type: object
+  properties:
+    repo_id:
+      type: string
+      description: Review rule repo ID
+      example: "31415926"
+    name:
+      type: string
+      description: Review rule repo name
+      example: "Review Rule Repo 1"
+    groups:
+      description: List of rule groups under the rule repo
+      type: array
+      items:
+        $ref: '#/ReviewRuleGroup'
+    category_ids:
+      type: array
+      items:
+        type: string
+        description: Category ID
+        example: "1234567890"
+
+ReviewRuleGroup:
+  type: object
+  properties:
+    group_id:
+      type: string
+      description: Rule group ID
+      example: "31415926"
+    name:
+      type: string
+      description: Rule group name
+      example: "Review Rule Group 1"
+    rules:
+      type: array
+      items:
+        $ref: '#/ReviewRule'
+
+ReviewRule:
+  type: object
+  properties:
+    rule_id:
+      type: string
+      description: Rule ID
+      example: "31415926"
+    name:
+      type: string
+      description: Rule name
+      example: "Review Rule 1"
+    prompt:
+      type: string
+      description: Rule prompt
+      example: "Review rule prompt"
+    category_ids:
+      type: array
+      items:
+        type: string
+        description: Category ID
+        example: "1234567890"
+    risk_level:
+      $ref: '#/RiskLevel'
+    referenced_fields:
+      type: array
+      items:
+        $ref: '#/ReviewRuleReferencedField'

@@ -1,0 +1,356 @@
+---
+title: "修改文件类别（文件拆分）"
+description: "对于文件拆分任务，使用 修改文件类别 接口修改拆分后的文件类别和页码"
+---
+
+## 功能概述
+
+对于已经处理完成的文件拆分任务，如果发现拆分后的子文件类别不正确，或者需要调整子文件的页码范围，可以使用 修改文件类别 接口修改拆分后的文件类别和页码。
+
+<Tip>
+此接口用于修改文件拆分任务（`task_type = 2`，父任务）产生的子文件的类别和页码。需要先获取父任务的 `task_id`。
+</Tip>
+
+## 使用场景
+
+1. **拆分类别修正**：自动拆分后，某些子文件的类别识别错误，需要手动修正
+2. **页码调整**：拆分后的页码范围需要调整，例如将多个子文件合并或重新划分
+
+## API 接口
+
+**接口地址**：`POST /api/app-api/sip/platform/v2/file/amend_category`
+
+## 请求参数
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| `workspace_id` | string | 是 | 空间ID |
+| `task_id` | string | 是 | 父任务ID（文件拆分任务的ID） |
+| `split_tasks` | array | 是 | 文件拆分任务列表，每个元素包含 `category` 和 `pages` |
+
+### split_tasks 参数说明
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| `category` | string | 是 | 子任务文件类别 |
+| `pages` | array | 是 | 子文件页码数组，从0开始计数 |
+
+### 参数说明
+
+- `task_id`：父任务的ID（`task_type = 2`），可以通过 `file/fetch` 接口获取
+- `category`：新文件类别名称，必须是已在 DocFlow 空间配置过的文件类别。如果某个子文件不需要修改类别，可以保持原有类别不变
+- `pages`：页码数组，表示该子文件包含的原文件页码。例如 `[0, 1]` 表示包含第1页和第2页（从0开始计数）。如果某个子文件不需要修改页码，可以保持原有页码不变
+
+<Warning>
+**重要**：`split_tasks` 数组中必须包含**所有**拆分后的子文件信息，即使部分子文件的类别或页码不需要修改。如果只提交部分子文件信息，会导致未包含的子文件被删除或处理异常。
+</Warning>
+
+## 示例代码
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+# 重要：必须包含所有拆分后的子文件信息
+# 假设原文件拆分为3个子文件，即使只需要修改第一个子文件的类别，
+# 也必须包含所有3个子文件的信息
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "1234567890",
+    "task_id": "1234567890",
+    "split_tasks": [
+      {
+        "category": "电子发票（普通发票）",
+        "pages": [0, 1]
+      },
+      {
+        "category": "合同",
+        "pages": [2, 3, 4]
+      },
+      {
+        "category": "收据",
+        "pages": [5, 6]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def amend_split_category(workspace_id, task_id, split_tasks, app_id, secret_code):
+    """
+    修改文件拆分任务的子文件类别和页码
+    
+    Args:
+        workspace_id: 空间ID
+        task_id: 父任务ID（文件拆分任务的ID）
+        split_tasks: 拆分任务列表，格式为：
+            [
+                {
+                    "category": "类别名称",
+                    "pages": [0, 1]  # 页码数组，从0开始
+                },
+                ...
+            ]
+        app_id: 应用ID
+        secret_code: 密钥
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "split_tasks": split_tasks
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# 使用示例
+if __name__ == "__main__":
+    WORKSPACE_ID = "1234567890"
+    PARENT_TASK_ID = "1234567890"  # 父任务ID（task_type = 2）
+    APP_ID = "<your-app-id>"
+    SECRET_CODE = "<your-secret-code>"
+    
+    # 重要：必须包含所有拆分后的子文件信息
+    # 假设原文件拆分为3个子文件：
+    # - 子文件1：第1-2页，类别为"发票"
+    # - 子文件2：第3-5页，类别为"合同"
+    # - 子文件3：第6-7页，类别为"收据"
+    # 
+    # 如果只需要修改子文件1的类别，也必须包含子文件2和子文件3的信息
+    split_tasks = [
+        {
+            "category": "电子发票（普通发票）",  # 修改后的类别
+            "pages": [0, 1]  # 保持原有页码
+        },
+        {
+            "category": "合同",  # 保持原有类别
+            "pages": [2, 3, 4]  # 保持原有页码
+        },
+        {
+            "category": "收据",  # 保持原有类别
+            "pages": [5, 6]  # 保持原有页码（注意：原文件第6-7页对应页码5-6）
+        }
+    ]
+    
+    result = amend_split_category(WORKSPACE_ID, PARENT_TASK_ID, split_tasks, APP_ID, SECRET_CODE)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## 获取父任务ID和子文件信息
+
+在修改文件类别之前，需要先获取父任务的 `task_id` 和子文件信息。可以通过 `file/fetch` 接口查询：
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_split_task_info(workspace_id, file_id, app_id, secret_code):
+    """
+    获取文件拆分任务的信息，包括父任务ID和子文件信息
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    
+    params = {
+        "workspace_id": workspace_id,
+        "file_id": file_id
+    }
+    
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+    
+    files = data.get("result", {}).get("files", [])
+    if files:
+        file_data = files[0]
+        task_id = file_data.get("task_id")
+        task_type = file_data.get("task_type")
+        child_files = file_data.get("child_files", [])
+        
+        # 提取子文件信息
+        split_children = []
+        for child in child_files:
+            if child.get("task_type") == 0:  # 文件拆分产生的子文件
+                split_children.append({
+                    "task_id": child.get("task_id"),
+                    "category": child.get("category"),
+                    "pages": child.get("pages", {}).get("pages", []) if isinstance(child.get("pages"), dict) else child.get("pages", [])
+                })
+        
+        return {
+            "parent_task_id": task_id,
+            "parent_task_type": task_type,
+            "split_children": split_children
+        }
+    return None
+
+# 使用示例
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+task_info = get_split_task_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+if task_info:
+    print("父任务ID:", task_info["parent_task_id"])
+    print("父任务类型:", task_info["parent_task_type"])
+    print("子文件信息:")
+    for child in task_info["split_children"]:
+        print(json.dumps(child, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## 返回结果
+
+成功修改文件类别后，接口会返回成功响应：
+
+```json expandable
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## 完整示例
+
+以下是一个完整的示例，展示如何查询文件拆分任务信息，然后修改子文件的类别和页码：
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_split_task_info(workspace_id, file_id, app_id, secret_code):
+    """获取文件拆分任务信息"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    params = {"workspace_id": workspace_id, "file_id": file_id}
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+def amend_split_category(workspace_id, task_id, split_tasks, app_id, secret_code):
+    """修改文件拆分任务的类别和页码"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "split_tasks": split_tasks
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# 使用示例
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+# 1. 获取文件拆分任务信息
+file_info = get_split_task_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+files = file_info.get("result", {}).get("files", [])
+if files:
+    file_data = files[0]
+    parent_task_id = file_data.get("task_id")
+    task_type = file_data.get("task_type")
+    child_files = file_data.get("child_files", [])
+    
+    # 确认是文件拆分父任务（task_type = 2）
+    if task_type == 2:
+        print(f"父任务ID: {parent_task_id}")
+        print("当前子文件信息:")
+        
+        # 构建 split_tasks 参数
+        # 重要：必须包含所有子文件信息，即使部分不需要修改
+        split_tasks = []
+        for child in child_files:
+            if child.get("task_type") == 0:  # 文件拆分产生的子文件
+                # 获取当前页码信息
+                pages_info = child.get("pages", [])
+                if isinstance(pages_info, list) and pages_info:
+                    # 如果pages是对象数组，提取页码
+                    pages = [p.get("page") if isinstance(p, dict) else p for p in pages_info]
+                elif isinstance(pages_info, dict):
+                    # 如果pages是字典，尝试提取pages数组
+                    pages = pages_info.get("pages", [])
+                else:
+                    # 如果pages是简单数组，直接使用
+                    pages = pages_info if isinstance(pages_info, list) else []
+                
+                current_category = child.get("category")
+                print(f"  - 类别: {current_category}, 页码: {pages}")
+                
+                # 示例：只修改第一个子文件的类别，其他保持不变
+                # 注意：必须包含所有子文件，即使不需要修改
+                if len(split_tasks) == 0:
+                    # 修改第一个子文件的类别
+                    split_tasks.append({
+                        "category": "电子发票（普通发票）",  # 新的类别
+                        "pages": pages  # 保持原有页码
+                    })
+                else:
+                    # 其他子文件保持原有类别和页码
+                    split_tasks.append({
+                        "category": current_category,  # 保持原有类别
+                        "pages": pages  # 保持原有页码
+                    })
+        
+        # 2. 修改文件类别和页码
+        # 确保包含了所有子文件信息
+        if split_tasks:
+            print(f"\n准备提交 {len(split_tasks)} 个子文件的信息")
+            result = amend_split_category(WORKSPACE_ID, parent_task_id, split_tasks, APP_ID, SECRET_CODE)
+            print(f"修改结果: {json.dumps(result, indent=2, ensure_ascii=False)}")
+    else:
+        print(f"该任务不是文件拆分父任务（task_type={task_type}）")
+```
+
+## 页码说明
+
+- 页码从 **0** 开始计数，即第1页对应页码 `0`，第2页对应页码 `1`，以此类推
+- `pages` 数组中的页码表示该子文件包含的原文件页码
+
+## 注意事项
+
+1. **必须包含所有子文件**：`split_tasks` 数组中必须包含**所有**拆分后的子文件信息，即使部分子文件的类别或页码不需要修改。如果只提交部分子文件信息，会导致未包含的子文件被删除或处理异常
+2. **任务类型限制**：只有文件拆分父任务（`task_type = 2`）才支持使用 `split_tasks` 参数
+3. **类别必须存在**：指定的 `category` 必须在 DocFlow 空间中已经配置过，否则会返回错误
+4. **类别名称匹配**：类别名称必须与配置时完全一致（区分大小写）
+5. **页码范围**：确保 `pages` 数组中的页码在有效范围内（0 到原文件总页数-1），且页码不能重复
+6. **页码不重复**：每个页码只能出现在一个子文件中，不能有重叠
+7. **修改后重新处理**：修改文件类别和页码后，系统会根据新的类别和页码范围重新进行数据处理

@@ -1,0 +1,124 @@
+WorkspaceId:
+  name: workspace_id
+  in: query
+  description: Workspace ID
+  required: true
+  schema:
+    type: string
+    example: 1234567890
+
+Category:
+  name: category
+  in: query
+  description: File Category
+  required: false
+  schema:
+    type: string
+    example: invoice
+
+BatchNumber:
+  name: batch_number
+  in: query
+  description: |
+    Batch Number.            You can upload multiple times with the same batch number, and later retrieve processing results for multiple files in that batch using the batch number.            If the value is empty, the system automatically generates a string up to 20 characters long.
+  required: false
+  schema:
+    type: string
+    example: 202412190001
+
+SplitFlag:
+  name: split_flag
+  in: query
+  description: Whether to perform file splitting
+  required: false
+  schema:
+    type: boolean
+    default: false
+
+CropFlag:
+  name: crop_flag
+  in: query
+  description: Whether to perform multi-image cropping
+  required: false
+  schema:
+    type: boolean
+    default: false
+
+TargetProcess:
+  name: target_process
+  in: query
+  description: |
+    Target processing type.            Optional values:            - classify: Classification            - extract: Extraction
+  required: false
+  schema:
+    type: string
+    enum:
+      - classify
+      - extract
+    example: classify
+
+ParserRemoveWatermark:
+  name: parser_remove_watermark
+  in: query
+  description: Remove watermark (0 no, 1 yes)
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserCropDewarp:
+  name: parser_crop_dewarp
+  in: query
+  description: Crop and dewarp (0 no, 1 yes)
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserApplyMerge:
+  name: parser_apply_merge
+  in: query
+  description: Merge cross-page paragraphs and tables (0 no, 1 yes)
+  required: false
+  schema:
+    type: integer
+    default: 1
+
+ParserFormulaLevel:
+  name: parser_formula_level
+  in: query
+  description: Formula recognition level (0 recognizes both display and inline formulas, 1 recognizes display formulas only, 2 recognizes no formulas)
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserTableTextSplitMode:
+  name: parser_table_text_split_mode
+  in: query
+  description: Split text blocks crossed by table lines (0 no, 1 yes)
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserDpi:
+  name: parser_dpi
+  in: query
+  description: File resolution (144 default, 216 high precision)
+  required: false
+  schema:
+    type: integer
+    default: 144
+    enum:
+      - 144
+      - 216
+
+WithTaskDetailUrl:
+  name: with_task_detail_url
+  in: query
+  description: Whether to return the task details page URL
+  required: false
+  schema:
+    type: boolean
+    default: false
