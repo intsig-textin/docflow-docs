@@ -1,0 +1,387 @@
+/api/app-api/sip/platform/v2/review/task/submit:
+  post:
+    summary: レビュータスクを送信
+    description: レビュータスクを送信します
+    operationId: submitReviewTask
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              name:
+                type: string
+                description: タスク名
+                example: "レビュータスク 1"
+                maxLength: 100
+              repo_id:
+                type: string
+                description: レビュー規則リポジトリ ID
+                example: "31415926"
+              extract_task_ids:
+                type: array
+                items:
+                  type: string
+                  description: 抽出タスク ID
+                  example: "1234567890"
+              batch_number:
+                type: string
+                description: バッチ番号
+                example: "1234567890"
+              model:
+                type: string
+                description: |
+                  レビュータスクモデル（任意）。指定可能な値：`deepseek-v4-pro`、`qwen3.6-plus`、`qwen3.7-max`、`ORM-O1`。省略した場合は、ルールリポジトリのデフォルトレビューモデルが使用されます。
+
+                  2026-07-08 以降、以下の旧モデルは廃止されました。対応する代替モデルを使用してください：
+
+                  | 旧モデル | 代替モデル |
+                  | --- | --- |
+                  | `deepseek-r1` | `deepseek-v4-pro` |
+                  | `qwq-32b` | `qwen3.6-plus` |
+                  | `qwen3-max` | `qwen3.7-max` |
+                example: "deepseek-v4-pro"
+            required:
+              - workspace_id
+              - name
+              - repo_id
+    responses:
+      '200':
+        description: レビュータスクの送信に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          description: レビュータスク ID
+                          example: "31415926"
+                        model:
+                          type: string
+                          description: このタスクで実際に使用されたレビューモデルの表示名。廃止済みのデフォルトモデルがプラットフォームルールにより代替された場合は、代替後のモデル表示名を返します。
+                          example: "deepseek-v4-pro"
+
+/api/app-api/sip/platform/v2/review/task/result:
+  post:
+    summary: レビュータスク結果を取得
+    description: レビュータスク結果を取得します
+    operationId: getReviewTaskResult
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              task_id:
+                type: string
+                description: レビュータスク ID
+                example: "31415926"
+              with_task_detail_url:
+                type: boolean
+                description: レビュータスク詳細ページ URL を返すかどうか
+                example: false
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: レビュータスク結果の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          description: レビュータスク ID
+                          example: "31415926"
+                        task_name:
+                          type: string
+                          description: タスク名
+                          example: "レビュータスク 1"
+                        task_detail_url:
+                          type: string
+                          description: レビュータスク詳細ページ URL
+                        status:
+                          $ref: '../components/schemas/reviews.yaml#/ReviewTaskStatus'
+                        rule_repo:
+                          type: object
+                          properties:
+                            repo_id:
+                              type: string
+                              description: レビュー規則リポジトリ ID
+                              example: "31415926"
+                            name:
+                              type: string
+                              description: レビュー規則リポジトリ名
+                              example: "レビュー規則リポジトリ 1"
+                        extract_task_ids:
+                          type: array
+                          items:
+                            type: string
+                            description: 抽出タスク ID
+                            example: "1234567890"
+                        statistics:
+                          type: object
+                          properties:
+                            pass_count:
+                              type: integer
+                              description: 合格件数
+                              example: 100
+                            failure_count:
+                              type: integer
+                              description: 不合格件数
+                              example: 100
+                            error_count:
+                              type: integer
+                              description: タスク実行エラー件数
+                              example: 100
+                            not_triggered_count:
+                              type: integer
+                              description: 未トリガー件数
+                              example: 100
+                        groups:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              group_id:
+                                type: string
+                                description: レビュー規則グループ ID
+                                example: "31415926"
+                              group_name:
+                                type: string
+                                description: レビュー規則グループ名
+                                example: "レビュー規則グループ 1"
+                              review_tasks:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    rule_task_id:
+                                      type: string
+                                      description: レビューサブタスク ID
+                                      example: "31415926"
+                                    rule_id:
+                                      type: string
+                                      description: レビュー規則 ID
+                                      example: "31415926"
+                                    rule_name:
+                                      type: string
+                                      description: レビュー規則名
+                                      example: "レビュー規則 1"
+                                    risk_level:
+                                      $ref: '../components/schemas/reviews.yaml#/RiskLevel'
+                                    prompt:
+                                      type: string
+                                      description: レビュー規則プロンプト
+                                      example: "レビュー規則プロンプト"
+                                    review_result:
+                                      $ref: '../components/schemas/reviews.yaml#/ReviewTaskStatus'
+                                    reasoning:
+                                      type: string
+                                      description: レビュー判定理由
+                                      example: "レビュー判定理由"
+                                    anchors:
+                                      type: array
+                                      description: レビュー判定理由の位置アンカー情報。元テキスト内のレビュー判定理由の位置を特定するために使用します
+                                      items:
+                                        type: object
+                                        properties:
+                                          start_pos:
+                                            type: integer
+                                            description: "`reasoning` 内の開始文字位置"
+                                          end_pos:
+                                            type: integer
+                                            description: "`reasoning` 内の終了文字位置"
+                                          text:
+                                            type: string
+                                            description: 元テキストの内容
+                                          vertices:
+                                            type: array
+                                            items:
+                                              type: integer
+                                              description: 元テキストの外接四角形座標
+                                              example: [0, 0, 100, 0, 100, 100, 0, 100]
+                                          file_id:
+                                            type: string
+                                            description: ファイル ID
+                                            example: "1234567890"
+                                          extract_task_id:
+                                            type: string
+                                            description: 抽出タスク ID
+                                            example: "1234567890"
+                                          page:
+                                            type: integer
+                                            description: ファイル内のページ番号
+                                            example: 1
+                                          source:
+                                            type: string
+                                            description: |
+                                              位置アンカーのソース
+                                              - "ocr": 認識結果
+                                              - "extract_field": 関連フィールド
+                                            example: "ocr"
+                                            enum:
+                                              - ocr
+                                              - extract_field
+                                          file_category:
+                                            type: string
+                                            description: ファイルカテゴリ
+                                            example: "インボイス"
+                                          field_name:
+                                            type: string
+                                            description: 関連フィールド名
+                                            example: "インボイスコード"
+                                    audit_result:
+                                      type: integer
+                                      description: |
+                                        手動レビュー結果
+                                        - 0: 手動レビュー不合格
+                                        - 1: 手動レビュー合格
+                                      example: 1
+                                      enum:
+                                        - 0
+                                        - 1
+                                    audit_message:
+                                      type: string
+                                      description: 手動レビューコメント
+                                      example: "手動レビューコメント"
+                        model:
+                          type: string
+                          description: レビュータスクモデルの表示名。履歴タスクでは `deepseek-r1（廃止済み）` のように、元のモデルと廃止済みマークが返る場合があります。
+                          example: "deepseek-v4-pro"
+
+/api/app-api/sip/platform/v2/review/task/delete:
+  post:
+    summary: レビュータスクを削除
+    description: レビュータスクを削除します
+    operationId: deleteReviewTask
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              task_ids:
+                type: array
+                items:
+                  type: string
+                  description: レビュータスク ID
+                  example: "31415926"
+            required:
+              - workspace_id
+              - task_ids
+    responses:
+      '200':
+        description: レビュータスクの削除に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/task/retry:
+  post:
+    summary: レビュータスクを再試行
+    description: レビュータスクを再試行します
+    operationId: retryReviewTask
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              task_id:
+                type: string
+                description: レビュータスク ID
+                example: "31415926"
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: レビュータスクの再試行に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/task/rule/retry:
+  post:
+    summary: レビュータスク内の特定規則を再試行
+    description: レビュータスク内の特定規則を再試行します。
+    operationId: retryReviewTaskRule
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              task_id:
+                type: string
+                description: レビュータスク ID
+                example: "31415926"
+              rule_id:
+                type: string
+                description: レビュー規則 ID
+                example: "31415926"
+            required:
+              - workspace_id
+              - task_id
+              - rule_id
+    responses:
+      '200':
+        description: レビュータスク内の特定規則の再試行に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'

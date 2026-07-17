@@ -1,0 +1,411 @@
+---
+title: "更新履歴"
+sidebarTitle: "更新履歴"
+description: "DocFlow API ドキュメントの更新履歴"
+---
+
+## 2026-07-08
+
+### API
+
+#### スマートレビューモデルの更新
+
+- [レビュータスクを送信](/api-reference/スマートレビュー/レビュータスクを送信)
+
+  - **Body**： `model` パラメータの指定可能な値を `deepseek-v4-pro`、`qwen3.6-plus`、`qwen3.7-max`、`ORM-O1` に更新しました。
+  2026-07-08 以降、以下の旧モデルは廃止されました。対応する代替モデルを使用してください：
+
+    | 旧モデル | 代替モデル |
+    | --- | --- |
+    | `deepseek-r1` | `deepseek-v4-pro` |
+    | `qwq-32b` | `qwen3.6-plus` |
+    | `qwen3-max` | `qwen3.7-max` |
+
+  - **Response**： `model` フィールドを追加しました。このフィールドは、レビュータスクで実際に使用されたモデルを返します。
+- [レビュータスク結果を取得](/api-reference/スマートレビュー/レビュータスク結果を取得) の統計情報に `not_triggered_count` を追加しました。このフィールドは、レビュー規則が未トリガーだった件数を返します。
+
+## 2026-07-05
+
+### API
+
+#### 抽出モデルのアップグレード
+
+抽出モデルの名称を統一し、新たに **Auto** スマートルーティングを追加しました。`extract_model` を含むすべてのエンドポイント（**ファイルカテゴリを作成**、**ファイルカテゴリを更新**、ファイルカテゴリのフィールド/テーブルの追加と更新、**特定フィールドを抽出**、**ファイル処理結果一覧を取得**）が対象です。
+
+| 旧モデル名 | 新モデル名 | 説明 |
+|---------|---------|------|
+| Model 1 | `Acgpt` | 高速で安定した抽出結果 |
+| Model 2 | `DF-M1` | 複雑な文書理解に適しています |
+| Model 3 | `Acgpt-VL` | VLM。シンプルな抽出に適しています（≤10 ページ） |
+| — | `Auto` | 抽出モデルを自動でマッチング（新規追加。アルゴリズムがフィールドごとに実際のモデルを自動でルーティングします） |
+
+- リクエストパラメータ `extract_model` は新モデル名（`Auto`/`Acgpt`/`Acgpt-VL`/`DF-M1`）のみを受け付けます。旧値 `Model 1`/`Model 2`/`Model 3` および過去の code 値 `llm`/`vlm` はサポートされなくなりました。
+- **ファイル処理結果一覧を取得**、**特定フィールドを抽出** のレスポンスで、フィールドとテーブルに `configModel`（設定モデル。`Auto` を取り得ます。既存データで未設定の場合は `null`）を追加しました。従来の `extractModel` は「実際にヒットしたモデル」（値は `Acgpt`/`Acgpt-VL`/`DF-M1`）に意味を変更しました。
+- 抽出失敗理由に「Acgpt-VL の処理上限を超過」を追加しました（`Acgpt-VL` には文書レベルの処理上限があり、ページ数超過時などに通知されます）。
+- 抽出モデル `Acgpt-VL` は現在、テーブルの複数テーブル結合（`collect_from_multi_table`）に対応していません。
+
+## 2026-06-02
+
+### API
+
+#### 主要エンドポイントのアップグレード
+
+1 回のリクエストで複数オブジェクトを処理できます。すべてのエンドポイントは **all-or-nothing** セマンティクスを採用しており、いずれかの項目が検証に失敗すると、バッチ全体が拒否されます。
+
+| エンドポイント | 説明 |
+|----------|-------------|
+| [ファイルカテゴリのフィールドを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E8%BF%BD%E5%8A%A0) | 最大 100 個のフィールドを一括作成 |
+| [ファイルカテゴリのフィールドを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0) | 複数のフィールド設定を一括更新 |
+| [ファイルカテゴリのテーブルを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E8%BF%BD%E5%8A%A0) | テーブルを作成（内包フィールドも同時に設定可能） |
+| [ファイルカテゴリのテーブルを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E6%9B%B4%E6%96%B0) | 複数のテーブル設定を一括更新 |
+| [カテゴリサンプルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) | 複数のカテゴリサンプルをアップロード（最大 20 件） |
+| [カテゴリサンプルをダウンロード（ZIP）](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%EF%BC%88ZIP%EF%BC%89) | カテゴリサンプルを ZIP 形式でダウンロード |
+
+#### 非推奨エンドポイント
+
+以下の単一操作エンドポイントは `deprecated` としてマークされました。現在も利用できますが、今後メンテナンスされません。上記の主要エンドポイントへ移行してください。
+
+| 非推奨 | 代替 |
+|-----------|-------------|
+| 単一ファイルカテゴリフィールドを追加 | [ファイルカテゴリのフィールドを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E8%BF%BD%E5%8A%A0) |
+| 単一ファイルカテゴリフィールドを更新 | [ファイルカテゴリのフィールドを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0) |
+| 単一ファイルカテゴリテーブルを追加 | [ファイルカテゴリのテーブルを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E8%BF%BD%E5%8A%A0) |
+| 単一ファイルカテゴリテーブルを更新 | [ファイルカテゴリのテーブルを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E6%9B%B4%E6%96%B0) |
+| 単一カテゴリサンプルをアップロード | [カテゴリサンプルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) |
+| 単一カテゴリサンプルをダウンロード | [カテゴリサンプルをダウンロード（ZIP）](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%EF%BC%88ZIP%EF%BC%89) |
+
+#### 1 回のリクエストでカテゴリを作成
+
+[ファイルカテゴリを作成](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E4%BD%9C%E6%88%90) が `tables` パラメータに対応しました。カテゴリ作成時に、テーブルとそのフィールドを 1 回の呼び出しで設定できます。
+
+#### フィールドの高度な設定
+
+[ファイルカテゴリフィールドを更新](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0)（単一更新 + [一括更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0)）が、以下のプロパティに対応しました。
+
+| プロパティ | 説明 | 更新時の動作 |
+|----------|-------------|-----------------|
+| `alias` | フィールド別名 | 省略=変更なし、`[]`=クリア、`["a","b"]`=上書き |
+| `identity` | エクスポート時のフィールド名 | 省略=変更なし、`""`=クリア、空でない値=上書き |
+| `multi_value` | 複数値抽出 | 省略=変更なし、`true`/`false`=上書き |
+| `duplicate_value_distinct` | 重複値の除去 | `multi_value=true` の場合のみ有効 |
+| `transform_settings` | 出力変換設定 | datetime / enumerate / regex に対応 |
+
+#### レスポンス情報の拡充
+
+追加のクエリなしで完全な設定を取得できます。
+
+- [ファイルカテゴリのフィールド一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) — `enabled`, `prompt`, `use_prompt`, `extract_model`, `alias`, `identity`, `multi_value`, `duplicate_value_distinct`, `transform_settings` を追加
+- [ファイルカテゴリのテーブル一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) — `prompt`, `collect_from_multi_table`, `extract_model` を追加
+- [ファイルカテゴリ一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) — `category_prompt`, `extract_model` を追加
+- **with_detail フラグ** — 作成/更新時に `with_detail=true` を渡すと、レスポンスで完全なオブジェクトを取得できます
+
+### SDK
+
+- Python SDK の `fields.update()` と `fields.batch_update()` に、高度な設定パラメータとクリア動作のサンプルを追加
+
+## 2026-05-27
+
+**API**
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) エンドポイントが、解析モード（auto/scan/VLM）を指定する `parser_parse_mode` パラメータに対応
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) エンドポイントが、暗号化 PDF の復号に使う `parser_pdf_pwd` パラメータに対応
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のレスポンスに、ファイル解析パラメータ設定を示す `parser_params` フィールドを追加
+
+## 2026-05-06
+
+**ガイド**
+- 更新: [経費精算シナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/expense_reimbursement), [AP 照合シナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/ap_review), [契約レビューシナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/contract_review) — レビュー規則のリスクレベル表示と説明を改善
+- 追加: 更新履歴ページ
+
+## 2026-04-30
+
+**ガイド**
+- 更新: [経費精算シナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/expense_reimbursement), [経費精算シナリオ（既存ワークスペース）](/docflow-global/cn/00-overview/expense_reimbursement_already_configured), [AP 照合シナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/ap_review), [AP 照合シナリオ（既存ワークスペース）](/docflow-global/cn/00-overview/ap_review_already_configured), [契約レビューシナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/contract_review), [契約レビューシナリオ（既存ワークスペース）](/docflow-global/cn/00-overview/contract_review_already_configured) — アップロード手順に **同期アップロード** [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) のコード例（Python + Java）と、非同期/同期モードの比較を追加
+- 更新: サンプルコードファイル（`expense_reimbursement.py`, `contract_review.py`, `ap_review.py` と各 `_configured` 版）に `upload_file_sync` 関数を追加
+
+## 2026-04-16
+
+**API**
+- 更新: レビュー API を v2.1 にアップグレード。[レビュータスクを送信](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E9%80%81%E4%BF%A1)、[レビュータスク結果を取得](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E7%B5%90%E6%9E%9C%E3%82%92%E5%8F%96%E5%BE%97) および関連 API のスキーマ定義を改善
+
+## 2026-04-15
+
+**API**
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイル処理を再試行](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C) エンドポイントが、文書解析解像度をカスタマイズする `parser_dpi` パラメータに対応
+
+## 2026-04-14
+
+**ガイド**
+- 更新: [対応ファイル形式](/docflow-global/ja/01-upload/support_format), [URL 指定アップロード](/docflow-global/ja/01-upload/upload_by_urls) — ファイルアップロードサイズ上限を 50MB から **100MB** に引き上げ
+
+**API**
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) のファイルサイズ上限を 100MB に変更
+
+## 2026-04-12
+
+**ガイド**
+- 追加: [Docflow 文書抽出との違い](/docflow-global/cn/00-overview/atomic_capabilities_extract) — アトミック機能（エンティティ抽出）と Docflow 抽出ワークフローの比較
+- 追加: [Docflow 文書解析との違い](/docflow-global/cn/00-overview/atomic_capabilities_parse) — アトミック機能（文書解析）と Docflow 解析ワークフローの比較
+
+## 2026-04-08
+
+**SDK**
+- 追加: Python SDK ドキュメント
+
+## 2026-04-07
+
+**ガイド**
+- 更新: 6 つのシナリオガイド（[経費精算](/docflow-global/cn/00-overview/expense_reimbursement)、[AP 照合](/docflow-global/cn/00-overview/ap_review)、[契約レビュー](/docflow-global/cn/00-overview/contract_review) と各既存ワークスペース版）のタイトル、説明、サンプルファイル参照を改善
+- 追加: Java サンプルコード（`ApReview.java`, `ContractReview.java` など 6 ファイル）と対応するサンプル文書
+
+## 2026-04-03
+
+**ガイド**
+- 追加: [AP 照合シナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/ap_review) — Python/Java サンプル付き
+- 追加: [AP 照合シナリオ（既存ワークスペース）](/docflow-global/cn/00-overview/ap_review_already_configured)
+- 追加: [契約レビューシナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/contract_review) — Python/Java サンプル付き
+- 追加: [契約レビューシナリオ（既存ワークスペース）](/docflow-global/cn/00-overview/contract_review_already_configured)
+- 追加: [経費精算シナリオ（既存ワークスペース）](/docflow-global/cn/00-overview/expense_reimbursement_already_configured)
+- 追加: `entity_extraction.py` — Entity Extraction API の単独サンプル
+
+**API**
+- 更新: [ワークスペース管理](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) エンドポイントで `enterprise_id` パラメータが不要に変更
+
+## 2026-04-01
+
+**API**
+- API ドキュメントを **v2.4.0**
+- 追加: ワークスペース管理とカテゴリ管理の REST API エンドポイント一式
+- 追加: [ファイルカテゴリを修正](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E4%BF%AE%E6%AD%A3), [ファイルカテゴリのテーブル一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [ファイルカテゴリテーブルを追加](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E8%BF%BD%E5%8A%A0), [ファイルカテゴリテーブルを更新](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E6%9B%B4%E6%96%B0), [ファイルカテゴリのテーブルを削除](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E5%89%8A%E9%99%A4) エンドポイント
+
+## 2026-03-24
+
+**ガイド**
+- 追加: [経費精算シナリオ（ワークスペース未作成）](/docflow-global/cn/00-overview/expense_reimbursement) — フロー図と Python/Java サンプル付き
+- 更新: [クイックスタート](/docflow-global/ja/00-overview/quickstart)
+
+## 2026-03-12
+
+**ガイド**
+- 追加: [ワークスペース管理 - クイックスタート](/docflow-global/ja/02-workspace/quickstart)
+- 追加: [カテゴリ管理 - クイックスタート](/docflow-global/ja/10-category-management/quickstart)
+- 追加: [フィールド管理](/docflow-global/ja/10-category-management/fields_management)
+- 追加: [テーブル管理](/docflow-global/ja/10-category-management/tables_management)
+- 追加: [サンプル管理](/docflow-global/ja/10-category-management/samples_management)
+
+**API**
+- API ドキュメントを **v2.3.0**
+- 追加: [ファイル処理結果を更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E3%82%92%E6%9B%B4%E6%96%B0), [特定フィールドを抽出](/api-reference/%E7%89%B9%E5%AE%9A%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%8A%BD%E5%87%BA), [ファイル処理を再試行](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C), [短期有効トークンを生成](/api-reference/%E7%9F%AD%E6%9C%9F%E6%9C%89%E5%8A%B9%E3%83%88%E3%83%BC%E3%82%AF%E3%83%B3%E3%82%92%E7%94%9F%E6%88%90)、ワークスペース CRUD、カテゴリ CRUD、[ファイルカテゴリのテーブル一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [ファイルカテゴリテーブルを追加](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E8%BF%BD%E5%8A%A0), [ファイルカテゴリテーブルを更新](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E6%9B%B4%E6%96%B0), [ファイルカテゴリのテーブルを削除](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E5%89%8A%E9%99%A4)
+- 追加: レビュー関連エンドポイント: [レビュー規則リポジトリ一覧を取得](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [レビュー規則グループを作成](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97%E3%82%92%E4%BD%9C%E6%88%90), [レビュー規則を作成](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%82%92%E4%BD%9C%E6%88%90), [レビュータスクを送信](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E9%80%81%E4%BF%A1)
+
+## 2026-03-02
+
+**API**
+- API ドキュメントを **v2.2.0**
+- 追加: [ワークスペースを作成](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E4%BD%9C%E6%88%90), [ファイルカテゴリを作成](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E4%BD%9C%E6%88%90), [ファイルカテゴリフィールドを追加](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E8%BF%BD%E5%8A%A0)
+
+## 2026-02-03
+
+**ガイド**
+- 追加: フロントエンド iframe 埋め込み
+
+## 2026-01-28
+
+**API**
+- 追加: ワークスペース管理エンドポイント: [ワークスペースを作成](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E4%BD%9C%E6%88%90), [ワークスペース一覧を取得](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [ワークスペース詳細を取得](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E8%A9%B3%E7%B4%B0%E3%82%92%E5%8F%96%E5%BE%97), [ワークスペースを更新](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E6%9B%B4%E6%96%B0), [ワークスペースを削除](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E5%89%8A%E9%99%A4)
+- 追加: カテゴリ管理エンドポイント: [ファイルカテゴリを作成](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E4%BD%9C%E6%88%90), [ファイルカテゴリを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E6%9B%B4%E6%96%B0), [ファイルカテゴリを削除](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E5%89%8A%E9%99%A4), [カテゴリサンプルをアップロード](/api-reference/%E5%8D%98%E4%B8%80%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [カテゴリサンプル一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [カテゴリサンプルをダウンロード](/api-reference/%E5%8D%98%E4%B8%80%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89)
+- 追加: カテゴリフィールド管理エンドポイント: [ファイルカテゴリフィールドを追加](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E8%BF%BD%E5%8A%A0), [ファイルカテゴリフィールドを更新](/api-reference/%E5%8D%98%E4%B8%80%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0), [ファイルカテゴリのフィールドを削除](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E5%89%8A%E9%99%A4)
+
+## 2026-01-27
+
+**ガイド**
+- 追加: [OpenAPI ファイルのダウンロード](/docflow-global/ja/100-faq/openapi_download)
+
+## 2026-01-21
+
+**API**
+- 更新: [短期有効トークンを生成](/api-reference/%E7%9F%AD%E6%9C%9F%E6%9C%89%E5%8A%B9%E3%83%88%E3%83%BC%E3%82%AF%E3%83%B3%E3%82%92%E7%94%9F%E6%88%90) エンドポイントが有効期限設定に対応
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のレスポンスに `total_page_num` フィールドを追加
+
+## 2025-12-25
+
+**ガイド**
+- 更新: [レビュータスクを作成](/docflow-global/ja/07-review/create_task) — `batch_number` パラメータの説明を追加
+
+**API**
+- 更新: [レビュータスクを送信](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E9%80%81%E4%BF%A1) が `batch_number` パラメータに対応
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89), [ファイル処理を再試行](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C) エンドポイントが画像処理パラメータ（`parser_remove_watermark`, `parser_crop_dewarp` など）に対応
+
+## 2025-12-24
+
+**ガイド**
+- 追加: [規則リポジトリ管理](/docflow-global/ja/07-review/rule_management) — 規則リポジトリ、規則グループ、規則の CRUD
+- 追加: [レビュータスクを作成](/docflow-global/ja/07-review/create_task)
+- 追加: [レビュー結果を取得](/docflow-global/ja/07-review/get_result)
+- 追加: [レビュータスクを再試行](/docflow-global/ja/07-review/retry_task)
+- 更新: [レビュー - クイックスタート](/docflow-global/ja/07-review/quickstart)
+
+**API**
+- 追加: [レビュー規則リポジトリ一覧を取得](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [レビュー規則リポジトリを取得](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%82%92%E5%8F%96%E5%BE%97), [レビュータスクを再試行](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C), [レビュータスク内の特定規則を再試行](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E5%86%85%E3%81%AE%E7%89%B9%E5%AE%9A%E8%A6%8F%E5%89%87%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C)
+- 削除: 旧レビュー API
+
+## 2025-12-19
+
+**ガイド**
+- 追加: [同期アップロード](/docflow-global/ja/01-upload/upload_sync)
+
+**API**
+- 追加: [ファイルを同期アップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E5%90%8C%E6%9C%9F%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89)
+- 追加: [ワークスペースのファイルカテゴリ一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [ファイルカテゴリのフィールド一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97)
+- 追加: レビュー規則リポジトリエンドポイント: [レビュー規則リポジトリを作成](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%82%92%E4%BD%9C%E6%88%90), [レビュー規則リポジトリを削除](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%82%92%E5%89%8A%E9%99%A4), [レビュー規則リポジトリを更新](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%82%92%E6%9B%B4%E6%96%B0)
+
+## 2025-12-17
+
+**ガイド**
+- 追加: [特定フィールドを抽出](/docflow-global/ja/06-extract/extract_specific_fields)
+- 更新: [抽出 - クイックスタート](/docflow-global/ja/06-extract/quickstart)
+
+**API**
+- 追加: [特定フィールドを抽出](/api-reference/%E7%89%B9%E5%AE%9A%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%8A%BD%E5%87%BA)
+- 削除: 旧レビュー API エンドポイント
+
+## 2025-12-11
+
+**ガイド**
+- 追加: [エンタープライズマルチテナント](/docflow-global/ja/00-overview/enterprise_multi_tenant)
+- 追加: [Enterprise ID の取得方法](/docflow-global/ja/100-faq/get_enterprise_id)
+
+## 2025-12-08
+
+**ガイド**
+- 追加: [ファイル再試行 - クイックスタート](/docflow-global/ja/09-retry/quickstart)
+
+**API**
+- 追加: [ファイル処理を再試行](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C)
+
+## 2025-11-12
+
+**API**
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のレスポンスにエクスポート用フィールド名（`export_name`）を追加
+
+## 2025-11-04
+
+**ガイド**
+- 追加: [ファイルカテゴリを修正](/docflow-global/ja/04-classify/amend_category)
+- 追加: [ファイルカテゴリを修正（ファイル分割）](/docflow-global/ja/05-split/amend_category_split)
+- 追加: [ファイルカテゴリを修正（複数画像クロップ）](/docflow-global/ja/05-split/amend_category_crop)
+
+**API**
+- 追加: [ファイルカテゴリを修正](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%92%E4%BF%AE%E6%AD%A3)
+
+## 2025-10-27
+
+**ガイド**
+- 追加: [URL 指定アップロード](/docflow-global/ja/01-upload/upload_by_urls)
+- 追加: [タスクステータス確認](/docflow-global/ja/01-upload/task_status) — 失敗理由と処理時間を含む
+- 更新: [レスポンス JSON 構造](/docflow-global/ja/01-upload/response) — `task_id` フィールドの説明を追加
+
+**API**
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) が URL 指定アップロード（リクエストボディの `urls`）に対応
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) のレスポンスに `task_id` フィールドを追加
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のレスポンスに `failure_causes` と `duration_ms` フィールドを追加
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のテーブル座標構造をフィールドおよび明細項目と統一
+
+## 2025-10-16
+
+**ガイド**
+- 追加: [ファイル削除 - クイックスタート](/docflow-global/ja/08-delete/quickstart)
+
+**API**
+- 追加: [タスクを削除](/api-reference/%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E5%89%8A%E9%99%A4)
+
+## 2025-09-01 ~ 2025-09-05
+
+**ガイド**
+- 追加: 英語版ドキュメントを公開（[製品紹介](/docflow-global/ja/00-overview/intro)、[アップロード](/docflow-global/ja/01-upload/quickstart)、[解析](/docflow-global/ja/03-parse/quickstart)、[分類](/docflow-global/ja/04-classify/quickstart)、[分割](/docflow-global/ja/05-split/quickstart)、[抽出](/docflow-global/ja/06-extract/quickstart)、[レビュー](/docflow-global/ja/07-review/quickstart)、よくある質問など 25 ページ以上）
+- 更新: [複数画像クロップ](/docflow-global/ja/05-split/crop) — 分割結果にクロップ画像のページ番号と回転角度を追加
+
+**API**
+- 追加: 英語版 OpenAPI 仕様
+
+## 2025-08-26 ~ 2025-08-28
+
+**ガイド**
+- 追加: [分類 - クイックスタート](/docflow-global/ja/04-classify/quickstart)
+- 追加: [分類のみ](/docflow-global/ja/04-classify/target_process)
+- 追加: [分類指定アップロード](/docflow-global/ja/04-classify/manual)
+- 追加: [分割 - クイックスタート](/docflow-global/ja/05-split/quickstart)
+- 追加: [ファイル分割](/docflow-global/ja/05-split/split)
+- 追加: [複数画像クロップ](/docflow-global/ja/05-split/crop)
+- 追加: [抽出 - クイックスタート](/docflow-global/ja/06-extract/quickstart)
+- 追加: [基本フィールド情報](/docflow-global/ja/06-extract/fields)
+- 追加: [テーブルフィールド情報](/docflow-global/ja/06-extract/tables)
+- 追加: [印影情報](/docflow-global/ja/06-extract/stamps)
+- 追加: [手書き情報](/docflow-global/ja/06-extract/handwritings)
+- 追加: [座標系](/docflow-global/ja/03-parse/coordinate)
+- 追加: よくある質問ページ — [Workspace ID の取得方法](/docflow-global/ja/100-faq/get_workspace_id), [ファイルカテゴリの設定方法](/docflow-global/ja/100-faq/setup_category), [中国語カテゴリパラメータの問題](/docflow-global/ja/100-faq/chinese_category_param), [製品料金](/docflow-global/ja/100-faq/product_charge)
+
+## 2025-08-14
+
+**ガイド**
+- 追加: [文書解析 - クイックスタート](/docflow-global/ja/03-parse/quickstart)
+- 追加: [解析結果の可視化](/docflow-global/ja/03-parse/visualization)
+- 追加: [レスポンス JSON 構造](/docflow-global/ja/01-upload/response)
+
+## 2025-08-13
+
+**ガイド**
+- DocFlow API ドキュメントサイトを公開:
+  - [製品紹介](/docflow-global/ja/00-overview/intro)
+  - [クイックスタート](/docflow-global/ja/00-overview/quickstart)
+  - [アクセス認証情報](/docflow-global/ja/00-overview/auth)
+  - [アップロード - クイックスタート](/docflow-global/ja/01-upload/quickstart)
+  - [対応ファイル形式](/docflow-global/ja/01-upload/support_format)
+  - [ワークスペース管理](/docflow-global/ja/02-workspace/quickstart)
+  - [レビュー - クイックスタート](/docflow-global/ja/07-review/quickstart)
+
+**API**
+- 初期 API ドキュメントを公開。含まれるエンドポイント: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) と [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) エンドポイント
+
+## 2025-07-09
+
+**API**
+- 修正: テーブル結果と印影結果のフィールド定義
+
+## 2025-05-20 ~ 2025-05-21
+
+**API**
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) が `split_flag`（ファイル分割）と `crop_flag`（複数画像クロップ）パラメータに対応
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) が `auto_verify_vat`（VAT インボイス自動検証）パラメータに対応
+- 更新: [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) がパイプライン制御（分類のみ / 分類+抽出）用の `target_process` パラメータに対応
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のレスポンスがサブタスクとサブ画像座標に対応
+
+## 2025-05-07 ~ 2025-05-12
+
+**API**
+- 追加: 旧 API: [レビュータスクを送信](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E9%80%81%E4%BF%A1), [レビュー規則を更新](/api-reference/%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC/%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E8%A6%8F%E5%89%87%E3%82%92%E6%9B%B4%E6%96%B0), `runRule` — レビュー API
+
+## 2025-04-15
+
+**API**
+- 更新: [ワークスペースのファイルカテゴリ一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) エンドポイントに `enabled` フィルタパラメータを追加
+- 追加: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) API ドキュメント
+- 修正: 印影、手書き、テーブルのフィールド定義
+
+## 2025-02-18
+
+**API**
+- 追加: [ワークスペースを作成](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E4%BD%9C%E6%88%90), [ワークスペース一覧を取得](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97), [ワークスペース詳細を取得](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E8%A9%B3%E7%B4%B0%E3%82%92%E5%8F%96%E5%BE%97), [ワークスペースを更新](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E6%9B%B4%E6%96%B0), [ワークスペースを削除](/api-reference/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E7%AE%A1%E7%90%86/%E3%83%AF%E3%83%BC%E3%82%AF%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%E3%82%92%E5%89%8A%E9%99%A4) — ワークスペース管理
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のレスポンスに `task_id` フィールドを追加
+
+## 2025-01-02 ~ 2025-01-03
+
+**API**
+- 追加: [ファイル処理結果を更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E3%82%92%E6%9B%B4%E6%96%B0) — ファイル抽出結果の一括更新に対応
+- 更新: [ファイル処理結果一覧を取得](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E5%87%A6%E7%90%86%E7%B5%90%E6%9E%9C%E4%B8%80%E8%A6%A7%E3%82%92%E5%8F%96%E5%BE%97) のフィールド抽出結果に `position` 座標情報を追加
+
+## 2024-12-20 ~ 2024-12-23
+
+**API**
+- DocFlow API の初回リリース
+- [ファイルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) エンドポイントは `multipart/form-data` 形式を使用し、複数ファイルアップロードに対応
+- 認証署名サンプル（Python）

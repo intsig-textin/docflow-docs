@@ -1,0 +1,345 @@
+---
+title: "レビュータスクの作成"
+description: "REST API でレビュータスクを作成する方法"
+---
+
+<Tip>
+  このページでは、REST API でレビュータスクを作成する方法を説明します。レビュータスクを作成するには、規則リポジトリと抽出タスク ID のリストを指定します。システムは規則リポジトリ内の規則と抽出タスクを自動で照合し、マッチした規則に対してレビューを実行します。
+</Tip>
+
+レビュータスクは、規則リポジトリを抽出タスクに適用する 1 回のレビュー実行です。レビュータスクを作成すると、システムは自動でレビューを実行し、レビュー結果を生成します。
+
+## レビュータスクを作成
+
+指定した抽出タスクをレビューするため、レビュータスクを送信します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+# Using extract_task_ids
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "name": "Review Task 1",
+    "repo_id": "31415926",
+    "extract_task_ids": ["1234567890", "1234567891"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/submit"
+
+# Using batch_number
+# curl -X POST \
+#   -H "Content-Type: application/json" \
+#   -H "x-ti-app-id: <your-app-id>" \
+#   -H "x-ti-secret-code: <your-secret-code>" \
+#   -d '{
+#     "workspace_id": "<your-workspace-id>",
+#     "name": "Review Task 1",
+#     "repo_id": "31415926",
+#     "batch_number": "202412190001"
+#   }' \
+#   "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/submit"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/submit"
+
+# Method 1: Using extract_task_ids
+payload = {
+    "workspace_id": workspace_id,
+    "name": "Review Task 1",
+    "repo_id": "31415926",
+    "extract_task_ids": ["1234567890", "1234567891"]
+}
+
+# Method 2: Using batch_number
+# payload = {
+#     "workspace_id": workspace_id,
+#     "name": "Review Task 1",
+#     "repo_id": "31415926",
+#     "batch_number": "202412190001"
+# }
+
+# Method 3: Using both batch_number and extract_task_ids (system will automatically merge with deduplication)
+# payload = {
+#     "workspace_id": workspace_id,
+#     "name": "Review Task 1",
+#     "repo_id": "31415926",
+#     "batch_number": "202412190001",
+#     "extract_task_ids": ["1234567890", "1234567891"]
+# }
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    task_id = result.get("result", {}).get("task_id")
+    print(f"Review task created successfully, ID: {task_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `name`（必須）: タスク名。最大 100 文字
+- `repo_id`（必須）: レビュー規則リポジトリ ID
+- `extract_task_ids`（任意）: 抽出タスク ID の配列。レビュー対象の抽出タスク ID リスト
+- `batch_number`（任意）: バッチ番号。指定すると、システムはこのバッチ配下のすべてのタスクを取得し、`extract_task_ids` と重複排除しながら統合します
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "task_id": "31415926"
+  }
+}
+```
+
+## パラメータ説明
+
+### 規則リポジトリ ID（repo_id）
+
+規則リポジトリ ID は、作成済みレビュー規則リポジトリの識別子です。システムはこのリポジトリ内のすべての規則を使用して抽出タスクをレビューします。
+
+**規則リポジトリ ID の取得方法:**
+- [規則リポジトリを作成](./rule_management#規則リポジトリを作成) API のレスポンスから取得します
+- 画面上の規則リポジトリ一覧から確認します
+
+### 抽出タスク ID（extract_task_ids）
+
+抽出タスク ID は、文書抽出が完了したタスクの識別子です。抽出が完了したタスクだけをレビュー対象として利用できます。
+
+**重要事項:**
+- 親タスク ID（ファイル分割や複数画像クロップで生成された親タスクなど）を指定した場合、システムはその親タスク配下のすべての子タスクを自動で取得して入力として使用します
+- `batch_number` と `extract_task_ids` の両方を指定した場合、システムはバッチ内のすべてのタスクと `extract_task_ids` を自動で重複排除しながら統合します
+
+**抽出タスク ID の取得方法:**
+- ファイルアップロード API が返す `task_id` から取得します
+- ファイル確認 API（`/api/app-api/sip/platform/v2/file/fetch`）でファイル情報を取得し、その中の `task_id` を抽出タスク ID として使用します
+
+### バッチ番号（batch_number）
+
+バッチ番号は、レビュー対象タスクをバッチ単位で指定するために使用します。`batch_number` を指定すると、システムはそのバッチ配下のすべてのタスクを取得してレビュー対象にします。
+
+**利用シーン:**
+- 同じバッチでアップロードしたすべてのファイルを一括レビューする
+- `extract_task_ids` と組み合わせて、より柔軟にレビュー対象を選択する
+
+**例: 抽出タスク ID を取得する**
+
+```python Python icon=python expandable
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": batch_number
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    extract_task_ids = []
+    for file in files:
+        # Ensure file has completed extraction (recognition_status == 1)
+        if file.get("recognition_status") == 1:
+            task_id = file.get("task_id")
+            if task_id:
+                extract_task_ids.append(task_id)
+
+    print(f"Available extraction task IDs: {extract_task_ids}")
+```
+
+## レビュータスクの実行フロー
+
+レビュータスクを作成すると、システムは次の流れでレビューを実行します。
+
+1. **規則マッチング**: システムが規則リポジトリ内の規則と抽出タスクのカテゴリを照合します
+   - 規則の `category_ids` が抽出タスクのカテゴリに一致するかを確認します
+   - 抽出タスクに規則が参照するフィールドが含まれるかを確認します
+
+2. **フィールド参照**: マッチした規則について、システムは抽出結果から規則が参照するフィールド値を取得します
+
+3. **AI レビュー**: 規則プロンプトとフィールド値にもとづいて、AI がレビュー判定を行います
+
+4. **結果生成**: レビューステータス、レビュー根拠、位置アンカーなどを含むレビュー結果を生成します
+
+## 完全な例
+
+レビュータスク作成の一連の流れです。
+
+```python Python icon=python expandable
+import requests
+import time
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+host = "https://docflow.textin.ai"
+
+# 1. Get extraction task IDs
+fetch_url = "/api/app-api/sip/platform/v2/file/fetch"
+fetch_resp = requests.get(
+    url=f"{host}{fetch_url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "<your-batch-number>"
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+fetch_result = fetch_resp.json()
+if fetch_result.get("code") != 200:
+    print(f"Failed to get file list: {fetch_result.get('msg')}")
+    exit(1)
+
+files = fetch_result.get("result", {}).get("files", [])
+extract_task_ids = []
+for file in files:
+    if file.get("recognition_status") == 1:  # Ensure extraction is completed
+        task_id = file.get("task_id")
+        if task_id:
+            extract_task_ids.append(task_id)
+
+if not extract_task_ids:
+    print("No available extraction tasks")
+    exit(1)
+
+print(f"Found {len(extract_task_ids)} extraction tasks: {extract_task_ids}")
+
+# 2. Create review task
+submit_url = "/api/app-api/sip/platform/v2/review/task/submit"
+submit_payload = {
+    "workspace_id": workspace_id,
+    "name": f"Review Task_{int(time.time())}",
+    "repo_id": "31415926",  # Rule repository ID
+    "extract_task_ids": extract_task_ids
+}
+
+submit_resp = requests.post(
+    url=f"{host}{submit_url}",
+    json=submit_payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+submit_result = submit_resp.json()
+if submit_result.get("code") == 200:
+    task_id = submit_result.get("result", {}).get("task_id")
+    print(f"Review task created successfully, Task ID: {task_id}")
+    print("Please use the task ID to query review results")
+else:
+    print(f"Failed to create review task: {submit_result.get('msg')}")
+```
+
+## レビュータスクを削除
+
+レビュータスクを削除する場合は、次の API を使用します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_ids": ["31415926", "31415927"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_ids": ["31415926", "31415927"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `task_ids`（必須）: レビュータスク ID の配列
+
+## 注意事項
+
+1. **抽出タスクの状態**: 抽出が完了したタスク（`recognition_status == 1`）だけをレビュー対象として利用できます
+2. **親タスクの扱い**: 親タスク ID（ファイル分割や複数画像クロップで生成された親タスクなど）を指定した場合、システムはその親タスク配下のすべての子タスクを自動でレビュー入力として取得します
+3. **バッチ番号とタスク ID の組み合わせ**: `batch_number` と `extract_task_ids` の両方を指定した場合、システムはバッチ内のすべてのタスクと `extract_task_ids` を自動で重複排除しながら統合します
+4. **規則マッチング**: システムは規則の `category_ids` と抽出タスクのカテゴリにもとづいて規則を照合します。マッチした規則だけがレビューを実行します
+5. **フィールド参照**: 規則が参照するフィールドが抽出結果内に存在することを確認してください。存在しない場合、レビュー精度に影響する可能性があります
+6. **非同期実行**: レビュータスクは非同期で実行されます。タスク作成後は、[レビュー結果を取得](./get_result) API でレビューステータスと結果を確認してください
+
+## 関連ページ
+
+- [レビューの概念](./quickstart) - レビュー機能の中核概念を確認します
+- [規則リポジトリ管理](./rule_management) - レビュー規則リポジトリの管理方法を確認します
+- [レビュー結果を取得](./get_result) - レビュー結果の取得と利用方法を確認します

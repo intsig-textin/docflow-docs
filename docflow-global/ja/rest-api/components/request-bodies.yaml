@@ -1,0 +1,28 @@
+FileUploadRequestBody:
+  description: ファイルアップロードのリクエストボディ
+  required: true
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          file:
+            type: string
+            format: binary
+    application/json:
+      schema:
+        type: object
+        properties:
+          urls:
+            description: |
+              ファイル URL リスト
+              1 回のアップロードで最大 10 個のファイル URL に対応し、各ファイルは最大 100MB です
+            type: array
+            items:
+              type: string
+              description: ファイル URL
+              example: https://example.com/file.pdf
+              pattern: ^https?://.*$
+            maxItems: 10
+        required:
+        - urls

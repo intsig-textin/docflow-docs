@@ -1,0 +1,173 @@
+---
+title: "基本フィールド情報"
+description: "文書抽出におけるフィールド情報の構造と処理方法の詳細説明"
+---
+
+文書抽出機能は、ファイルカテゴリに設定されたフィールドに基づいて、文書内の主要なフィールド情報を認識します。各フィールドにはキーと値のペアおよび位置座標情報が含まれます。
+
+## フィールド構造
+
+フィールド情報は `result.files[].data.fields[]` に格納されており、各フィールドには以下の属性が含まれます：
+
+- `key`：フィールド名（「請求書番号」「請求書日付」など）
+- `value`：フィールド値（認識されたテキスト内容）
+- `position[]`：文書内におけるフィールドの位置座標情報。フィールドがページや行をまたぐ場合があるため、配列形式を採用しています
+
+### 位置座標の構造
+
+```json
+{
+  "page": 0,           // フィールドが位置するページ番号
+  "vertices": [        // 四隅の座標 [x1,y1,x2,y2,x3,y3,x4,y4]
+    100, 200,          // 左上
+    300, 200,          // 右上
+    300, 250,          // 右下
+    100, 250           // 左下
+  ]
+}
+```
+
+座標の詳細については、[座標系](../03-parse/coordinate.mdx) のドキュメントを参照してください。
+
+## サンプルコード
+
+<CodeGroup>
+
+```python Python expandable icon=python
+import requests
+import json
+
+def extract_fields(workspace_id, batch_number, app_id, secret_code):
+    """Extract field information from documents"""
+
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id,
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id,
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        return None
+
+    data = resp.json()
+
+    for file in data.get("result", {}).get("files", []):
+        print(f"File name: {file.get('name')}")
+        print(f"Recognition status: {file.get('recognition_status')}")
+
+        # Extract field information
+        fields = file.get("data", {}).get("fields", [])
+        if fields:
+            print("\n=== Field Information ===")
+            for field in fields:
+                key = field.get("key", "")
+                value = field.get("value", "")
+                positions = field.get("position", [])
+
+                print(f"Field: {key}")
+                print(f"Value: {value}")
+
+                # Display position information
+                for i, pos in enumerate(positions):
+                    page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  Position {i+1} (Page {page+1}): {vertices}")
+                print("-" * 30)
+        else:
+            print("No field information found")
+
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+
+    result = extract_fields(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## 返却データ例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "fields": [
+            {
+              "key": "Invoice Code",
+              "value": "3100231130",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 150, 200, 150, 200, 180, 100, 180]
+                }
+              ]
+            },
+            {
+              "key": "Invoice Number",
+              "value": "12345678",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [250, 150, 320, 150, 320, 180, 250, 180]
+                }
+              ]
+            },
+            {
+              "key": "Invoice Date",
+              "value": "December 19, 2024",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [400, 150, 500, 150, 500, 180, 400, 180]
+                }
+              ]
+            },
+            {
+              "key": "Buyer Name",
+              "value": "Shanghai XX Technology Co., Ltd.",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 250, 400, 250, 400, 280, 100, 280]
+                }
+              ]
+            },
+            {
+              "key": "Amount",
+              "value": "1000.00",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [500, 350, 600, 350, 600, 380, 500, 380]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```

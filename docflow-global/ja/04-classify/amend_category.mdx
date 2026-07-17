@@ -1,0 +1,223 @@
+---
+title: "ファイルカテゴリの修正"
+description: "通常タスクに対してカテゴリ修正 API を使用してファイルカテゴリを変更する"
+---
+
+## 概要
+
+処理が完了した通常タスクにおいて、ファイルカテゴリが不正確な場合、**カテゴリ修正** API を使用してファイルカテゴリを変更できます。変更後、システムは新しいカテゴリを使用してデータを再処理します。
+
+<Tip>
+通常タスクのみカテゴリ修正に対応しています。ファイル分割タスクおよび複数画像クロップタスクは、それぞれ対応するパラメータを使用して修正する必要があります。
+</Tip>
+<Tip>
+ファイルカテゴリを変更すると、システムは新しいカテゴリに設定されたフィールドを使用して自動的に再抽出を行い、抽出結果が変更されます。
+</Tip>
+
+## 利用シーン
+
+1. **カテゴリのエラー修正**：自動分類の結果が不正確で、手動で修正が必要な場合
+2. **カテゴリの調整**：業務要件が変更され、ファイルの再分類が必要な場合
+
+## API エンドポイント
+
+**エンドポイント**: `POST /api/app-api/sip/platform/v2/file/amend_category`
+
+## リクエストパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| `workspace_id` | string | はい | ワークスペース ID |
+| `task_id` | string | はい | タスク ID |
+| `category` | string | はい | 新しいファイルカテゴリ |
+
+### パラメータ説明
+
+- `task_id`：`file/fetch` API を通じて取得できます
+- `category`：新しいファイルカテゴリ名。DocFlow ワークスペースで設定済みのファイルカテゴリである必要があります
+
+## サンプルコード
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "1234567890",
+    "task_id": "1234567890",
+    "category": "Electronic Invoice (Regular)"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def amend_category(workspace_id, task_id, category, app_id, secret_code):
+    """
+    Amend file category for normal tasks
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "category": category
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+if __name__ == "__main__":
+    WORKSPACE_ID = "1234567890"
+    TASK_ID = "1234567890"
+    CATEGORY = "Electronic Invoice (Regular)"
+    APP_ID = "<your-app-id>"
+    SECRET_CODE = "<your-secret-code>"
+
+    result = amend_category(WORKSPACE_ID, TASK_ID, CATEGORY, APP_ID, SECRET_CODE)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## タスク ID の取得
+
+ファイルカテゴリを変更する前に、タスクの `task_id` を取得する必要があります。`file/fetch` API で確認できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable
+import requests
+
+def get_task_id(workspace_id, file_id, app_id, secret_code):
+    """
+    Get the task ID for a file
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+
+    params = {
+        "workspace_id": workspace_id,
+        "file_id": file_id
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    # Extract task_id from the response
+    files = data.get("result", {}).get("files", [])
+    if files:
+        return files[0].get("task_id")
+    return None
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+task_id = get_task_id(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+print(f"Task ID: {task_id}")
+```
+
+</CodeGroup>
+
+## レスポンス
+
+ファイルカテゴリの変更が成功すると、API は成功レスポンスを返します。
+
+```json expandable
+{
+  "code": 200,
+  "message": "success"
+}
+```
+
+## 完全な例
+
+以下は、ファイル情報を確認し、タスク ID を取得してからファイルカテゴリを変更する完全な例です。
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_file_info(workspace_id, file_id, app_id, secret_code):
+    """Get file information"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    params = {"workspace_id": workspace_id, "file_id": file_id}
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+def amend_category(workspace_id, task_id, category, app_id, secret_code):
+    """Amend file category"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "category": category
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+NEW_CATEGORY = "Electronic Invoice (Regular)"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+# 1. Get file information and task ID
+file_info = get_file_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+files = file_info.get("result", {}).get("files", [])
+if files:
+    file_data = files[0]
+    task_id = file_data.get("task_id")
+    current_category = file_data.get("category")
+
+    print(f"Current file category: {current_category}")
+    print(f"Task ID: {task_id}")
+
+    # 2. Amend file category
+    result = amend_category(WORKSPACE_ID, task_id, NEW_CATEGORY, APP_ID, SECRET_CODE)
+    print(f"Amendment result: {json.dumps(result, indent=2, ensure_ascii=False)}")
+```
+
+## 注意事項
+
+1. **タスクタイプの制限**：通常タスク（分割タスク、複数画像クロップタスク以外）のみ `category` パラメータによるカテゴリ修正に対応しています
+2. **カテゴリが存在すること**：指定する `category` は DocFlow ワークスペースで設定済みである必要があります。そうでない場合、エラーが返されます
+3. **カテゴリ名の一致**：カテゴリ名は設定された内容と完全に一致する必要があります（大文字・小文字を区別）
+4. **中国語カテゴリの処理**：中国語のカテゴリ名を使用する場合、リクエストボディが UTF-8 エンコーディングを使用していることを確認してください
+5. **変更後の再処理**：ファイルカテゴリを変更すると、システムは新しいカテゴリに従ってデータを再処理します

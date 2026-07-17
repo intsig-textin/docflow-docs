@@ -1,0 +1,386 @@
+---
+title: "サンプル管理"
+description: "ファイルカテゴリ用のサンプルファイルを管理する方法"
+---
+
+<Tip>
+  サンプルファイルは、ファイルカテゴリの例となる文書で、文書分類モデルと抽出モデルの学習、最適化に使用されます。各ファイルカテゴリには少なくとも 1 件のサンプルファイルが必要です。このガイドでは、ファイルカテゴリ用のサンプルファイルを API で管理する方法を説明します。
+</Tip>
+
+## サンプルをアップロード
+
+指定したファイルカテゴリにサンプルファイルをアップロードします。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "workspace_id=<your-workspace-id>" \
+  -F "category_id=<category-id>" \
+  -F "files=@/path/to/sample1.pdf" \
+  -F "files=@/path/to/sample2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/batch_upload"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/batch_upload"
+
+# Prepare sample files (supports multiple)
+files = [
+    ("files", ("sample1.pdf", open('/path/to/sample1.pdf', 'rb'))),
+    ("files", ("sample2.pdf", open('/path/to/sample2.pdf', 'rb')))
+]
+
+# Prepare form data
+data = {
+    'workspace_id': workspace_id,
+    'category_id': category_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    sample_ids = result.get("result", {}).get("sample_ids", [])
+    print(f"Samples uploaded successfully, IDs: {sample_ids}")
+else:
+    print(f"Upload failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `files`（必須）: サンプルファイル。1 回のリクエストで複数ファイルをアップロードできます
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "sample_ids": ["sample_123", "sample_456"]
+  }
+}
+```
+
+<Note>
+  **サンプルファイルの要件**:
+  - サンプルファイルは、そのカテゴリを代表する典型的な文書にしてください
+  - 分類精度を向上させるため、3〜5 件のサンプルファイルをアップロードすることを推奨します
+  - 対応ファイル形式は、文書アップロードの対応形式を参照してください
+</Note>
+
+## サンプル一覧を取得
+
+指定したファイルカテゴリのサンプル一覧を取得します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/list?workspace_id=<your-workspace-id>&category_id=<category-id>&page=1&page_size=20"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "page": 1,
+        "page_size": 20
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    samples = result.get("result", {}).get("samples", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} samples")
+    for sample in samples:
+        print(f"Sample ID: {sample.get('sample_id')}, File name: {sample.get('file_name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `page`（任意）: ページ番号。デフォルトは `1`
+- `page_size`（任意）: 1 ページあたりの件数。デフォルトは `20`、最大 `100`
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 5,
+    "page": 1,
+    "page_size": 20,
+    "samples": [
+      {
+        "sample_id": "sample_123",
+        "file_name": "invoice_sample_01.pdf"
+      },
+      {
+        "sample_id": "sample_456",
+        "file_name": "invoice_sample_02.pdf"
+      }
+    ]
+  }
+}
+```
+
+## サンプルをダウンロード
+
+指定したサンプルファイルをダウンロードします。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -o "samples.zip" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "sample_ids": ["<sample-id>"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/batch_download"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/batch_download"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "sample_ids": ["<sample-id>"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+if resp.status_code == 200:
+    # Save file
+    with open("samples_downloaded.zip", "wb") as f:
+        f.write(resp.content)
+    print("Samples downloaded successfully")
+else:
+    print(f"Download failed: {resp.status_code}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `sample_ids`（必須）: ダウンロードするサンプル ID の配列
+
+**レスポンス**: ファイルのバイナリストリーム（`application/octet-stream`）を返します
+
+## サンプルを削除
+
+指定したサンプルファイルを削除します。複数件の一括削除にも対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "sample_ids": ["sample_123", "sample_456"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "sample_ids": ["sample_123", "sample_456"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Sample deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `sample_ids`（必須）: 削除するサンプル ID の配列
+
+<Warning>
+  サンプル削除は元に戻せません。慎重に操作してください。各ファイルカテゴリには少なくとも 1 件のサンプルファイルが必要です。
+</Warning>
+
+## サンプル管理 ベストプラクティス
+
+### サンプルの選定
+
+適切なサンプルファイルを選ぶことは、分類精度と抽出精度の向上に重要です。
+
+1. **代表性**: そのカテゴリを代表する典型的な文書を選択します
+2. **多様性**: そのカテゴリに現れる可能性のある異なる形式やレイアウトをカバーします
+3. **品質**: サンプルファイルが鮮明で完全であり、破損していないことを確認します
+4. **数量**: 3〜5 件のサンプルファイルをアップロードすることを推奨します
+
+### サンプル数の目安
+
+- **最小**: 1 カテゴリにつき少なくとも 1 件（カテゴリ作成時に必須）
+- **推奨**: 3〜5 件のサンプルで良好な分類結果が得られます
+- **最大**: 1 カテゴリあたり最大 20 件
+
+### サンプル更新方針
+
+分類結果または抽出結果が期待どおりでない場合は、次の対応を検討してください。
+
+1. **新しいサンプルを追加**: より典型的なサンプルを追加でアップロードします
+2. **サンプルを置き換え**: 代表性の低いサンプルを削除し、より適切なサンプルをアップロードします
+3. **サンプルを多様化**: 想定されるさまざまな文書形式をサンプルでカバーします
+
+### 例: サンプルを一括アップロード
+
+```python Python icon=python expandable
+import requests
+import os
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/sample/batch_upload"
+
+# Sample files directory
+sample_dir = "/path/to/samples"
+sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.pdf')]
+
+print(f"Preparing to upload {len(sample_files)} sample files")
+
+# Prepare all files for batch upload
+files = []
+for filename in sample_files:
+    file_path = os.path.join(sample_dir, filename)
+    files.append(("files", (filename, open(file_path, 'rb'))))
+
+data = {
+    'workspace_id': workspace_id,
+    'category_id': category_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    sample_ids = result.get("result", {}).get("sample_ids", [])
+    print(f"All samples uploaded successfully, IDs: {sample_ids}")
+else:
+    print(f"Upload failed: {result.get('msg')}")
+
+print("Sample upload completed")
+```
+
+## 次のステップ
+
+- [フィールド管理](./fields_management) - ファイルカテゴリのフィールドを設定します
+- [テーブル管理](./tables_management) - ファイルカテゴリの表を設定します
+- [カテゴリのクイックスタート](./quickstart) に戻る - ファイルカテゴリの基本操作を確認します

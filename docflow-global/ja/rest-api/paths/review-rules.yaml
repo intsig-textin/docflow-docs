@@ -1,0 +1,448 @@
+/api/app-api/sip/platform/v2/review/rule_repo/create:
+  post:
+    summary: レビュー規則リポジトリを作成
+    description: レビュー規則リポジトリを作成します
+    operationId: createReviewRuleRepo
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              name:
+                type: string
+                description: リポジトリ名
+                example: "レビュー規則リポジトリ 1"
+                maxLength: 30
+            required:
+              - workspace_id
+              - name
+    responses:
+      '200':
+        description: レビュー規則リポジトリの作成に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        repo_id:
+                          type: integer
+                          description: レビュー規則リポジトリ ID
+                          example: "31415926"
+
+/api/app-api/sip/platform/v2/review/rule_repo/delete:
+  post:
+    summary: レビュー規則リポジトリを削除
+    description: レビュー規則リポジトリを削除します
+    operationId: deleteReviewRuleRepo
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              repo_ids:
+                type: array
+                items:
+                  type: integer
+                  description: レビュー規則リポジトリ ID
+                  example: "31415926"
+            required:
+              - workspace_id
+              - repo_ids
+    responses:
+      '200':
+        description: レビュー規則リポジトリの削除に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule_repo/update:
+  post:
+    summary: レビュー規則リポジトリを更新
+    description: レビュー規則リポジトリを更新します
+    operationId: updateReviewRuleRepo
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              repo_id:
+                type: integer
+                description: レビュー規則リポジトリ ID
+                example: "31415926"
+              name:
+                type: string
+                description: リポジトリ名
+                example: "レビュー規則リポジトリ 1"
+                maxLength: 30
+            required:
+              - workspace_id
+              - repo_id
+    responses:
+      '200':
+        description: レビュー規則リポジトリの更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule_group/create:
+  post:
+    summary: レビュー規則グループを作成
+    description: レビュー規則グループを作成します
+    operationId: createReviewRuleGroup
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              repo_id:
+                type: integer
+                description: レビュー規則リポジトリ ID
+                example: "31415926"
+              name:
+                type: string
+                description: グループ名
+                example: "レビュー規則グループ 1"
+                maxLength: 30
+            required:
+              - workspace_id
+              - repo_id
+              - name
+    responses:
+      '200':
+        description: レビュー規則グループの作成に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        group_id:
+                          type: string
+                          description: レビュー規則グループ ID
+                          example: "31415926"
+
+/api/app-api/sip/platform/v2/review/rule_group/delete:
+  post:
+    summary: レビュー規則グループを削除
+    description: レビュー規則グループを削除します
+    operationId: deleteReviewRuleGroup
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              group_id:
+                type: string
+                description: レビュー規則グループ ID
+                example: "31415926"
+            required:
+              - workspace_id
+              - group_id
+    responses:
+      '200':
+        description: レビュー規則グループの削除に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule_group/update:
+  post:
+    summary: レビュー規則グループを更新
+    description: レビュー規則グループを更新します
+    operationId: updateReviewRuleGroup
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              group_id:
+                type: string
+                description: レビュー規則グループ ID
+                example: "31415926"
+              name:
+                type: string
+                description: グループ名
+                example: "レビュー規則グループ 1"
+                maxLength: 30
+            required:
+              - workspace_id
+              - group_id
+    responses:
+      '200':
+        description: レビュー規則グループの更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule/create:
+  post:
+    summary: レビュー規則を作成
+    description: レビュー規則を作成します
+    operationId: createReviewRule
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/reviews.yaml#/ReviewRuleProperties'
+              - type: object
+                properties:
+                  workspace_id:
+                    type: string
+                    description: ワークスペース ID
+                    example: "1234567890"
+                  repo_id:
+                    type: integer
+                    description: レビュー規則リポジトリ ID
+                    example: "31415926"
+                required:
+                  - workspace_id
+                  - repo_id
+    responses:
+      '200':
+        description: レビュー規則の作成に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        rule_id:
+                          type: string
+                          description: レビュー規則 ID
+                          example: "31415926"
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule/update:
+  post:
+    summary: レビュー規則を更新
+    description: レビュー規則を更新します
+    operationId: updateReviewRule
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - type: object
+                properties:
+                  workspace_id:
+                    type: string
+                    description: ワークスペース ID
+                    example: "1234567890"
+                  rule_id:
+                    type: string
+                    description: レビュー規則 ID
+                    example: "31415926"
+              - $ref: '../components/schemas/reviews.yaml#/ReviewRuleProperties'
+    responses:
+      '200':
+        description: レビュー規則の更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule/delete:
+  post:
+    summary: レビュー規則を削除
+    description: レビュー規則を削除します
+    operationId: deleteReviewRule
+    tags:
+      - スマートレビュー
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              rule_id:
+                type: string
+                description: レビュー規則 ID
+                example: "31415926"
+            required:
+              - workspace_id
+              - rule_id
+    responses:
+      '200':
+        description: レビュー規則の削除に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/review/rule_repo/list:
+  get:
+    summary: レビュー規則リポジトリ一覧を取得
+    description: レビュー規則リポジトリ一覧を取得します。リポジトリ配下の規則グループと規則情報を含みます
+    operationId: listReviewRuleRepo
+    tags:
+      - スマートレビュー
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: page
+        in: query
+        description: ページ番号
+        required: false
+        schema:
+          type: integer
+          example: 1
+          default: 1
+      - name: page_size
+        in: query
+        description: ページサイズ
+        required: false
+        schema:
+          type: integer
+          example: 10
+          default: 10
+    responses:
+      '200':
+        description: レビュー規則リポジトリ一覧の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        repos:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/reviews.yaml#/ReviewRuleRepo'
+                        total:
+                          type: integer
+                          description: 総件数
+                          example: 100
+                        page:
+                          type: integer
+                          description: ページ番号
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: ページサイズ
+                          example: 10
+
+/api/app-api/sip/platform/v2/review/rule_repo/get:
+  get:
+    summary: レビュー規則リポジトリを取得
+    description: レビュー規則リポジトリを取得します
+    operationId: getReviewRuleRepo
+    tags:
+      - スマートレビュー
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: repo_id
+        in: query
+        description: レビュー規則リポジトリ ID
+        required: true
+        schema:
+          type: string
+          example: "31415926"
+    responses:
+      '200':
+        description: レビュー規則リポジトリの取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '../components/schemas/reviews.yaml#/ReviewRuleRepo'

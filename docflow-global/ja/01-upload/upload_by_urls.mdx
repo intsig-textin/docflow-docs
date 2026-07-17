@@ -1,0 +1,249 @@
+---
+title: "URL 指定アップロード"
+description: "ファイル URL を使用して DocFlow に文書をアップロードする方法"
+---
+
+<Tip>
+  このガイドでは、REST API でファイル URL を使用して DocFlow に文書をアップロードする方法を説明します。
+  直接ファイルをアップロードする方法と比べて、URL アップロードはリモートファイルの処理やバッチ処理に適しています。
+</Tip>
+
+DocFlow はファイル URL による文書アップロードに対応しており、ローカルにファイルを保存する必要がありません。この方法は特に次の場面に適しています。
+
+- リモートサーバー上のファイルを処理する
+- 複数のファイル URL をバッチ処理する
+- ローカルストレージとネットワーク転送の負荷を減らす
+
+## 01 単一ファイル URL アップロード
+
+`application/json` 形式でファイル URL リストを送信します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com/document.pdf"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_url = "https://example.com/document.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+payload = {
+    "urls": [file_url]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 02 バッチ URL アップロード
+
+1 回のリクエストで複数のファイル URL をアップロードできます。最大 **10 ファイル** まで対応します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": [
+      "https://example.com/invoice1.pdf",
+      "https://example.com/invoice2.pdf",
+      "https://example.com/contract.docx"
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&batch_number=202412190001"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+# Batch upload multiple file URLs
+file_urls = [
+    "https://example.com/invoice1.pdf",
+    "https://example.com/invoice2.pdf",
+    "https://example.com/contract.docx"
+]
+
+payload = {
+    "urls": file_urls
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "202412190001",
+        "category": "invoice"
+    },
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+print(f"Batch number: {result['result']['batch_number']}")
+for file_info in result['result']['files']:
+    print(f"File ID: {file_info['id']}, File name: {file_info['name']}")
+```
+
+</CodeGroup>
+
+## 03 パラメータ説明
+
+### 必須パラメータ
+
+- `workspace_id`: ワークスペース ID。[Workspace ID の取得方法](../100-faq/get_workspace_id) を参照してください。
+
+### リクエストボディパラメータ
+
+- `urls`: ファイル URL リスト
+  - 型: 文字列配列
+  - 制限: 1 リクエストあたり最大 10 URL
+  - 形式: `http://` または `https://` で始まる有効な URL
+  - ファイルサイズ: 1 ファイルあたり最大 100MB
+
+### 任意パラメータ
+
+必要に応じて URL クエリパラメータに追加できます。
+
+- `category`: ファイルカテゴリ（例: invoice）
+- `batch_number`: バッチ番号。未指定の場合は自動生成されます
+- `auto_verify_vat`: 請求書検証を有効にするかどうか。デフォルトは false
+- `split_flag`: ファイル分割を実行するかどうか。デフォルトは false（[ファイル分割](../05-split/split) を参照）
+- `crop_flag`: 複数画像クロップを実行するかどうか。デフォルトは false（[複数画像クロップ](../05-split/crop) を参照）
+- `target_process`: 対象処理タイプ。`classify` または `extract` を指定できます
+
+## 04 URL 要件
+
+### 対応 URL 形式
+
+- `http://` または `https://` で始まる必要があります
+- URL は公開アクセス可能である必要があります（認証不要）
+- サーバーが HTTP GET リクエストに対応している必要があります
+
+### ファイル要件
+
+- ファイル形式: [対応ファイル形式](./support_format) に記載されたすべての形式に対応
+- ファイルサイズ: 1 ファイルあたり 100MB 以下
+- ファイルページ数: 複数ページ文書は 1000 ページ以下
+
+### URL の例
+
+```bash
+# Valid URL examples
+https://example.com/document.pdf
+https://cdn.example.com/files/invoice.pdf
+http://192.168.1.100/shared/contract.docx
+
+# Invalid URL examples
+ftp://example.com/file.pdf          # FTP protocol not supported
+file:///local/path/document.pdf      # Local file paths not supported
+https://example.com/protected.pdf   # URLs requiring authentication
+```
+
+## 05 レスポンス形式
+
+URL アップロード成功後のレスポンス形式は、通常のファイルアップロードと同じです。
+
+```json expandable
+{
+   "code": 200,
+   "msg": "Success",
+   "result": {
+      "batch_number": "202412190001",
+      "files": [
+         {
+            "id": "1955840505753140508",
+            "name": "document.pdf",
+            "format": "pdf"
+         },
+         {
+            "id": "1955840505753140509",
+            "name": "invoice.pdf",
+            "format": "pdf"
+         }
+      ]
+   }
+}
+```
+
+## 06 処理結果を確認
+
+アップロード完了後、返された `batch_number` を使用して処理結果を確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}, File name: {f.get('name')}, Status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>

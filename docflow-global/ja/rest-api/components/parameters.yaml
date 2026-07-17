@@ -1,0 +1,157 @@
+WorkspaceId:
+  name: workspace_id
+  in: query
+  description: ワークスペース ID
+  required: true
+  schema:
+    type: string
+    example: 1234567890
+
+Category:
+  name: category
+  in: query
+  description: ファイルカテゴリ
+  required: false
+  schema:
+    type: string
+    example: invoice
+
+BatchNumber:
+  name: batch_number
+  in: query
+  description: |
+    バッチ番号。同じバッチ番号で複数回アップロードできます。後からそのバッチ番号を使って、同一バッチ内の複数ファイルの処理結果を取得できます。値が空の場合、システムが最大 20 文字の文字列を自動生成します。
+  required: false
+  schema:
+    type: string
+    example: 202412190001
+
+AutoVerifyVat:
+  name: auto_verify_vat
+  in: query
+  description: VAT インボイスを自動検証するかどうか
+  required: false
+  schema:
+    type: boolean
+    default: false
+
+SplitFlag:
+  name: split_flag
+  in: query
+  description: ファイル分割を実行するかどうか
+  required: false
+  schema:
+    type: boolean
+    default: false
+
+CropFlag:
+  name: crop_flag
+  in: query
+  description: 複数画像クロップを実行するかどうか
+  required: false
+  schema:
+    type: boolean
+    default: false
+
+TargetProcess:
+  name: target_process
+  in: query
+  description: |
+    対象処理タイプ。指定可能な値: - classify: 分類 - extract: 抽出
+  required: false
+  schema:
+    type: string
+    enum:
+      - classify
+      - extract
+    example: classify
+
+ParserRemoveWatermark:
+  name: parser_remove_watermark
+  in: query
+  description: "透かし除去（0: いいえ、1: はい）"
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserCropDewarp:
+  name: parser_crop_dewarp
+  in: query
+  description: "クロップと歪み補正（0: いいえ、1: はい）"
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserApplyMerge:
+  name: parser_apply_merge
+  in: query
+  description: "ページをまたぐ段落とテーブルを結合（0: いいえ、1: はい）"
+  required: false
+  schema:
+    type: integer
+    default: 1
+
+ParserFormulaLevel:
+  name: parser_formula_level
+  in: query
+  description: "数式認識レベル（0: 表示数式とインライン数式を認識、1: 表示数式のみ認識、2: 数式を認識しない）"
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserTableTextSplitMode:
+  name: parser_table_text_split_mode
+  in: query
+  description: "テーブル罫線と交差するテキストブロックを分割（0: いいえ、1: はい）"
+  required: false
+  schema:
+    type: integer
+    default: 0
+
+ParserDpi:
+  name: parser_dpi
+  in: query
+  description: "ファイル解像度（144: デフォルト、216: 高精度）"
+  required: false
+  schema:
+    type: integer
+    default: 144
+    enum:
+      - 144
+      - 216
+
+ParserParseMode:
+  name: parser_parse_mode
+  in: query
+  description: |
+    解析モード
+    - `auto`: 自動（デフォルト）
+    - `scan`: スキャン文書モード
+    - `vlm`: VLM モード
+  required: false
+  schema:
+    type: string
+    enum:
+      - auto
+      - scan
+      - vlm
+
+ParserPdfPwd:
+  name: parser_pdf_pwd
+  in: query
+  description: 暗号化 PDF ファイルを復号するための PDF パスワード
+  required: false
+  schema:
+    type: string
+
+WithTaskDetailUrl:
+  name: with_task_detail_url
+  in: query
+  description: タスク詳細ページ URL を返すかどうか
+  required: false
+  schema:
+    type: boolean
+    default: false

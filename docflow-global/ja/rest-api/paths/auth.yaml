@@ -1,0 +1,14 @@
+/api/app-api/sip/platform/v2/auth/token:
+  get:
+    summary: 短期有効トークンを生成
+    description: 短期有効トークンを生成します（iframe シナリオ用）
+    operationId: authToken
+    responses:
+      '200':
+        description: トークン情報の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - $ref: '../components/schemas/files.yaml#/TokenResult'

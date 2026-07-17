@@ -1,0 +1,405 @@
+---
+title: "特定フィールドの抽出"
+description: "抽出済みタスクに対して追加フィールドの抽出や既存フィールドの再抽出を行う"
+---
+
+抽出が完了したタスクに対して、特定フィールド抽出 API を使用して、追加フィールドの抽出や既存の個別フィールドの再抽出を行うことができます。この API は全フィールドの完全な抽出結果を返します。
+
+## 機能
+
+- **追加フィールドの抽出**：抽出済みタスクに新しいフィールド抽出を追加
+- **フィールドの再抽出**：既存フィールドを再抽出し、抽出結果の修正や最適化に利用可能
+- **テーブルフィールド対応**：テーブル内の特定フィールドを抽出可能
+- **完全な結果を返却**: 全フィールドの完全な抽出結果を返し、構造は `/api/app-api/sip/platform/v2/file/fetch` と同じ
+
+## フィールド抽出ルール
+
+API は、フィールドが元の分類設定に存在するかどうかに基づいて、異なる抽出戦略を採用します。
+
+### 追加フィールド（元の結果に存在しないフィールド）
+
+元の抽出結果に**存在しない**フィールド（追加フィールド）に対しては、リクエストで指定された `prompt` を使用して抽出を行います：
+
+- リクエストで `prompt` が指定されている場合、それを使用してフィールド抽出をガイドします
+- リクエストで `prompt` が指定されていない場合、デフォルトの抽出ロジックが使用されます
+
+**利用シーン**：分類設定で定義されていない新しいフィールドを文書から抽出する必要がある場合。
+
+### 設定済みフィールド（元の分類設定に既に存在するフィールド）
+
+元の分類設定に**既に存在する**フィールドに対しては、分類設定の内容を優先して抽出を行います：
+
+- 分類設定の `prompt` を使用（設定されている場合）
+- 分類設定の後処理ルールを適用
+- リクエストで渡された `prompt` パラメータは**無視**されます
+
+**利用シーン**：既存フィールドを再抽出し、統一された分類設定ルールを使用して抽出結果の一貫性を維持する場合。
+
+### 使用上の推奨事項
+
+- **新しいフィールドを抽出する場合**：リクエストで `prompt` を指定すると、システムはその `prompt` を使用して抽出を行います
+- **既存フィールドを再抽出する場合**：`key` を指定するだけで、システムが自動的に分類設定のルールを使用します。リクエストで `prompt` を指定する必要はありません
+
+## API エンドポイント
+
+**エンドポイント**: `POST /api/app-api/sip/platform/v2/file/extract_fields`
+
+**リクエストパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| workspace_id | string | はい | ワークスペース ID |
+| task_id | string | はい | タスク ID |
+| fields | array | いいえ | 抽出するフィールドのリスト。各フィールドには `key`（フィールド名）と `prompt`（フィールドヒント、任意）が含まれます |
+| tables | array | いいえ | 抽出するテーブルフィールドのリスト。各テーブルには `name`（テーブル名）と `fields`（フィールドリスト）が含まれます |
+
+### フィールド構造
+
+**ExtractFieldReqVO**:
+
+```json
+{
+  "key": "Invoice Code",        // フィールド名
+  "prompt": "年の部分のみを保持"  // フィールドヒント（任意）
+}
+```
+
+**テーブル構造**:
+
+```json
+{
+  "name": "Table1",        // テーブル名
+  "fields": [              // フィールドリスト
+    {
+      "key": "Goods Name",
+      "prompt": "完全な商品名を抽出"
+    }
+  ]
+}
+```
+
+## サンプルコード
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_specific_fields(workspace_id, task_id, app_id, secret_code):
+    """Extract specific fields"""
+
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/extract_fields"
+
+    # Request body
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "fields": [
+            {
+                "key": "Invoice Code",
+                "prompt": "Extract complete invoice code"
+            },
+            {
+                "key": "Invoice Date",
+                "prompt": "Keep only the year part"
+            }
+        ],
+        "tables": [
+            {
+                "name": "Table1",
+                "fields": [
+                    {
+                        "key": "Goods Name",
+                        "prompt": "Extract full product name"
+                    },
+                    {
+                        "key": "Unit Price"
+                    }
+                ]
+            }
+        ]
+    }
+
+    resp = requests.post(
+        f"{host}{url}",
+        json=payload,
+        headers={
+            "x-ti-app-id": app_id,
+            "x-ti-secret-code": secret_code,
+            "Content-Type": "application/json"
+        },
+        timeout=60,
+    )
+
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        print(f"Error message: {resp.text}")
+        return None
+
+    data = resp.json()
+
+    if data.get("code") != 200:
+        print(f"API returned error: {data.get('message')}")
+        return None
+
+    # Process returned results
+    result = data.get("result", {})
+    files = result.get("files", [])
+
+    for file in files:
+        print(f"File name: {file.get('name')}")
+        print(f"Task ID: {file.get('task_id')}")
+
+        # Extract field information
+        file_data = file.get("data", {})
+        fields = file_data.get("fields", [])
+
+        if fields:
+            print("\n=== Field Information ===")
+            for field in fields:
+                key = field.get("key", "")
+                value = field.get("value", "")
+                positions = field.get("position", [])
+
+                print(f"Field: {key}")
+                print(f"Value: {value}")
+
+                # Display position information
+                for i, pos in enumerate(positions):
+                    page = pos.get("page", 0)
+                    vertices = pos.get("vertices", [])
+                    print(f"  Position {i+1} (Page {page+1}): {vertices}")
+                print("-" * 30)
+
+        # Extract table information
+        tables = file_data.get("tables", [])
+        if tables:
+            print("\n=== Table Information ===")
+            for table in tables:
+                table_name = table.get("tableName", "")
+                print(f"Table name: {table_name}")
+                items = table.get("items", [])
+                for row_idx, row in enumerate(items):
+                    print(f"  Row {row_idx + 1}:")
+                    for cell in row:
+                        print(f"    {cell.get('key')}: {cell.get('value')}")
+
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    task_id = "<your-task-id>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+
+    result = extract_specific_fields(workspace_id, task_id, app_id, secret_code)
+```
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "<your-task-id>",
+    "fields": [
+      {
+        "key": "Invoice Code",
+        "prompt": "Extract complete invoice code"
+      },
+      {
+        "key": "Invoice Date",
+        "prompt": "Keep only the year part"
+      }
+    ],
+    "tables": [
+      {
+        "name": "Table1",
+        "fields": [
+          {
+            "key": "Goods Name",
+            "prompt": "Extract full product name"
+          },
+          {
+            "key": "Unit Price"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/extract_fields"
+```
+
+</CodeGroup>
+
+## リクエスト例
+
+### 基本フィールドのみを抽出
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "fields": [
+    {
+      "key": "Invoice Code"
+    },
+    {
+      "key": "Invoice Date",
+      "prompt": "Keep only the year part"
+    }
+  ]
+}
+```
+
+### テーブルフィールドのみを抽出
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "tables": [
+    {
+      "name": "Table1",
+      "fields": [
+        {
+          "key": "Goods Name"
+        },
+        {
+          "key": "Unit Price"
+        },
+        {
+          "key": "Quantity"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 基本フィールドとテーブルフィールドの両方を抽出
+
+```json
+{
+  "workspace_id": "1234567890",
+  "task_id": "202412190001",
+  "fields": [
+    {
+      "key": "Invoice Code"
+    },
+    {
+      "key": "Invoice Date"
+    }
+  ],
+  "tables": [
+    {
+      "name": "Table1",
+      "fields": [
+        {
+          "key": "Goods Name",
+          "prompt": "Extract full product name"
+        },
+        {
+          "key": "Unit Price"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 返却データ例
+
+```json expandable
+{
+  "code": 200,
+  "message": "success",
+  "result": {
+    "total": 1,
+    "page": 1,
+    "page_size": 20,
+    "files": [
+      {
+        "id": "202412190001",
+        "task_id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "fields": [
+            {
+              "key": "Invoice Code",
+              "value": "3100231130",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [100, 150, 200, 150, 200, 180, 100, 180]
+                }
+              ]
+            },
+            {
+              "key": "Invoice Date",
+              "value": "2024",
+              "position": [
+                {
+                  "page": 0,
+                  "vertices": [400, 150, 500, 150, 500, 180, 400, 180]
+                }
+              ]
+            }
+          ],
+          "tables": [
+            {
+              "tableName": "Table1",
+              "tableType": "0",
+              "items": [
+                [
+                  {
+                    "key": "Goods Name",
+                    "value": "Electronic Computer Microcomputer Host",
+                    "position": [
+                      {
+                        "page": 0,
+                        "vertices": [100, 300, 400, 300, 400, 330, 100, 330]
+                      }
+                    ]
+                  },
+                  {
+                    "key": "Unit Price",
+                    "value": "5000.00",
+                    "position": [
+                      {
+                        "page": 0,
+                        "vertices": [500, 300, 600, 300, 600, 330, 500, 330]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## 注意事項
+
+1. **タスクステータス**：この API は抽出が完了したタスク（`recognition_status` が 1 または 2）にのみ適用されます
+2. **フィールド名**：`key` フィールド名は、設定済みフィールドテンプレートのフィールド名（設定済みフィールドの場合）またはカスタム名（追加フィールドの場合）と一致する必要があります
+3. **フィールドヒント（prompt）**：
+   - **追加フィールド**（元の結果に存在しない）の場合、`prompt` が有効になり、抽出ロジックをガイドするために使用できます
+   - **設定済みフィールド**（元の分類設定に既に存在する）の場合、`prompt` は無視され、システムは分類設定のルールを使用します
+4. **レスポンス**: API は全フィールドの完全な抽出結果を返します。以前に抽出されたフィールドと新しく抽出されたフィールドの両方が含まれます
+5. **テーブル名**：`tables` 内の `name` は、文書内の実際のテーブル名と一致する必要があります
+
+## 関連ページ
+
+- [クイックスタート](./quickstart) - 文書抽出機能のクイックスタートガイド
+- [基本フィールド情報](./fields) - 基本フィールド情報の構造と処理方法
+- [テーブルフィールド情報](./tables) - テーブルフィールド情報の構造と処理方法

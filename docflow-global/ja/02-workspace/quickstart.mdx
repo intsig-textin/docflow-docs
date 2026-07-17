@@ -1,0 +1,341 @@
+---
+title: "クイックスタート"
+description: "ワークスペース管理機能を API ですばやく連携する方法"
+---
+
+<Tip>
+  ワークスペースは、DocFlow で文書処理タスクを整理、分離するための基本単位です。各ワークスペースには、ファイルカテゴリ、レビュー規則リポジトリなどのリソースを含めることができ、マルチテナント管理や複数プロジェクト管理に役立ちます。
+</Tip>
+
+このガイドでは、ワークスペース関連 API の作成、一覧取得、詳細取得、更新、削除の使い方を説明します。
+
+## ワークスペースを作成
+
+新しいワークスペースを作成します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Workspace",
+    "description": "This is a workspace for processing invoices",
+    "enterprise_id": 12345,
+    "auth_scope": 1
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/create"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/create"
+
+payload = {
+    "name": "My Workspace",
+    "description": "This is a workspace for processing invoices",
+    "enterprise_id": 12345,
+    "auth_scope": 1  # 0: Private, 1: Enterprise-wide
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    workspace_id = result.get("result", {}).get("workspace_id")
+    print(f"Workspace created successfully, ID: {workspace_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `name`（必須）: ワークスペース名。最大 50 文字
+- `description`（任意）: ワークスペース説明。最大 200 文字
+- `enterprise_id`（必須）: 企業組織 ID
+- `auth_scope`（必須）: 共有範囲。`0`: 非公開、`1`: 企業全体
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "workspace_id": "1234567890"
+  }
+}
+```
+
+## ワークスペース一覧を取得
+
+現在のユーザーが利用できるすべてのワークスペースを取得します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/list?enterprise_id=12345&page=1&page_size=20"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+enterprise_id = 12345
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "enterprise_id": enterprise_id,
+        "page": 1,
+        "page_size": 20
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    workspaces = result.get("result", {}).get("workspaces", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} workspaces")
+    for workspace in workspaces:
+        print(f"Workspace ID: {workspace.get('workspace_id')}, Name: {workspace.get('name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `enterprise_id`（必須）: 企業 ID
+- `page`（任意）: ページ番号。デフォルトは `1`
+- `page_size`（任意）: 1 ページあたりの件数。デフォルトは `20`
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 10,
+    "page": 1,
+    "page_size": 20,
+    "workspaces": [
+      {
+        "workspace_id": "1234567890",
+        "name": "My Workspace",
+        "description": "This is a workspace for processing invoices",
+        "auth_scope": 1,
+        "manage_account_id": "admin_123456",
+        "manage_account_name": "John Doe",
+        "callback_url": "https://example.com/callback",
+        "callback_retry_time": 3
+      }
+    ]
+  }
+}
+```
+
+## ワークスペース詳細を取得
+
+ワークスペース ID を指定して詳細情報を取得します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/get?workspace_id=1234567890"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "1234567890"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/get"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    workspace = result.get("result", {})
+    print(f"Workspace name: {workspace.get('name')}")
+    print(f"Description: {workspace.get('description')}")
+    print(f"Administrator: {workspace.get('manage_account_name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+
+## ワークスペースを更新
+
+指定したワークスペースの情報を更新します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "1234567890",
+    "name": "Updated Workspace Name",
+    "description": "Updated description",
+    "auth_scope": 1,
+    "callback_url": "https://example.com/callback",
+    "callback_retry_time": 3
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/update"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "1234567890"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "name": "Updated Workspace Name",
+    "description": "Updated description",
+    "auth_scope": 1,
+    "callback_url": "https://example.com/callback",
+    "callback_retry_time": 3
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Workspace updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `name`（必須）: ワークスペース名。最大 50 文字
+- `description`（任意）: ワークスペース説明。最大 200 文字
+- `auth_scope`（必須）: 共有範囲。`0`: 非公開、`1`: 企業全体
+- `callback_url`（任意）: コールバック URL
+- `callback_retry_time`（任意）: コールバック再試行回数。範囲は 0〜3
+
+## ワークスペースを削除
+
+指定したワークスペースを削除します。複数件の一括削除にも対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_ids": ["1234567890", "0987654321"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/workspace/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/workspace/delete"
+
+payload = {
+    "workspace_ids": ["1234567890", "0987654321"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Workspace deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_ids`（必須）: 削除するワークスペース ID の配列
+
+<Warning>
+  ワークスペースを削除すると、その配下のすべてのリソース（ファイルカテゴリ、レビュー規則リポジトリなど）も削除されます。慎重に操作してください。
+</Warning>
+
+## 次のステップ
+
+- [カテゴリ管理](../10-category-management/quickstart) - ワークスペース内でファイルカテゴリを作成、管理します
+- [レビュー規則管理](../07-review/rule_management) - ワークスペース内でレビュー規則リポジトリを作成します

@@ -89,7 +89,7 @@ else:
 
 ## Add Table
 
-Add a table under a specified file category:
+Add table(s) under a specified file category:
 
 <CodeGroup>
 
@@ -101,11 +101,15 @@ curl -X POST \
   -d '{
     "workspace_id": "<your-workspace-id>",
     "category_id": "<category-id>",
-    "name": "Item Details",
-    "prompt": "Please extract item name, quantity, and amount for each row",
-    "collect_from_multi_table": true
+    "tables": [
+      {
+        "name": "Item Details",
+        "prompt": "Please extract item name, quantity, and amount for each row",
+        "collect_from_multi_table": true
+      }
+    ]
   }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/add"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/batch_add"
 ```
 
 ```python Python icon=python expandable lines
@@ -117,14 +121,18 @@ workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/tables/add"
+url = "/api/app-api/sip/platform/v2/category/tables/batch_add"
 
 payload = {
     "workspace_id": workspace_id,
     "category_id": category_id,
-    "name": "Item Details",
-    "prompt": "Please extract item name, quantity, and amount for each row",
-    "collect_from_multi_table": True  # Whether to merge multiple tables in document
+    "tables": [
+        {
+            "name": "Item Details",
+            "prompt": "Please extract item name, quantity, and amount for each row",
+            "collect_from_multi_table": True  # Whether to merge multiple tables in document
+        }
+    ]
 }
 
 resp = requests.post(
@@ -150,9 +158,10 @@ else:
 **Request Parameters:**
 - `workspace_id` (required): Workspace ID
 - `category_id` (required): File category ID
-- `name` (required): Table name, max length 50
-- `prompt` (optional): Semantic extraction prompt for table, max length 200
-- `collect_from_multi_table` (optional): Whether to merge multiple tables, default is false
+- `tables` (required): Array of table objects, each containing:
+  - `name` (required): Table name, max length 50
+  - `prompt` (optional): Semantic extraction prompt for table, max length 200
+  - `collect_from_multi_table` (optional): Whether to merge multiple tables, default is false
 
 **Response Example:**
 
@@ -172,7 +181,7 @@ else:
 
 ## Update Table
 
-Update information for a specified table:
+Update information for specified table(s):
 
 <CodeGroup>
 
@@ -184,12 +193,16 @@ curl -X POST \
   -d '{
     "workspace_id": "<your-workspace-id>",
     "category_id": "<category-id>",
-    "table_id": "<table-id>",
-    "name": "Updated Table Name",
-    "prompt": "Updated prompt",
-    "collect_from_multi_table": true
+    "tables": [
+      {
+        "table_id": "<table-id>",
+        "name": "Updated Table Name",
+        "prompt": "Updated prompt",
+        "collect_from_multi_table": true
+      }
+    ]
   }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/update"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/batch_update"
 ```
 
 ```python Python icon=python expandable lines
@@ -199,18 +212,21 @@ ti_app_id = "<your-app-id>"
 ti_secret_code = "<your-secret-code>"
 workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
-table_id = "<table-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/tables/update"
+url = "/api/app-api/sip/platform/v2/category/tables/batch_update"
 
 payload = {
     "workspace_id": workspace_id,
     "category_id": category_id,
-    "table_id": table_id,
-    "name": "Updated Table Name",
-    "prompt": "Updated prompt",
-    "collect_from_multi_table": True
+    "tables": [
+        {
+            "table_id": "<table-id>",
+            "name": "Updated Table Name",
+            "prompt": "Updated prompt",
+            "collect_from_multi_table": True
+        }
+    ]
 }
 
 resp = requests.post(
@@ -235,10 +251,11 @@ else:
 **Request Parameters:**
 - `workspace_id` (required): Workspace ID
 - `category_id` (required): File category ID
-- `table_id` (required): Table ID
-- `name` (optional): Table name, max length 50
-- `prompt` (optional): Semantic extraction prompt for table, max length 200
-- `collect_from_multi_table` (required): Whether to merge multiple tables
+- `tables` (required): Array of table objects, each containing:
+  - `table_id` (required): Table ID
+  - `name` (optional): Table name, max length 50
+  - `prompt` (optional): Semantic extraction prompt for table, max length 200
+  - `collect_from_multi_table` (required): Whether to merge multiple tables
 
 ## Delete Table
 
@@ -321,13 +338,17 @@ host = "https://docflow.textin.ai"
 
 # 1. Create table
 table_resp = requests.post(
-    url=f"{host}/api/app-api/sip/platform/v2/category/tables/add",
+    url=f"{host}/api/app-api/sip/platform/v2/category/tables/batch_add",
     json={
         "workspace_id": workspace_id,
         "category_id": category_id,
-        "name": "Item Details",
-        "prompt": "Please extract item name, quantity, and amount for each row",
-        "collect_from_multi_table": True
+        "tables": [
+            {
+                "name": "Item Details",
+                "prompt": "Please extract item name, quantity, and amount for each row",
+                "collect_from_multi_table": True
+            }
+        ]
     },
     headers={
         "x-ti-app-id": ti_app_id,
@@ -337,30 +358,30 @@ table_resp = requests.post(
 table_id = table_resp.json()["result"]["table_id"]
 print(f"Table created successfully, ID: {table_id}")
 
-# 2. Add fields to table
-fields_to_add = [
-    {"name": "Item Name", "description": "Name of goods or services"},
-    {"name": "Quantity", "description": "Item quantity"},
-    {"name": "Unit Price", "description": "Item unit price"},
-    {"name": "Amount", "description": "Item amount"}
-]
-
-for field_config in fields_to_add:
-    field_resp = requests.post(
-        url=f"{host}/api/app-api/sip/platform/v2/category/fields/add",
-        json={
-            "workspace_id": workspace_id,
-            "category_id": category_id,
-            "table_id": table_id,  # Specify table ID
-            **field_config
-        },
-        headers={
-            "x-ti-app-id": ti_app_id,
-            "x-ti-secret-code": ti_secret_code,
-        },
-    )
-    field_id = field_resp.json()["result"]["field_id"]
-    print(f"Field '{field_config['name']}' created successfully, ID: {field_id}")
+# 2. Add fields to table (batch)
+field_resp = requests.post(
+    url=f"{host}/api/app-api/sip/platform/v2/category/fields/batch_add",
+    json={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "table_id": table_id,  # Specify table ID
+        "fields": [
+            {"name": "Item Name", "description": "Name of goods or services"},
+            {"name": "Quantity", "description": "Item quantity"},
+            {"name": "Unit Price", "description": "Item unit price"},
+            {"name": "Amount", "description": "Item amount"}
+        ]
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+)
+result = field_resp.json()
+if result.get("code") == 200:
+    print("All fields created successfully")
+else:
+    print(f"Field creation failed: {result.get('msg')}")
 
 print("Table and fields creation completed")
 ```

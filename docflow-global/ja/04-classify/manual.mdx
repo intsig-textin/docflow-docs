@@ -1,0 +1,259 @@
+---
+title: "分類指定アップロード"
+description: "アップロード時にファイルカテゴリを指定して、自動分類プロセスをスキップし直接抽出に進む"
+---
+
+文書カテゴリが事前に分かっている場合、ファイルアップロード時に `category` パラメータでファイルカテゴリを指定することで、DocFlow は自動分類プロセスをスキップして直接抽出ステージに進みます。
+
+<Tip>
+  指定する `category` は、DocFlow ワークスペースで設定済みのファイルカテゴリでなければなりません。そうでない場合、処理が失敗します。
+</Tip>
+
+<Tip>
+  手動分類は処理時間を節約でき、同じ種類の文書を一括処理するシーンに特に適しています。
+</Tip>
+
+## 利用シーン
+
+1. **同一種類の文書の一括処理**：請求書、契約書などの一括処理
+2. **文書タイプが既知の場合**：ファイルアップロード前に文書カテゴリが確定している場合
+3. **処理効率の向上**：分類ステップをスキップして直接抽出ステージに進む
+
+## アップロード時にカテゴリを指定
+
+ファイルアップロード API に `category` パラメータを追加して手動分類を行います。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/invoice.pdf"
+category = "invoice"  # Specify file category
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category": category
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 一括アップロード時にカテゴリを指定
+
+一括アップロードの場合、すべてのファイルに同じカテゴリを指定できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice1.pdf" \
+  -F "file=@/path/to/invoice2.pdf" \
+  -F "file=@/path/to/invoice3.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice&batch_number=INV-2024-001"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category = "invoice"
+batch_number = "INV-2024-001"
+
+# Prepare multiple files
+files = [
+    "/path/to/invoice1.pdf",
+    "/path/to/invoice2.pdf",
+    "/path/to/invoice3.pdf"
+]
+
+# Build multipart data
+fields = {}
+for i, filepath in enumerate(files):
+    mime_type = "application/pdf"
+    if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+        mime_type = "image/jpeg"
+
+    fields[f"file"] = (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+
+payload = MultipartEncoder(fields=fields)
+
+resp = requests.post(
+    url="https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload",
+    params={
+        "workspace_id": workspace_id,
+        "category": category,
+        "batch_number": batch_number
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 処理ワークフローの比較
+
+### 自動分類ワークフロー
+
+```
+アップロード → 解析 → 自動分類 → 抽出 → 完了
+```
+
+### 手動分類ワークフロー
+
+```
+アップロード（カテゴリ指定） → 解析 → 抽出 → 完了
+```
+
+## 注意事項
+
+1. **カテゴリが設定済みであること**: 指定する `category` は DocFlow ワークスペースで設定済みである必要があります。そうでない場合、エラーが返されます
+2. **カテゴリ名の一致**: カテゴリ名は設定された内容と完全に一致する必要があります（大文字・小文字を区別）
+3. **処理ステータス**: 手動分類されたファイルは、確認結果で分類ステータスを直接スキップします
+4. **エラーハンドリング**: 指定されたカテゴリが存在しない場合、ファイル処理が失敗します。事前に[ファイルカテゴリの設定](../100-faq/setup_category)でカテゴリが正しく設定されていることを確認してください
+
+## 処理結果の確認
+
+手動分類されたファイルの処理が完了した後、`file/fetch` API で結果を確認できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file_id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File name: {f.get('name')}")
+    print(f"Specified category: {f.get('category')}")
+    print(f"Processing status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## レスポンス例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice_sample.pdf",
+        "category": "invoice",
+        "recognition_status": 1,
+        "extract_result": {
+          // Extraction result fields
+        }
+      }
+    ]
+  }
+}
+```
+
+## 中国語ファイルカテゴリのパラメータ指定
+
+中国語やその他の非英語ファイルカテゴリを指定する場合、`category` パラメータに対して UTF-8 URL エンコーディングを行う必要があります。
+
+### エンコーディング例
+
+<Tip>
+  `urllib.parse.quote()` 関数を使用して中国語のカテゴリ名を URL エンコードします。
+</Tip>
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+# Using encoded Chinese category
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=%E5%8F%91%E7%A5%A8"
+```
+
+
+```python Python expandable icon=python lines
+import urllib.parse
+
+# Chinese category name
+chinese_category = "发票"
+encoded_category = urllib.parse.quote(chinese_category)
+print(f"Original category: {chinese_category}")
+print(f"After encoding: {encoded_category}")
+# Output: Original category: 发票
+# Output: After encoding: %E5%8F%91%E7%A5%A8
+```
+
+</CodeGroup>

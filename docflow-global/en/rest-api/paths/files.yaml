@@ -7,6 +7,7 @@
       - $ref: '../components/parameters.yaml#/WorkspaceId'
       - $ref: '../components/parameters.yaml#/Category'
       - $ref: '../components/parameters.yaml#/BatchNumber'
+      - $ref: '../components/parameters.yaml#/AutoVerifyVat'
       - $ref: '../components/parameters.yaml#/SplitFlag'
       - $ref: '../components/parameters.yaml#/CropFlag'
       - $ref: '../components/parameters.yaml#/TargetProcess'
@@ -16,6 +17,8 @@
       - $ref: '../components/parameters.yaml#/ParserFormulaLevel'
       - $ref: '../components/parameters.yaml#/ParserTableTextSplitMode'
       - $ref: '../components/parameters.yaml#/ParserDpi'
+      - $ref: '../components/parameters.yaml#/ParserParseMode'
+      - $ref: '../components/parameters.yaml#/ParserPdfPwd'
     requestBody:
       $ref: '../components/request-bodies.yaml#/FileUploadRequestBody'
     responses:
@@ -73,6 +76,7 @@
       - $ref: '../components/parameters.yaml#/WorkspaceId'
       - $ref: '../components/parameters.yaml#/Category'
       - $ref: '../components/parameters.yaml#/BatchNumber'
+      - $ref: '../components/parameters.yaml#/AutoVerifyVat'
       - $ref: '../components/parameters.yaml#/SplitFlag'
       - $ref: '../components/parameters.yaml#/CropFlag'
       - $ref: '../components/parameters.yaml#/TargetProcess'
@@ -82,6 +86,8 @@
       - $ref: '../components/parameters.yaml#/ParserFormulaLevel'
       - $ref: '../components/parameters.yaml#/ParserTableTextSplitMode'
       - $ref: '../components/parameters.yaml#/ParserDpi'
+      - $ref: '../components/parameters.yaml#/ParserParseMode'
+      - $ref: '../components/parameters.yaml#/ParserPdfPwd'
       - $ref: '../components/parameters.yaml#/WithTaskDetailUrl'
     requestBody:
       $ref: '../components/request-bodies.yaml#/FileUploadRequestBody'
@@ -500,15 +506,17 @@
                     extract_model:
                       type: string
                       description: |
-                        Table-level extraction model, defaults to Model 1 if not specified. All fields within the table use this model
-                        - Model 1: Fast speed with stable extraction results
-                        - Model 2: Suitable for complex document understanding
-                        - Model 3: VLM, suitable for simple extraction
-                      example: "Model 1"
+                        Table-level extraction model, defaults to Acgpt if not specified. All fields within the table use this model
+                        - Auto: Automatically matches the extraction model
+                        - Acgpt: Fast speed with stable extraction results
+                        - Acgpt-VL: VLM, suitable for simple extraction (≤10 pages)
+                        - DF-M1: Suitable for complex document understanding
+                      example: "Acgpt"
                       enum:
-                        - Model 1
-                        - Model 2
-                        - Model 3
+                        - Auto
+                        - Acgpt
+                        - Acgpt-VL
+                        - DF-M1
                     fields:
                       type: array
                       items:

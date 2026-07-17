@@ -19,8 +19,9 @@ curl -X POST \
   -H "x-ti-secret-code: <your-secret-code>" \
   -F "workspace_id=<your-workspace-id>" \
   -F "category_id=<category-id>" \
-  -F "file=@/path/to/sample.pdf" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/upload"
+  -F "files=@/path/to/sample1.pdf" \
+  -F "files=@/path/to/sample2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/batch_upload"
 ```
 
 ```python Python icon=python expandable lines
@@ -32,12 +33,13 @@ workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/sample/upload"
+url = "/api/app-api/sip/platform/v2/category/sample/batch_upload"
 
-# Prepare sample file
-files = {
-    'file': open('/path/to/sample.pdf', 'rb')
-}
+# Prepare sample files (supports multiple)
+files = [
+    ("files", ("sample1.pdf", open('/path/to/sample1.pdf', 'rb'))),
+    ("files", ("sample2.pdf", open('/path/to/sample2.pdf', 'rb')))
+]
 
 # Prepare form data
 data = {
@@ -58,8 +60,8 @@ resp = requests.post(
 
 result = resp.json()
 if result.get("code") == 200:
-    sample_id = result.get("result", {}).get("sample_id")
-    print(f"Sample uploaded successfully, ID: {sample_id}")
+    sample_ids = result.get("result", {}).get("sample_ids", [])
+    print(f"Samples uploaded successfully, IDs: {sample_ids}")
 else:
     print(f"Upload failed: {result.get('msg')}")
 ```
@@ -69,7 +71,7 @@ else:
 **Request Parameters:**
 - `workspace_id` (required): Workspace ID
 - `category_id` (required): File category ID
-- `file` (required): Sample file
+- `files` (required): Sample file(s), supports uploading multiple files in one request
 
 **Response Example:**
 
@@ -78,7 +80,7 @@ else:
   "code": 200,
   "msg": "success",
   "result": {
-    "sample_id": "sample_123"
+    "sample_ids": ["sample_123", "sample_456"]
   }
 }
 ```
@@ -174,16 +176,22 @@ else:
 
 ## Download Sample
 
-Download a specified sample file:
+Download specified sample file(s):
 
 <CodeGroup>
 
 ```bash curl icon=terminal wrap
-curl \
+curl -X POST \
   -H "x-ti-app-id: <your-app-id>" \
   -H "x-ti-secret-code: <your-secret-code>" \
-  -o "sample.pdf" \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/download?workspace_id=<your-workspace-id>&category_id=<category-id>&sample_id=<sample-id>"
+  -H "Content-Type: application/json" \
+  -o "samples.zip" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "sample_ids": ["<sample-id>"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/sample/batch_download"
 ```
 
 ```python Python icon=python expandable lines
@@ -193,18 +201,19 @@ ti_app_id = "<your-app-id>"
 ti_secret_code = "<your-secret-code>"
 workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
-sample_id = "<sample-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/sample/download"
+url = "/api/app-api/sip/platform/v2/category/sample/batch_download"
 
-resp = requests.get(
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "sample_ids": ["<sample-id>"]
+}
+
+resp = requests.post(
     url=f"{host}{url}",
-    params={
-        "workspace_id": workspace_id,
-        "category_id": category_id,
-        "sample_id": sample_id
-    },
+    json=payload,
     headers={
         "x-ti-app-id": ti_app_id,
         "x-ti-secret-code": ti_secret_code,
@@ -214,9 +223,9 @@ resp = requests.get(
 
 if resp.status_code == 200:
     # Save file
-    with open("sample_downloaded.pdf", "wb") as f:
+    with open("samples_downloaded.zip", "wb") as f:
         f.write(resp.content)
-    print("Sample downloaded successfully")
+    print("Samples downloaded successfully")
 else:
     print(f"Download failed: {resp.status_code}")
 ```
@@ -226,7 +235,7 @@ else:
 **Request Parameters:**
 - `workspace_id` (required): Workspace ID
 - `category_id` (required): File category ID
-- `sample_id` (required): Sample ID
+- `sample_ids` (required): Array of sample IDs to download
 
 **Response**: Returns file binary stream (`application/octet-stream`)
 
@@ -309,7 +318,7 @@ Choosing appropriate sample files is crucial for improving classification and ex
 
 - **Minimum**: At least 1 sample per category (required when creating category)
 - **Recommended**: 3-5 samples provide good classification results
-- **Maximum**: A maximum of 10 samples per category
+- **Maximum**: A maximum of 20 samples per category
 
 ### Sample Update Strategy
 
@@ -330,7 +339,7 @@ ti_secret_code = "<your-secret-code>"
 workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/sample/upload"
+url = "/api/app-api/sip/platform/v2/category/sample/batch_upload"
 
 # Sample files directory
 sample_dir = "/path/to/samples"
@@ -338,33 +347,34 @@ sample_files = [f for f in os.listdir(sample_dir) if f.endswith('.pdf')]
 
 print(f"Preparing to upload {len(sample_files)} sample files")
 
+# Prepare all files for batch upload
+files = []
 for filename in sample_files:
     file_path = os.path.join(sample_dir, filename)
+    files.append(("files", (filename, open(file_path, 'rb'))))
 
-    with open(file_path, 'rb') as f:
-        files = {'file': f}
-        data = {
-            'workspace_id': workspace_id,
-            'category_id': category_id
-        }
+data = {
+    'workspace_id': workspace_id,
+    'category_id': category_id
+}
 
-        resp = requests.post(
-            url=f"{host}{url}",
-            data=data,
-            files=files,
-            headers={
-                "x-ti-app-id": ti_app_id,
-                "x-ti-secret-code": ti_secret_code,
-            },
-            timeout=60,
-        )
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
 
-        result = resp.json()
-        if result.get("code") == 200:
-            sample_id = result.get("result", {}).get("sample_id")
-            print(f"✓ {filename} uploaded successfully, ID: {sample_id}")
-        else:
-            print(f"✗ {filename} upload failed: {result.get('msg')}")
+result = resp.json()
+if result.get("code") == 200:
+    sample_ids = result.get("result", {}).get("sample_ids", [])
+    print(f"All samples uploaded successfully, IDs: {sample_ids}")
+else:
+    print(f"Upload failed: {result.get('msg')}")
 
 print("Sample upload completed")
 ```

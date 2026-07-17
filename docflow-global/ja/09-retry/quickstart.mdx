@@ -1,0 +1,111 @@
+---
+title: "クイックスタート"
+description: "API で文書再処理機能をすばやく利用するための例"
+---
+
+<Tip>
+  このページでは、REST API で DocFlow のファイルタスクを再試行する方法を説明します。ファイル処理に失敗した場合や再処理が必要な場合は、再試行 API を使用できます。
+</Tip>
+
+DocFlow はファイル再試行 API を提供しており、指定したタスクを再処理できます。再試行操作では、解析、分類、分割、抽出などを含む完全な処理フローを再実行します。
+
+<Warning>
+**重要な制限**: 抽出が成功または失敗したタスクで、かつメインタスクまたは親タスクのみ再試行できます。子タスクは再試行をサポートしていません。
+</Warning>
+
+## ファイル処理を再試行
+
+指定したタスク ID に対応するファイルを再処理します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "1978297791713619968"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "1978297791713619968"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/retry"
+
+headers = {
+    "x-ti-app-id": ti_app_id,
+    "x-ti-secret-code": ti_secret_code,
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers=headers,
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    print("File retry successful")
+else:
+    print(f"Retry failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+## パラメータ説明
+
+### 必須パラメータ
+
+- `workspace_id`: ワークスペース ID。[Workspace ID の取得方法](../100-faq/get_workspace_id) を参照してください。
+- `task_id`: タスク ID。ファイルアップロード API のレスポンス、または確認 API から取得できます。
+
+### レスポンス説明
+
+再試行に成功すると、標準レスポンスが返されます。
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+- `code`: レスポンスステータスコード。200 は成功を表します
+- `msg`: レスポンスメッセージ
+
+## 利用シーン
+
+再試行 API は次のような場面に適しています。
+
+1. **処理失敗後の再試行**: ファイル処理に失敗した場合、再試行 API を呼び出して再処理できます
+2. **設定更新後の再処理**: 分類、抽出などの設定を更新した後、処理済みファイルを再処理して新しい設定を適用できます
+
+## 重要な注意事項
+
+<Warning>
+**再試行制限**: 抽出が成功または失敗したタスクで、かつメインタスクまたは親タスクのみ再試行できます。子タスクは再試行をサポートしていません。
+</Warning>
+
+1. **タスク状態**: 再試行操作ではファイルを再処理するため、既存の処理結果が上書きされる可能性があります
+2. **処理時間**: 再試行操作では処理フローを再実行するため、時間がかかる場合があります。確認 API でタスク状態を確認することをおすすめします
+3. **タスクタイプ制限**: メインタスクまたは親タスクのみ再試行できます。子タスクは再試行できません
+4. **抽出ステータス制限**: 抽出成功または抽出失敗ステータスのタスクのみ再試行できます

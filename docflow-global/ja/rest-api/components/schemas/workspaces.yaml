@@ -1,0 +1,42 @@
+Workspace:
+  type: object
+  description: ワークスペース
+  properties:
+    workspace_id:
+      type: string
+      description: ワークスペース ID（システム生成）
+      example: "1234567890"
+    name:
+      type: string
+      description: ワークスペース名
+      example: "My ワークスペース"
+    description:
+      type: string
+      description: ワークスペースの説明
+      example: "請求書処理用のワークスペースです"
+    auth_scope:
+      type: integer
+      description: "共同利用範囲 0: 自分のみ表示 1: エンタープライズメンバーに表示"
+      example: 1
+      enum:
+        - 0
+        - 1
+    manage_account_id:
+      type: string
+      description: ワークスペース管理者 ID
+      example: "admin_123456"
+    manage_account_name:
+      type: string
+      description: ワークスペース管理者名
+      example: "山田太郎"
+    callback_url:
+      type: string
+      description: コールバック URL
+      example: "https://example.com/callback"
+    callback_retry_time:
+      type: integer
+      description: コールバック再試行回数
+      example: 3
+  required:
+    - workspace_id
+    - name

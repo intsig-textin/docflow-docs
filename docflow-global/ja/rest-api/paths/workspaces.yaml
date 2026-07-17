@@ -1,0 +1,234 @@
+/api/app-api/sip/platform/v2/workspace/create:
+  post:
+    summary: ワークスペースを作成
+    description: 新しいワークスペースを作成します
+    operationId: createWorkspace
+    tags:
+      - ワークスペース管理
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                description: ワークスペース名
+                example: "My ワークスペース"
+                maxLength: 50
+              description:
+                type: string
+                description: ワークスペースの説明
+                example: "請求書処理用のワークスペースです"
+                maxLength: 200
+              enterprise_id:
+                type: integer
+                format: int64
+                description: エンタープライズ組織 ID
+                example: 12345
+              auth_scope:
+                type: integer
+                description: "共同利用範囲 0: 自分のみ表示 1: エンタープライズメンバーに表示"
+                example: 1
+                enum:
+                  - 0
+                  - 1
+            required:
+              - name
+              - enterprise_id
+              - auth_scope
+    responses:
+      '200':
+        description: ワークスペースの作成に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        workspace_id:
+                          type: string
+                          description: ワークスペース ID
+                          example: "1234567890"
+
+/api/app-api/sip/platform/v2/workspace/list:
+  get:
+    summary: ワークスペース一覧を取得
+    description: 現在のユーザーのワークスペース一覧を取得します
+    operationId: listWorkspaces
+    tags:
+      - ワークスペース管理
+    parameters:
+      - name: enterprise_id
+        in: query
+        description: エンタープライズ ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: ページ番号
+        required: false
+        schema:
+          type: integer
+          default: 1
+          example: 1
+      - name: page_size
+        in: query
+        description: ページサイズ
+        required: false
+        schema:
+          type: integer
+          default: 20
+          example: 20
+    responses:
+      '200':
+        description: ワークスペース一覧の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: ワークスペース総数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 現在のページ番号
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: ページサイズ
+                          example: 20
+                        workspaces:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/workspaces.yaml#/Workspace'
+
+/api/app-api/sip/platform/v2/workspace/get:
+  get:
+    summary: ワークスペース詳細を取得
+    description: ワークスペース ID を指定してワークスペースの詳細情報を取得します
+    operationId: getWorkspace
+    tags:
+      - ワークスペース管理
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: ワークスペース詳細の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      $ref: '../components/schemas/workspaces.yaml#/Workspace'
+
+/api/app-api/sip/platform/v2/workspace/update:
+  post:
+    summary: ワークスペースを更新
+    description: 指定したワークスペースの情報を更新します
+    operationId: updateWorkspace
+    tags:
+      - ワークスペース管理
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              name:
+                type: string
+                description: ワークスペース名
+                example: "My ワークスペース"
+                maxLength: 50
+              description:
+                type: string
+                description: ワークスペースの説明
+                example: "請求書処理用のワークスペースです"
+                maxLength: 500
+              auth_scope:
+                type: integer
+                description: "共同利用範囲 0: 自分のみ表示 1: エンタープライズメンバーに表示"
+                example: 1
+                enum:
+                  - 0
+                  - 1
+              callback_url:
+                type: string
+                description: コールバック URL
+                example: "https://example.com/callback"
+              callback_retry_time:
+                type: integer
+                description: コールバック再試行回数
+                example: 3
+                minimum: 1
+                maximum: 3
+            required:
+              - workspace_id
+              - name
+              - auth_scope
+    responses:
+      '200':
+        description: ワークスペースの更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/workspace/delete:
+  post:
+    summary: ワークスペースを削除
+    description: 指定したワークスペースを削除します
+    operationId: deleteWorkspace
+    tags:
+      - ワークスペース管理
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_ids:
+                type: array
+                items:
+                  type: string
+                  description: ワークスペース ID
+                  example: "1234567890"
+                description: 削除するワークスペース ID のリスト
+            required:
+              - workspace_ids
+    responses:
+      '200':
+        description: ワークスペースの削除に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'

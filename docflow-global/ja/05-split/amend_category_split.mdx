@@ -1,0 +1,356 @@
+---
+title: "ファイルカテゴリの修正（ファイル分割）"
+description: "ファイル分割タスクに対してカテゴリ修正 API を使用し、分割ファイルのカテゴリとページ番号を変更する"
+---
+
+## 概要
+
+処理が完了したファイル分割タスクにおいて、分割された子ファイルのカテゴリが不正確な場合や、子ファイルのページ範囲を調整する必要がある場合、**カテゴリ修正** API を使用して分割ファイルのカテゴリとページ番号を変更できます。
+
+<Tip>
+この API は、ファイル分割タスク（`task_type = 2`、親タスク）によって生成された子ファイルのカテゴリとページ番号を変更するために使用します。事前に親タスクの `task_id` を取得する必要があります。
+</Tip>
+
+## 利用シーン
+
+1. **分割カテゴリの修正**：自動分割後、一部の子ファイルのカテゴリ認識が不正確で、手動で修正が必要な場合
+2. **ページ範囲の調整**：分割ファイルのページ範囲を調整する必要がある場合（複数の子ファイルの結合や再分割など）
+
+## API エンドポイント
+
+**エンドポイント**: `POST /api/app-api/sip/platform/v2/file/amend_category`
+
+## リクエストパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| `workspace_id` | string | はい | ワークスペース ID |
+| `task_id` | string | はい | 親タスク ID（ファイル分割タスク ID） |
+| `split_tasks` | array | はい | ファイル分割タスクリスト。各要素に `category` と `pages` を含む |
+
+### split_tasks パラメータ説明
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| `category` | string | はい | 子タスクのファイルカテゴリ |
+| `pages` | array | はい | 子ファイルのページ番号配列（0 から開始） |
+
+### パラメータ説明
+
+- `task_id`：親タスク ID（`task_type = 2`）。`file/fetch` API を通じて取得できます
+- `category`：新しいファイルカテゴリ名。DocFlow ワークスペースで設定済みのファイルカテゴリである必要があります。子ファイルのカテゴリ変更が不要な場合は、元のカテゴリをそのまま保持できます
+- `pages`：ページ番号配列。この子ファイルに含まれる元ファイルのページを示します。例えば `[0, 1]` は 1 ページ目と 2 ページ目を意味します（0 から開始）。子ファイルのページ番号変更が不要な場合は、元のページ番号をそのまま保持できます
+
+<Warning>
+**重要**：`split_tasks` 配列には、一部の子ファイルのカテゴリやページ番号の変更が不要であっても、**すべての**分割子ファイル情報を含める必要があります。部分的な子ファイル情報のみを送信すると、リストに含まれない子ファイルが削除されるか、処理例外が発生します。
+</Warning>
+
+## サンプルコード
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+# Important: Must include all split child file information
+# Assuming the original file is split into 3 child files, even if you only need to modify the first child file's category,
+# you must include information for all 3 child files
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "1234567890",
+    "task_id": "1234567890",
+    "split_tasks": [
+      {
+        "category": "Electronic Invoice (Regular)",
+        "pages": [0, 1]
+      },
+      {
+        "category": "Contract",
+        "pages": [2, 3, 4]
+      },
+      {
+        "category": "Receipt",
+        "pages": [5, 6]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def amend_split_category(workspace_id, task_id, split_tasks, app_id, secret_code):
+    """
+    Amend category and page numbers for file split tasks
+
+    Args:
+        workspace_id: Workspace ID
+        task_id: Parent task ID (file split task ID)
+        split_tasks: Split task list, format:
+            [
+                {
+                    "category": "Category name",
+                    "pages": [0, 1]  # Page number array, starting from 0
+                },
+                ...
+            ]
+        app_id: Application ID
+        secret_code: Secret code
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "split_tasks": split_tasks
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+if __name__ == "__main__":
+    WORKSPACE_ID = "1234567890"
+    PARENT_TASK_ID = "1234567890"  # Parent task ID (task_type = 2)
+    APP_ID = "<your-app-id>"
+    SECRET_CODE = "<your-secret-code>"
+
+    # Important: Must include all split child file information
+    # Assuming the original file is split into 3 child files:
+    # - Child file 1: Pages 1-2, category "Invoice"
+    # - Child file 2: Pages 3-5, category "Contract"
+    # - Child file 3: Pages 6-7, category "Receipt"
+    #
+    # If you only need to modify child file 1's category, you must also include information for child files 2 and 3
+    split_tasks = [
+        {
+            "category": "Electronic Invoice (Regular)",  # Modified category
+            "pages": [0, 1]  # Keep original page numbers
+        },
+        {
+            "category": "Contract",  # Keep original category
+            "pages": [2, 3, 4]  # Keep original page numbers
+        },
+        {
+            "category": "Receipt",  # Keep original category
+            "pages": [5, 6]  # Keep original page numbers (Note: original file pages 6-7 correspond to page numbers 5-6)
+        }
+    ]
+
+    result = amend_split_category(WORKSPACE_ID, PARENT_TASK_ID, split_tasks, APP_ID, SECRET_CODE)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## 親タスク ID と子ファイル情報の取得
+
+ファイルカテゴリを変更する前に、親タスクの `task_id` と子ファイル情報を取得する必要があります。`file/fetch` API で確認できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_split_task_info(workspace_id, file_id, app_id, secret_code):
+    """
+    Get file split task information, including parent task ID and child file information
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+
+    params = {
+        "workspace_id": workspace_id,
+        "file_id": file_id
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    files = data.get("result", {}).get("files", [])
+    if files:
+        file_data = files[0]
+        task_id = file_data.get("task_id")
+        task_type = file_data.get("task_type")
+        child_files = file_data.get("child_files", [])
+
+        # Extract child file information
+        split_children = []
+        for child in child_files:
+            if child.get("task_type") == 0:  # Child files generated by file split
+                split_children.append({
+                    "task_id": child.get("task_id"),
+                    "category": child.get("category"),
+                    "pages": child.get("pages", {}).get("pages", []) if isinstance(child.get("pages"), dict) else child.get("pages", [])
+                })
+
+        return {
+            "parent_task_id": task_id,
+            "parent_task_type": task_type,
+            "split_children": split_children
+        }
+    return None
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+task_info = get_split_task_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+if task_info:
+    print("Parent task ID:", task_info["parent_task_id"])
+    print("Parent task type:", task_info["parent_task_type"])
+    print("Child file information:")
+    for child in task_info["split_children"]:
+        print(json.dumps(child, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## レスポンス
+
+ファイルカテゴリの変更が成功すると、API は成功レスポンスを返します。
+
+```json expandable
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## 完全な例
+
+以下は、ファイル分割タスク情報を確認し、子ファイルのカテゴリとページ番号を変更する完全な例です：
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_split_task_info(workspace_id, file_id, app_id, secret_code):
+    """Get file split task information"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    params = {"workspace_id": workspace_id, "file_id": file_id}
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+def amend_split_category(workspace_id, task_id, split_tasks, app_id, secret_code):
+    """Amend category and page numbers for file split tasks"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "split_tasks": split_tasks
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+# 1. Get file split task information
+file_info = get_split_task_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+files = file_info.get("result", {}).get("files", [])
+if files:
+    file_data = files[0]
+    parent_task_id = file_data.get("task_id")
+    task_type = file_data.get("task_type")
+    child_files = file_data.get("child_files", [])
+
+    # Confirm it's a file split parent task (task_type = 2)
+    if task_type == 2:
+        print(f"Parent task ID: {parent_task_id}")
+        print("Current child file information:")
+
+        # Build split_tasks parameter
+        # Important: Must include all child file information, even if some don't need modification
+        split_tasks = []
+        for child in child_files:
+            if child.get("task_type") == 0:  # Child files generated by file split
+                # Get current page number information
+                pages_info = child.get("pages", [])
+                if isinstance(pages_info, list) and pages_info:
+                    # If pages is an object array, extract page numbers
+                    pages = [p.get("page") if isinstance(p, dict) else p for p in pages_info]
+                elif isinstance(pages_info, dict):
+                    # If pages is a dictionary, try to extract pages array
+                    pages = pages_info.get("pages", [])
+                else:
+                    # If pages is a simple array, use directly
+                    pages = pages_info if isinstance(pages_info, list) else []
+
+                current_category = child.get("category")
+                print(f"  - Category: {current_category}, Pages: {pages}")
+
+                # Example: Only modify the first child file's category, keep others unchanged
+                # Note: Must include all child files, even if they don't need modification
+                if len(split_tasks) == 0:
+                    # Modify the first child file's category
+                    split_tasks.append({
+                        "category": "Electronic Invoice (Regular)",  # New category
+                        "pages": pages  # Keep original page numbers
+                    })
+                else:
+                    # Other child files keep original category and page numbers
+                    split_tasks.append({
+                        "category": current_category,  # Keep original category
+                        "pages": pages  # Keep original page numbers
+                    })
+
+        # 2. Amend file category and page numbers
+        # Ensure all child file information is included
+        if split_tasks:
+            print(f"\nPreparing to submit information for {len(split_tasks)} child files")
+            result = amend_split_category(WORKSPACE_ID, parent_task_id, split_tasks, APP_ID, SECRET_CODE)
+            print(f"Amendment result: {json.dumps(result, indent=2, ensure_ascii=False)}")
+    else:
+        print(f"This task is not a file split parent task (task_type={task_type})")
+```
+
+## ページ番号に関する注意事項
+
+- ページ番号は **0** から始まります。つまり 1 ページ目がページ番号 `0`、2 ページ目がページ番号 `1` に対応します
+- `pages` 配列は、この子ファイルに含まれる元ファイルのページ番号を示します
+
+## 注意事項
+
+1. **すべての子ファイルを含めること**：`split_tasks` 配列には、一部の子ファイルのカテゴリやページ番号の変更が不要であっても、**すべての**分割子ファイル情報を含める必要があります。部分的な子ファイル情報のみを送信すると、リストに含まれない子ファイルが削除されるか、処理例外が発生します
+2. **タスクタイプの制限**：ファイル分割の親タスク（`task_type = 2`）のみ `split_tasks` パラメータの使用に対応しています
+3. **カテゴリが存在すること**：指定する `category` は DocFlow ワークスペースで設定済みである必要があります。そうでない場合、エラーが返されます
+4. **カテゴリ名の一致**：カテゴリ名は設定された内容と完全に一致する必要があります（大文字・小文字を区別）
+5. **ページ範囲**：`pages` 配列のページ番号が有効な範囲内（0 から総ページ数 - 1）であることを確認し、ページ番号の重複は許可されません
+6. **ページの重複不可**：各ページ番号は 1 つの子ファイルにのみ出現可能で、重複は許可されません
+7. **変更後の再処理**：ファイルカテゴリとページ番号を変更すると、システムは新しいカテゴリとページ範囲に従ってデータを再処理します

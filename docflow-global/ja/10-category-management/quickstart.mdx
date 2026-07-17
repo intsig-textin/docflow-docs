@@ -1,0 +1,359 @@
+---
+title: "クイックスタート"
+description: "ファイルカテゴリ管理機能を API ですばやく利用する方法"
+---
+
+<Tip>
+  ファイルカテゴリは、DocFlow で文書タイプを整理、定義するための中核概念です。各ファイルカテゴリには、文書分類とインテリジェント抽出に使用するフィールド、表、サンプルなどを設定できます。
+</Tip>
+
+## 中核概念
+
+ファイルカテゴリ API を使用する前に、次の中核概念を理解しておくと、システムの動作を把握しやすくなります。
+
+### サンプルファイル
+
+サンプルファイルは、そのファイルカテゴリを代表する典型的な文書例です。DocFlow はこれらのサンプルを次の用途に使用します。
+- **分類モデルの学習**: システムが異なる文書タイプを識別、区別できるようにします
+- **抽出性能の最適化**: サンプルの形式やレイアウトパターンを学習し、フィールド抽出精度を向上させます
+- **認識テンプレートの確立**: 類似文書を自動認識するための参照基準を提供します
+
+**要件**: 各ファイルカテゴリには少なくとも 1 件のサンプルファイルが必要で、最大 20 件まで登録できます。より良い結果を得るため、代表的なサンプルを 3〜5 件アップロードすることを推奨します。
+
+### 通常フィールド
+
+通常フィールドは、文書内に **表形式ではない形式** で存在する重要情報を指します。各フィールドにはフィールド名（key）と対応する値が含まれます。フィールドはページや行をまたぐ場合があります。
+
+**抽出結果の位置**: フィールド情報は抽出結果の `result.files[].data.fields[]` に格納され、各フィールドには次の情報が含まれます。
+- `key`: フィールド名（例: 「請求書コード」「発行日」）
+- `value`: フィールド値（抽出されたテキスト内容）
+- `position[]`: 文書内の位置座標情報
+
+**典型的な利用例**:
+- 請求書カテゴリ: 請求書コード、請求書番号、発行日、購入者名、合計金額
+- 契約書カテゴリ: 契約番号、甲の名称、乙の名称、署名日、契約金額
+- 身分証カテゴリ: 氏名、性別、民族、生年月日、身分証番号
+
+**フィールドを設定する目的**:
+- 文書から抽出すべき情報をシステムに明示します
+- フィールド説明やプロンプトによって、AI モデルの精密な抽出を導きます
+- フィールドのデータ形式や検証ルールを定義します
+
+### 表フィールド
+
+表フィールドは **表形式の構造化データ** を指します。DocFlow は文書内の表構造を認識し、表の内容を構造化データ形式に変換できます。表は複数の行と列で構成され、各表には複数のフィールド（列）を設定できます。
+
+**抽出結果の位置**: 表情報は抽出結果の `result.files[].data.items[][]` に格納され、二次元配列構造で表現されます。
+- 外側の配列: 表の行を表します
+- 内側の配列: 行内のセルを表します
+- 各セルには `key`（列名）、`value`（セル値）、`position`（位置座標）が含まれます
+
+**典型的な利用例**:
+- 請求書カテゴリ: 明細表（商品 / サービス名、規格、単位、数量、単価、金額）
+- 経費精算書: 経費明細表（経費項目、日付、金額、備考）
+- 注文書カテゴリ: 注文明細表（商品名、数量、単価、小計）
+
+**表フィールドと通常フィールドの違い**:
+- **通常フィールド**: 表形式ではないキーと値のペアです。`result.files[].data.fields[]` に返され、通常は文書内の単一の情報点を表します
+- **表フィールド**: 構造化された表データです。`result.files[].data.items[][]` に返され、複数行をまとめて抽出できます
+- **利用場面**: 通常フィールドは文書ヘッダーやフッターの固定情報に適しています。表フィールドは、繰り返し構造を持つ明細一覧に適しています
+
+## はじめに
+
+このガイドでは、ファイルカテゴリ関連 API の作成、一覧取得、更新、削除の使い方を説明します。
+
+## ファイルカテゴリを作成
+
+少なくとも 1 件のサンプルファイルをアップロードし、少なくとも 1 つのフィールドを設定して、新しいファイルカテゴリを作成します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "workspace_id=<your-workspace-id>" \
+  -F "name=Invoice" \
+  -F "category_prompt=VAT invoice with fields such as invoice code, invoice number, etc." \
+  -F "extract_model=Acgpt" \
+  -F "sample_files=@/path/to/invoice_sample.pdf" \
+  -F 'fields=[{"name":"Invoice Code","description":"Invoice code description","prompt":"Please extract the invoice code"}]' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/create"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/create"
+
+# Prepare sample file
+files = {
+    'sample_files': open('/path/to/invoice_sample.pdf', 'rb')
+}
+
+# Prepare form data
+data = {
+    'workspace_id': workspace_id,
+    'name': 'Invoice',
+    'category_prompt': 'VAT invoice with fields such as invoice code, invoice number, etc.',
+    'extract_model': 'Acgpt',
+    'fields': '[{"name":"Invoice Code","description":"Invoice code description","prompt":"Please extract the invoice code"}]'
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    data=data,
+    files=files,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    category_id = result.get("result", {}).get("category_id")
+    print(f"File category created successfully, ID: {category_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `name`（必須）: ファイルカテゴリ名。最大 50 文字
+- `category_prompt`（任意）: 分類用プロンプト。最大 500 文字
+- `extract_model`（必須）: 抽出モデル。指定可能な値は `Auto`、`Acgpt`、`Acgpt-VL`、`DF-M1`
+- `sample_files`（必須）: サンプルファイル一覧。少なくとも 1 件のサンプルファイルが必要です。1 カテゴリあたり最大 20 件まで登録できます
+- `fields`（必須）: フィールド設定一覧（JSON 文字列）。少なくとも 1 つのフィールドが必要です。表フィールドはデフォルト表（table_id=-1）にのみ設定できます
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "category_id": "1234567890"
+  }
+}
+```
+
+## ファイルカテゴリ一覧を取得
+
+ワークスペース内のすべてのファイルカテゴリを取得します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/list?workspace_id=<your-workspace-id>&page=1&page_size=20&enabled=1"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "page": 1,
+        "page_size": 20,
+        "enabled": "1"  # all: All, 1: Enabled, 0: Disabled, 2: Draft
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    categories = result.get("result", {}).get("categories", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} file categories")
+    for category in categories:
+        print(f"Category ID: {category.get('id')}, Name: {category.get('name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `page`（任意）: ページ番号。デフォルトは `1`
+- `page_size`（任意）: 1 ページあたりの件数。デフォルトは `1000`
+- `enabled`（任意）: ステータスフィルタ。指定可能な値は `all`（すべて）、`1`（有効）、`0`（無効）、`2`（下書き）。デフォルトは `1`
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 10,
+    "page": 1,
+    "page_size": 20,
+    "categories": [
+      {
+        "id": "1234567890",
+        "name": "Invoice",
+        "category_prompt": "VAT invoice with fields such as invoice code, invoice number, etc.",
+        "extract_model": "Acgpt",
+        "enabled": 1
+      }
+    ]
+  }
+}
+```
+
+## ファイルカテゴリを更新
+
+指定したファイルカテゴリの情報を更新します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "1234567890",
+    "name": "Updated Category Name",
+    "category_prompt": "Updated prompt",
+    "enabled": 1
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/update"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "1234567890"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "name": "Updated Category Name",
+    "category_prompt": "Updated prompt",
+    "enabled": 1  # 0: Disabled, 1: Enabled, 2: Draft
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("File category updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `name`（任意）: ファイルカテゴリ名。最大 50 文字
+- `category_prompt`（任意）: 分類用プロンプト。最大 500 文字
+- `enabled`（任意）: ステータス。`0`: 無効、`1`: 有効、`2`: 下書き
+
+## ファイルカテゴリを削除
+
+指定したファイルカテゴリを削除します。複数件の一括削除にも対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_ids": ["1234567890", "0987654321"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_ids": ["1234567890", "0987654321"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("File category deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_ids`（必須）: 削除するファイルカテゴリ ID の配列
+
+<Warning>
+  ファイルカテゴリを削除すると、その配下のすべてのフィールド、表、サンプルも削除されます。慎重に操作してください。
+</Warning>
+
+## 次のステップ
+
+- [フィールド管理](./fields_management) - ファイルカテゴリ配下のフィールドを管理します
+- [テーブル管理](./tables_management) - ファイルカテゴリ配下の表を管理します
+- [サンプル管理](./samples_management) - ファイルカテゴリ用のサンプルファイルを管理します

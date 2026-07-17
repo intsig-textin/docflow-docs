@@ -1,0 +1,761 @@
+ExtractFieldReqVO:
+  type: object
+  properties:
+    key:
+      type: string
+      description: フィールド名
+      example: インボイスコード
+    prompt:
+      type: string
+      description: フィールドプロンプト
+      example: 年の部分のみを保持します
+    extract_model:
+      type: string
+      description: |
+        フィールド単位の抽出モデル。未指定の場合は Acgpt がデフォルトです
+        - Auto: 抽出モデルを自動でマッチング
+        - Acgpt: 高速で安定した抽出結果
+        - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+        - DF-M1: 複雑な文書理解に適しています
+        注: テーブルフィールドでは抽出モデルはテーブル単位の extract_model によって決まり、このフィールドは無視されます
+      example: "Acgpt"
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+
+TaskProcessResult:
+  type: object
+  properties:
+    result:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: ファイル総数
+          example: 100
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        page_size:
+          type: integer
+          description: 1 ページあたりの件数
+          example: 20
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ファイル ID
+                example: 202412190001
+              task_id:
+                type: string
+                description: タスク ID
+                example: 202412190001
+              task_detail_url:
+                type: string
+                description: タスク詳細ページ URL
+              task_type:
+                $ref: '#/TaskType'
+              batch_number:
+                type: string
+                description: バッチ番号
+                example: 202412190001
+              name:
+                type: string
+                description: ファイル名
+                example: invoice.pdf
+              format:
+                type: string
+                description: ファイル形式
+              recognition_status:
+                $ref: './common.yaml#/RecognitionStatus'
+              failure_causes:
+                type: string
+                description: |
+                  タスク失敗理由。
+                  recognition_status が 2 の場合、このフィールドが返されます。
+              verification_status:
+                $ref: './common.yaml#/VerificationStatus'
+              category:
+                type: string
+                description: ファイルカテゴリ
+                example: invoice
+              pages:
+                $ref: '#/PagesInfo'
+              data:
+                type: object
+                description: 処理結果
+                properties:
+                  fields:
+                    description: フィールドリスト
+                    type: array
+                    items:
+                      $ref: '#/FieldRespKeyValue'
+                    example:
+                    - key: インボイスコード
+                      identifier: インボイスコード識別子
+                      value: "3100231130"
+                      position:
+                      - page: 0
+                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                    - key: インボイス番号
+                      value: "28737000"
+                      identifier: インボイス番号識別子
+                      position:
+                      - page: 0
+                        vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                  items:
+                    description: テーブルデータリスト
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/KeyValue'
+                    example:
+                    - - key: 商品・サービス名
+                        value: ＊Electronic Computer＊Microcomputer Host
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - key: 仕様モデル
+                        value: DMS-SC68
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                    - - key: 商品・サービス名
+                        value: ＊Mechanical Computer＊Supercomputer Host
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - key: 仕様モデル
+                        value: AN/FSQ-7
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                  tables:
+                    description: 完全なテーブルデータリスト（システムテーブルと手動設定テーブルを含む）
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tableName:
+                          description: テーブル名
+                          type: string
+                          example: table1
+                        tableType:
+                          description: |
+                            テーブルタイプ。0: システム設定、1: 手動追加。
+                          type: string
+                          example: 0
+                        extractModel:
+                          description: テーブル単位の実際にヒットしたモデル（Acgpt / Acgpt-VL / DF-M1）
+                          type: string
+                        configModel:
+                          description: テーブル単位の設定モデル（Auto / Acgpt / Acgpt-VL / DF-M1）；既存データで未設定の場合は null
+                          type: string
+                        items:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/CommonFieldDetailRespVO'
+                  stamps:
+                    description: 印影情報
+                    type: array
+                    items:
+                      $ref: '#/StampValue'
+                    example:
+                      - angel: 0
+                        page: 0
+                        text: 全国統一インボイス監督印
+                        type: Other
+                        color: Red
+                        shape: Oval Seal
+                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - angel: 0
+                        page: 0
+                        text: 税務局印
+                        type: Other
+                        color: Red
+                        shape: Oval Seal
+                        position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  handwritings:
+                    description: 手書き情報
+                    type: array
+                    items:
+                      $ref: '#/HandWritingValue'
+                    example:
+                      - angel: 0
+                        page: 0
+                        text: 3月1日
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                      - angel: 0
+                        page: 0
+                        text: 山田太郎
+                        position:
+                          - page: 0
+                            vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  invoiceVerifyResult:
+                    description: インボイス検証結果
+                    type: object
+                    properties:
+                      invoiceVerifyStatus:
+                        type: integer
+                        description: |
+                          インボイス検証に成功したかどうか（0: いいえ、1: はい、null: 未検証）
+                        example: 0
+                      invoiceVerifyErrorCode:
+                        type: integer
+                        description: インボイス検証エラーコード
+                        example: 0
+                      invoiceVerifyCanRetry:
+                        type: integer
+                        description: |
+                          インボイス検証を再試行/開始できるかどうか（0: いいえ、1: はい）
+                        example: 0
+                      invoiceVerifyFailMsg:
+                        type: string
+                        description: インボイス検証失敗理由
+                        example: 1日の上限を超過しました
+              document:
+                $ref: '#/Document'
+              child_files:
+                description: サブタスク情報
+                type: array
+                items:
+                  $ref: '#/SubFileDetailInfo'
+              duration_ms:
+                type: integer
+                description: |
+                  タスク処理時間。単位: ミリ秒
+                  タスク開始から完了（成功または失敗）までの時間です。キュー待ち時間は含みません。
+                example: 10000
+              total_page_num:
+                type: integer
+                description: 現在のファイルの総ページ数
+                example: 10
+              parser_params:
+                description: ファイル解析パラメータ設定
+                allOf:
+                  - $ref: '#/DocumentParserParam'
+            required:
+              - id
+              - name
+              - format
+              - recognition_status
+              - verification_status
+              - category
+
+KeyValue:
+  type: object
+  properties:
+    key:
+      type: string
+      description: フィールド名
+    value:
+      type: string
+      description: フィールド値
+    position:
+      $ref: "#/KeyValuePosition"
+
+FieldRespKeyValue:
+  type: object
+  properties:
+    key:
+      type: string
+      description: フィールド名
+    identifier:
+      type: string
+      description: 識別子（エクスポート時のフィールド名由来）
+    value:
+      type: string
+      description: フィールド値
+    position:
+      $ref: "#/KeyValuePosition"
+    confidence:
+      type: number
+      format: float
+      description: 信頼度スコア。範囲は 0〜1
+      example: 0.95
+    extractModel:
+      type: string
+      description: 実際にヒットしたモデル（Acgpt / Acgpt-VL / DF-M1）
+    configModel:
+      type: string
+      description: 設定モデル（Auto / Acgpt / Acgpt-VL / DF-M1）；既存データで未設定の場合は null
+
+StampValue:
+  type: object
+  properties:
+    angel:
+      type: integer
+      description: 角度
+    page:
+      type: integer
+      description: ページ番号
+    text:
+      type: string
+      description: 印影テキスト内容
+    type:
+      type: string
+      description: 印影タイプ
+    color:
+      type: string
+      description: 印影色
+    shape:
+      type: string
+      description: 印影形状
+    position:
+      type: array
+      description: 位置情報
+      items:
+        type: integer
+        example: 1
+
+HandWritingValue:
+  type: object
+  properties:
+    angel:
+      type: integer
+      description: 角度
+    page:
+      type: integer
+      description: ページ番号
+    text:
+      type: string
+      description: 手書きテキスト内容
+    position:
+      $ref: "#/KeyValuePosition"
+
+KeyValuePosition:
+  description: フィールド値の位置。フィールド値はページや行をまたぐ場合があるため、配列として表示されます。
+  type: array
+  items:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: フィールドが存在するページ。pages 配列のインデックスです
+      vertices:
+        type: array
+        description: フィールド値の外接四角形座標。画像の左上を原点とし、配列値は [左上 x, 左上 y, 右上 x, 右上 y, 右下 x, 右下 y, 左下 x, 左下 y] です
+        items:
+          type: integer
+        minItems: 8
+        maxItems: 8
+
+Document:
+  type: object
+  properties:
+    pages:
+      type: array
+      items:
+        type: object
+        properties:
+          angle:
+            type: integer
+            description: ページ回転角度
+          width:
+            type: integer
+            description: ページ幅
+          height:
+            type: integer
+            description: ページ高さ
+          lines:
+            description: ページテキスト行配列
+            type: array
+            items:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: 行テキスト
+                position:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 8
+                  maxItems: 8
+                charPositions:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: integer
+                    minItems: 8
+                    maxItems: 8
+
+TaskCropResult:
+  type: object
+  properties:
+    page:
+      type: integer
+      description: 元ファイルのページインデックス。0 は元ファイルの最初のページを表します
+    image角度:
+      type: string
+      description: クロップ画像の角度情報
+
+CommonFieldDetailRespVO:
+  type: object
+  properties:
+    key:
+      type: string
+      description: フィールドキー
+    identifier:
+      type: string
+      description: 識別子（エクスポート時のフィールド名由来）
+    value:
+      type: string
+      description: フィールド値
+    textInLines:
+      deprecated: true
+      type: array
+      description: |
+        **廃止済み**。代わりに position フィールドを使用してください
+        フィールド座標
+      items:
+        $ref: '#/TextInLines'
+    position:
+      $ref: "#/KeyValuePosition"
+    index:
+      type: integer
+      description: インデックス
+    confidence:
+      type: number
+      format: float
+      description: 信頼度スコア。範囲は 0〜1
+      example: 0.95
+
+SubFileDetailInfo:
+  type: object
+  properties:
+    id:
+      type: string
+      description: ファイル ID
+      example: 202412190001
+    task_id:
+      type: string
+      description: タスク ID
+      example: 202412190001
+    task_detail_url:
+      type: string
+      description: ファイルサブタスク詳細ページ URL
+    task_type:
+      $ref: '#/TaskType'
+    parent_task_id:
+      type: string
+      description: 親タスク ID（0 でない場合に有効）
+      example: 202412190001
+    batch_number:
+      type: string
+      description: バッチ番号
+      example: 202412190001
+    name:
+      type: string
+      description: ファイル名
+      example: invoice.pdf
+    format:
+      type: string
+      description: ファイル形式
+    recognition_status:
+      $ref: './common.yaml#/RecognitionStatus'
+    verification_status:
+      $ref: './common.yaml#/VerificationStatus'
+    category:
+      type: string
+      description: ファイルカテゴリ
+      example: invoice
+    pages:
+      $ref: '#/PagesInfo'
+    data:
+      type: object
+      description: 処理結果
+      properties:
+        fields:
+          description: フィールドリスト
+          type: array
+          items:
+            $ref: '#/FieldRespKeyValue'
+          example:
+            - key: インボイスコード
+              identifier: インボイスコード識別子
+              value: "3100231130"
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - key: インボイス番号
+              identifier: インボイス番号識別子
+              value: "28737000"
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        items:
+          description: テーブルデータリスト
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/KeyValue'
+          example:
+            - - key: 商品・サービス名
+                value: ＊Electronic Computer＊Microcomputer Host
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              - key: 仕様モデル
+                value: DMS-SC68
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - - key: 商品・サービス名
+                value: ＊Mechanical Computer＊Supercomputer Host
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+              - key: 仕様モデル
+                value: AN/FSQ-7
+                position:
+                  - page: 0
+                    vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        tables:
+          description: 完全なテーブルデータリスト（システムテーブルと手動設定テーブルを含む）
+          type: array
+          items:
+            type: object
+            properties:
+              tableName:
+                description: テーブル名
+                type: string
+                example: table1
+              tableType:
+                description: |
+                  テーブルタイプ。0: システム設定、1: 手動追加。
+                type: string
+                example: 0
+              extractModel:
+                description: テーブル単位の実際にヒットしたモデル（Acgpt / Acgpt-VL / DF-M1）
+                type: string
+              configModel:
+                description: テーブル単位の設定モデル（Auto / Acgpt / Acgpt-VL / DF-M1）；既存データで未設定の場合は null
+                type: string
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    $ref: '#/CommonFieldDetailRespVO'
+        stamps:
+          description: 印影情報
+          type: array
+          items:
+            $ref: '#/StampValue'
+          example:
+            - angel: 0
+              page: 0
+              text: 全国統一インボイス監督印
+              type: Other
+              color: Red
+              shape: Oval Seal
+              position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - angel: 0
+              page: 0
+              text: 税務局印
+              type: Other
+              color: Red
+              shape: Oval Seal
+              position: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        handwritings:
+          description: 手書き情報
+          type: array
+          items:
+            $ref: '#/HandWritingValue'
+          example:
+            - angel: 0
+              page: 0
+              text: 3月1日
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+            - angel: 0
+              page: 0
+              text: 山田太郎
+              position:
+                - page: 0
+                  vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        invoiceVerifyResult:
+          description: インボイス検証結果
+          type: object
+          properties:
+            invoiceVerifyStatus:
+              type: integer
+              description: |
+                インボイス検証に成功したかどうか（0: いいえ、1: はい、null: 未検証）
+              example: 0
+            invoiceVerifyErrorCode:
+              type: integer
+              description: インボイス検証エラーコード
+              example: 0
+            invoiceVerifyCanRetry:
+              type: integer
+              description: |
+                インボイス検証を再試行/開始できるかどうか（0: いいえ、1: はい）
+              example: 0
+            invoiceVerifyFailMsg:
+              type: string
+              description: インボイス検証失敗理由
+              example: 1日の上限を超過しました
+    document:
+      $ref: '#/Document'
+    from_parent_position_list:
+      type: array
+      description: 元ファイル内のクロップ結果の座標位置
+      items:
+        type: integer
+        description: 位置情報
+        example: 1
+    crop_info:
+      $ref: '#/TaskCropResult'
+
+TextInLines:
+  type: object
+  properties:
+    angle:
+      type: string
+      description: 角度
+      example: 0
+    pos:
+      type: array
+      description: 座標
+      items:
+        type: integer
+        description: 座標
+        example: 1
+    page:
+      type: integer
+      description: ページ番号
+      example: 1
+    text:
+      type: string
+      description: テキスト
+      example: テキスト内容
+    char_pos:
+      type: array
+      description: 文字座標
+      items:
+        type: array
+        description: 文字座標
+        items:
+          type: integer
+          description: 文字座標
+          example: 1
+  description: フィールド座標
+
+TaskType:
+  type: integer
+  description: |
+    タスクタイプ
+    - 0: **ファイル分割サブタスク**: 「ファイル分割」スイッチを有効にしたファイルタスクが正常に実行されると、そのファイルバッチタスク内のファイル分割操作で生成されたサブタスクは分割サブタスクとなり、ファイルカテゴリ配下の実際のファイルセット数に応じて分割されます
+    - 1: **通常タスク**: 「ファイル分割」および「複数画像クロップ」スイッチが有効でないファイルタスク
+    - 2: **親タスク**: 「ファイル分割」または「複数画像クロップ」スイッチを有効にしたファイルタスクの実行後、そのファイルバッチタスク内の各ファイルは親タスクになります
+    - 3: **クロップサブタスク**: 「複数画像クロップ」スイッチを有効にしたファイルタスクが正常に実行されると、そのファイルバッチタスク内の複数画像クロップ操作で生成されたサブタスクはクロップサブタスクとなり、ファイルカテゴリ配下の実際のクロップ結果数に応じて分割されます
+  example: 1
+
+PagesInfo:
+  type: array
+  description: |
+    ファイルの各ページをレンダリングするためのデータ。data.fields の page および position フィールドと組み合わせることで、ページ上のフィールド位置を正確に描画できます。
+  items:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: ページ番号。0 から開始
+        example: 1
+      angle:
+        type: integer
+        description: 回転角度
+        enum:
+          - 0
+          - 90
+          - 180
+          - 270
+      width:
+        type: integer
+        description: 補正後のページ幅
+        example: 1024
+      height:
+        type: integer
+        description: 補正後のページ高さ
+        example: 1024
+      dpi:
+        type: integer
+        description: PDF を画像に変換する際の解像度。PDF 以外のファイルでは、この値は 0 です。
+        example: 144
+
+DocumentParserParam:
+  type: object
+  properties:
+    formula_level:
+      type: integer
+      description: "数式認識レベル（0: 表示数式とインライン数式を認識、1: 表示数式のみ認識、2: 数式を認識しない）"
+      example: 0
+    apply_merge:
+      type: integer
+      description: "ページをまたぐ段落とテーブルを結合（0: いいえ、1: はい）"
+      example: 1
+    table_text_split_mode:
+      type: integer
+      description: "テーブル罫線と交差するテキストブロックを分割（0: いいえ、1: はい）"
+      example: 0
+    crop_dewarp:
+      type: integer
+      description: "クロップと歪み補正（0: いいえ、1: はい）"
+      example: 0
+    remove_watermark:
+      type: integer
+      description: "透かし除去（0: いいえ、1: はい）"
+      example: 0
+    dpi:
+      type: integer
+      description: "ファイル解像度（144: デフォルト、216: 高精度）"
+      example: 144
+      enum:
+        - 144
+        - 216
+    parse_mode:
+      type: string
+      description: |
+        解析モード
+        - `auto`: 自動（デフォルト）
+        - `scan`: スキャン文書モード
+        - `vlm`: VLM モード
+      example: auto
+      enum:
+        - auto
+        - scan
+        - vlm
+    pdf_pwd:
+      type: string
+      description: 暗号化 PDF ファイルを復号するための PDF パスワード
+
+TokenResult:
+  type: object
+  properties:
+    result:
+      type: object
+      properties:
+        token:
+          type: string
+          description: iframe シナリオで使用する有効なトークン
+          example: abcd
+        expiry:
+          type: integer
+          description: "有効期限（エポックタイムスタンプ形式、単位: 秒）"
+          example: 1700000000

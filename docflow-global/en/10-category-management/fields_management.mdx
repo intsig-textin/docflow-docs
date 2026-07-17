@@ -113,7 +113,7 @@ else:
 
 ## Add Field
 
-Add a field under a specified file category, supporting both regular fields and table fields:
+Add field(s) under a specified file category, supporting both regular fields and table fields:
 
 ### Add Regular Field
 
@@ -127,15 +127,19 @@ curl -X POST \
   -d '{
     "workspace_id": "<your-workspace-id>",
     "category_id": "<category-id>",
-    "name": "Invoice Number",
-    "description": "Invoice number description",
-    "prompt": "Please extract the invoice number",
-    "use_prompt": true,
-    "alias": ["Invoice No", "Number"],
-    "identity": "invoice_number",
-    "multi_value": false
+    "fields": [
+      {
+        "name": "Invoice Number",
+        "description": "Invoice number description",
+        "prompt": "Please extract the invoice number",
+        "use_prompt": true,
+        "alias": ["Invoice No", "Number"],
+        "identity": "invoice_number",
+        "multi_value": false
+      }
+    ]
   }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/add"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/batch_add"
 ```
 
 ```python Python icon=python expandable lines
@@ -147,18 +151,22 @@ workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/fields/add"
+url = "/api/app-api/sip/platform/v2/category/fields/batch_add"
 
 payload = {
     "workspace_id": workspace_id,
     "category_id": category_id,
-    "name": "Invoice Number",
-    "description": "Invoice number description",
-    "prompt": "Please extract the invoice number",
-    "use_prompt": True,
-    "alias": ["Invoice No", "Number"],
-    "identity": "invoice_number",
-    "multi_value": False
+    "fields": [
+        {
+            "name": "Invoice Number",
+            "description": "Invoice number description",
+            "prompt": "Please extract the invoice number",
+            "use_prompt": True,
+            "alias": ["Invoice No", "Number"],
+            "identity": "invoice_number",
+            "multi_value": False
+        }
+    ]
 }
 
 resp = requests.post(
@@ -183,7 +191,7 @@ else:
 
 ### Add Table Field
 
-To add a field under a table, pass the `table_id` parameter:
+To add field(s) under a table, pass the `table_id` parameter:
 
 <CodeGroup>
 
@@ -196,10 +204,14 @@ curl -X POST \
     "workspace_id": "<your-workspace-id>",
     "category_id": "<category-id>",
     "table_id": "<table-id>",
-    "name": "Unit Price",
-    "description": "Item unit price"
+    "fields": [
+      {
+        "name": "Unit Price",
+        "description": "Item unit price"
+      }
+    ]
   }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/add"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/batch_add"
 ```
 
 ```python Python icon=python expandable lines
@@ -212,14 +224,18 @@ category_id = "<category-id>"
 table_id = "<table-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/fields/add"
+url = "/api/app-api/sip/platform/v2/category/fields/batch_add"
 
 payload = {
     "workspace_id": workspace_id,
     "category_id": category_id,
     "table_id": table_id,  # Specify table ID to create table field
-    "name": "Unit Price",
-    "description": "Item unit price"
+    "fields": [
+        {
+            "name": "Unit Price",
+            "description": "Item unit price"
+        }
+    ]
 }
 
 resp = requests.post(
@@ -246,15 +262,16 @@ else:
 - `workspace_id` (required): Workspace ID
 - `category_id` (required): File category ID
 - `table_id` (optional): Table ID. Not provided or empty: create regular field; Provided: create table field
-- `name` (required): Field name
-- `description` (optional): Field description
-- `prompt` (optional): Semantic extraction prompt
-- `use_prompt` (optional): Whether to use semantic prompt
-- `alias` (optional): Array of field aliases
-- `identity` (optional): Export field name
-- `multi_value` (optional): Whether to extract multiple values
-- `duplicate_value_distinct` (optional): Whether to deduplicate values (only effective when multi_value is true)
-- `transform_settings` (optional): Transformation configuration
+- `fields` (required): Array of field objects, each containing:
+  - `name` (required): Field name
+  - `description` (optional): Field description
+  - `prompt` (optional): Semantic extraction prompt
+  - `use_prompt` (optional): Whether to use semantic prompt
+  - `alias` (optional): Array of field aliases
+  - `identity` (optional): Export field name
+  - `multi_value` (optional): Whether to extract multiple values
+  - `duplicate_value_distinct` (optional): Whether to deduplicate values (only effective when multi_value is true)
+  - `transform_settings` (optional): Transformation configuration
 
 **Response Example:**
 
@@ -270,7 +287,7 @@ else:
 
 ## Update Field
 
-Update information for a specified field, supporting both regular fields and table fields:
+Update information for specified field(s), supporting both regular fields and table fields:
 
 <CodeGroup>
 
@@ -282,12 +299,16 @@ curl -X POST \
   -d '{
     "workspace_id": "<your-workspace-id>",
     "category_id": "<category-id>",
-    "field_id": "<field-id>",
-    "name": "Updated Field Name",
-    "description": "Updated description",
-    "prompt": "Updated prompt"
+    "fields": [
+      {
+        "field_id": "<field-id>",
+        "name": "Updated Field Name",
+        "description": "Updated description",
+        "prompt": "Updated prompt"
+      }
+    ]
   }' \
-  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/update"
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/batch_update"
 ```
 
 ```python Python icon=python expandable lines
@@ -297,18 +318,21 @@ ti_app_id = "<your-app-id>"
 ti_secret_code = "<your-secret-code>"
 workspace_id = "<your-workspace-id>"
 category_id = "<category-id>"
-field_id = "<field-id>"
 
 host = "https://docflow.textin.ai"
-url = "/api/app-api/sip/platform/v2/category/fields/update"
+url = "/api/app-api/sip/platform/v2/category/fields/batch_update"
 
 payload = {
     "workspace_id": workspace_id,
     "category_id": category_id,
-    "field_id": field_id,
-    "name": "Updated Field Name",
-    "description": "Updated description",
-    "prompt": "Updated prompt"
+    "fields": [
+        {
+            "field_id": "<field-id>",
+            "name": "Updated Field Name",
+            "description": "Updated description",
+            "prompt": "Updated prompt"
+        }
+    ]
 }
 
 resp = requests.post(
@@ -333,12 +357,13 @@ else:
 **Request Parameters:**
 - `workspace_id` (required): Workspace ID
 - `category_id` (required): File category ID
-- `field_id` (required): Field ID
-- `table_id` (optional): Table ID. Can be omitted for regular fields; required for table fields to specify which table it belongs to
-- Other parameters same as field creation
+- `table_id` (optional): Table ID. Can be omitted for regular fields; required for table fields to specify which table they belong to
+- `fields` (required): Array of field objects, each containing:
+  - `field_id` (required): Field ID
+  - Other parameters same as field creation
 
 <Note>
-  When updating table fields, pass the `table_id` parameter to specify which table the field belongs to.
+  When updating table fields, pass the `table_id` parameter to specify which table the fields belong to.
 </Note>
 
 ## Delete Field

@@ -1,0 +1,106 @@
+---
+title: "クイックスタート"
+description: "API で文書分割機能をすばやく利用するための例"
+---
+
+## 機能概要
+
+文書分割は、複数ページのファイルに複数種類の文書が含まれる場合や、1 ページに複数のチケットが貼り付けられている場合に対応できます。
+
+文書分割には、**ファイル分割**（split）と **複数画像クロップ**（crop）の 2 種類の機能があります。
+
+### ファイル分割
+
+長い文書を単一ページまたは子文書に自動分割します。
+
+利用例:
+
+1. 医療保険請求: 1〜2 ページが保険証券、3〜5 ページが請求書、6〜10 ページが入院記録である複数ページファイル
+2. 物流輸出入: 1 ページ目が輸出通関申告書、2 ページ目が請求書、3 ページ目が梱包明細書、4 ページ目が売買契約書であるファイル
+
+> 📖 **詳細ドキュメント**: より多くの利用例、API パラメータ、サンプルコードについては [ファイル分割の詳細](./split) を参照してください。
+
+### 複数画像クロップ
+
+1 ページに複数の独立したチケットが含まれる場合に、切り出しに使用します。
+
+利用例:
+
+1. 経費精算で領収書を貼り付ける場面: A4 用紙に鉄道チケット、航空旅程表、複数のタクシー領収書が並べて貼られている場合
+
+> 📖 **詳細ドキュメント**: より多くの利用例、API パラメータ、サンプルコードについては [複数画像クロップの詳細](./crop) を参照してください。
+
+ファイル分割と複数画像クロップにより、ファイル内の異なるカテゴリを分離できます。これにより、後続の抽出処理で各種ファイルからより正確に情報を抽出できます。
+
+## 機能有効化パラメータ
+
+ファイル分割と複数画像クロップはデフォルトでは無効です。\
+アップロード API では、次の 2 つのパラメータでファイル分割とクロップ機能を有効にするかどうかを制御します。
+
+- `split_flag`: ファイル分割を実行するかどうか。デフォルトは `false`
+- `crop_flag`: 複数画像クロップを実行するかどうか。デフォルトは `false`
+
+ファイル分割と複数画像クロップは組み合わせて使用できます。たとえば、ファイル分割のみ、複数画像クロップのみ、または両方を同時に有効化できます。
+
+リクエスト例:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/long.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&split_flag=true"
+```
+
+</CodeGroup>
+
+## 分割結果を確認
+
+`file/fetch` で確認します。レスポンス内の `child_files` フィールドに子タスク情報が含まれます。
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+返却構造の主なフィールド:
+
+- `files[].child_files[]`: 子タスクリスト（分割またはクロップ時に存在）
+
+`files[].child_files[].task_type` は分割タスクの種類を表します。
+
+- `task_type=0`: ファイル分割によって生成された子ファイル
+- `task_type=3`: 複数画像クロップによって生成された子ファイル
+
+複数画像クロップでファイルが生成された場合、`child_files[].from_parent_position_list` は元画像内のクロップ結果の座標を表します。座標表現については [座標系](../03-parse/coordinate) を参照してください。
+
+### 返却例（抜粋）
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "parent-001",
+        "name": "multi-photo.pdf",
+        "child_files": [
+          {
+            "id": "child-001",
+            "task_id": "t-1",
+            "task_type": 0,
+            "name": "multi-photo.pdf#1",
+            "format": "pdf",
+            "category": "invoice",
+            "from_parent_position_list": [12, 30, 420, 30, 420, 320, 12, 320]
+          }
+        ],
+      }
+    ]
+  }
+}
+```

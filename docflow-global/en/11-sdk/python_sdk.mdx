@@ -1,0 +1,677 @@
+# Python SDK
+
+> Quickly integrate Docflow document workflow management capabilities with docflow-sdk Python SDK
+
+`docflow-sdk` is the official Python SDK for TextIn Docflow, providing workspace management, document classification, intelligent review, type-safe response models, and comprehensive error handling.
+
+* PyPI: [docflow-sdk](https://pypi.org/project/docflow-sdk/)
+* GitHub: [docflow-python-sdk](https://github.com/intsig-textin/docflow-python-sdk)
+
+## Installation
+
+<CodeGroup>
+  ```bash pip theme={null}
+  pip install docflow-sdk
+  ```
+
+  ```bash Install from Source theme={null}
+  git clone https://github.com/intsig-textin/docflow-python-sdk.git
+  cd docflow-python-sdk
+  pip install -e .
+  ```
+</CodeGroup>
+
+**System Requirements:** Python >= 3.8
+
+## Authentication and Initialization
+
+The SDK supports multiple authentication methods (priority: constructor parameters > environment variables > .env file):
+
+<CodeGroup>
+  ```python Environment Variables (Recommended) theme={null}
+  import os
+  os.environ["DOCFLOW_APP_ID"] = "your-app-id"
+  os.environ["DOCFLOW_SECRET_CODE"] = "your-secret-code"
+  os.environ["DOCFLOW_BASE_URL"] = "https://docflow.textin.ai/api"
+
+  from docflow import DocflowClient
+  client = DocflowClient.from_env()
+  ```
+
+  ```python Direct Parameters theme={null}
+  from docflow import DocflowClient
+  client = DocflowClient(
+      app_id="your-app-id",
+      secret_code="your-secret-code",
+      base_url="https://docflow.textin.ai/api",
+  )
+  ```
+
+  ```python .env File theme={null}
+  # Install dotenv: pip install python-dotenv
+  # .env file contents:
+  # DOCFLOW_APP_ID=your-app-id
+  # DOCFLOW_SECRET_CODE=your-secret-code
+  # DOCFLOW_BASE_URL=https://docflow.textin.ai/api
+
+  from dotenv import load_dotenv
+  from docflow import DocflowClient
+  
+  load_dotenv()
+  client = DocflowClient.from_env()
+  ```
+</CodeGroup>
+
+<Tip>
+  Using environment variables is recommended to avoid hardcoding credentials in your code.
+</Tip>
+
+## API Overview
+
+| Resource                      | Description                | Key Methods                                  |
+| ----------------------------- | -------------------------- | -------------------------------------------- |
+| `client.workspace`            | Workspace Management       | `create()`, `list()`, `get()`, `update()`, `delete()`, `iter()` |
+| `client.category`             | Category Management        | `create()`, `list()`, `get()`, `update()`, `delete()`, `iter()` |
+| `client.category.fields`      | Category Field Management  | `batch_add()`, `list()`, `batch_update()`, `delete()` |
+| `client.category.tables`      | Category Table Management  | `batch_add()`, `list()`, `batch_update()`, `delete()` |
+| `client.category.samples`     | Category Sample Management | `batch_upload()`, `list()`, `download()`, `delete()` |
+| `client.file`                 | File Management & Recognition | `upload()`, `fetch()`, `download()`, `delete()` |
+| `client.review`               | Intelligent Review Rule Management | `create_repo()`, `create_group()`, `create_rule()`, `submit_task()` |
+
+## Workspace Management
+
+Workspaces are the top-level organizational unit in Docflow, used to isolate document processing workflows for different business scenarios.
+
+### Create Workspace
+
+```python theme={null}
+from docflow import DocflowClient, AuthScope
+
+client = DocflowClient.from_env()
+
+workspace = client.workspace.create(
+    name="Expense Reimbursement Space",
+    auth_scope=AuthScope.PUBLIC,  # Public permission
+    description="Process company expense reimbursement documents"
+)
+
+print(f"Workspace ID: {workspace.workspace_id}")
+```
+
+### List Workspaces
+
+```python theme={null}
+# Paginated retrieval
+workspaces = client.workspace.list(page=1, page_size=20)
+
+for ws in workspaces.workspaces:
+    print(f"{ws.workspace_id}: {ws.name}")
+
+# Auto-pagination with iterator
+for workspace in client.workspace.iter():
+    print(f"{workspace.workspace_id}: {workspace.name}")
+```
+
+### Method Chaining (Recommended)
+
+Simplify code through context binding, reducing repetitive parameter passing:
+
+```python theme={null}
+# Bind workspace
+ws = client.workspace("123")
+
+# Get workspace details
+detail = ws.get()
+
+# Update workspace
+ws.update(
+    name="New Workspace Name",
+    auth_scope=AuthScope.PRIVATE
+)
+
+# Method chaining: operate on categories
+cat = ws.category("456")
+cat.fields.batch_add(fields=[{"name": "Invoice Number"}])
+cat.tables.batch_add(tables=[{"name": "Product Details Table"}])
+```
+
+## Document Category Management
+
+Categories define structured fields and extraction rules for documents.
+
+### Create Category (with Sample Files)
+
+```python theme={null}
+from docflow import ExtractModel, FieldType
+
+# Define field configuration
+fields = [
+    {
+        "name": "Invoice Number",
+        "description": "Unique invoice identifier"
+    },
+    {
+        "name": "Invoice Date",
+        "transform_settings": {
+            "type": FieldType.DATETIME.value,
+            "datetime_settings": {
+                "format": "yyyy-MM-dd"
+            }
+        }
+    },
+    {
+        "name": "Invoice Type",
+        "transform_settings": {
+            "type": FieldType.ENUMERATE.value,
+            "enumerate_settings": {
+                "items": ["VAT Special Invoice", "VAT General Invoice"]
+            }
+        }
+    }
+]
+
+# Create category
+category = client.category.create(
+    workspace_id="123",
+    name="VAT Invoice",
+    extract_model=ExtractModel.Model_1,  # Use Model 1
+    sample_files=[
+        "/path/to/invoice_sample1.pdf",
+        "/path/to/invoice_sample2.pdf"
+    ],
+    fields=fields,
+    category_prompt="VAT invoice containing invoice information and product details"
+)
+
+print(f"Category ID: {category.category_id}")
+
+# After creating category, add tables
+cat = client.workspace("123").category(category.category_id)
+result = cat.tables.batch_add(tables=[{
+    "name": "Product Details Table",
+    "prompt": "Extract product name, specification, quantity, unit price, amount"
+}])
+print(f"Table ID: {result.tables[0].table_id}")
+```
+
+### Field Management
+
+```python theme={null}
+# Bind category context
+cat = client.workspace("123").category("456")
+
+# Batch add fields
+cat.fields.batch_add(fields=[
+    {"name": "Tax Rate", "description": "Tax rate percentage"}
+])
+
+# Get field list
+fields = cat.fields.list()
+for field in fields.fields:
+    print(f"{field.id}: {field.name}")
+
+# Batch update fields
+cat.fields.batch_update(fields=[
+    {"field_id": "789", "name": "Tax Rate (%)", "required": True}
+])
+
+# Delete field
+cat.fields.delete(field_ids=["789"])
+```
+
+### Table Management
+
+```python theme={null}
+# Batch add table (with column fields)
+cat.tables.batch_add(tables=[{
+    "name": "Product Details Table",
+    "prompt": "Extract product name, specification, quantity, unit price, amount",
+    "fields": [
+        {"name": "Product Name"},
+        {"name": "Quantity"},
+        {"name": "Unit Price"}
+    ]
+}])
+
+# Get table list
+tables = cat.tables.list()
+for table in tables.tables:
+    print(f"{table.table_id}: {table.name}")
+```
+
+### Sample Management
+
+```python theme={null}
+# Batch upload sample files
+cat.samples.batch_upload(files=[
+    "/path/to/invoice_sample.pdf"
+])
+
+# Get sample list
+samples = cat.samples.list()
+
+# Download sample
+cat.samples.download(
+    sample_id="789",
+    save_path="/path/to/save.pdf"
+)
+
+# Delete sample
+cat.samples.delete(sample_ids=["789"])
+```
+
+## File Processing
+
+### Upload and Recognize Files
+
+```python theme={null}
+# Upload file (recognition starts automatically)
+response = client.file.upload(
+    workspace_id="123",
+    category="VAT Invoice",  # Category name
+    file_path="/path/to/invoice.pdf"
+)
+
+batch_number = response.batch_number
+print(f"Batch Number: {batch_number}")
+```
+
+### Get Recognition Results
+
+```python theme={null}
+import time
+
+# Poll until recognition completes
+max_wait = 60
+wait_interval = 3
+elapsed = 0
+
+while elapsed < max_wait:
+    result = client.file.fetch(
+        workspace_id="123",
+        batch_number=batch_number
+    )
+    
+    if result.files and result.files[0].recognition_status == 1:
+        file_info = result.files[0]
+        print(f"Recognition Complete: {file_info.name}")
+        
+        # Access extracted field data
+        if file_info.data and 'fields' in file_info.data:
+            for field in file_info.data['fields']:
+                print(f"{field['name']}: {field['value']}")
+        
+        # Access table data
+        if file_info.data and 'items' in file_info.data:
+            for row in file_info.data['items']:
+                print(row)
+        
+        break
+    
+    time.sleep(wait_interval)
+    elapsed += wait_interval
+```
+
+## Intelligent Review
+
+Docflow provides LLM-based intelligent review capabilities, supporting single-document rule validation and cross-document review.
+
+### Create Review Rule Repository
+
+```python theme={null}
+# 1. Create rule repository
+repo = client.review.create_repo(
+    workspace_id="123",
+    name="Expense Reimbursement Review Rules"
+)
+
+# 2. Create rule group
+group = client.review.create_group(
+    workspace_id="123",
+    repo_id=repo.repo_id,
+    name="Invoice Compliance Check"
+)
+
+# 3. Create review rule
+# Get field ID mapping
+fields_response = client.category.fields.list(
+    workspace_id="123",
+    category_id="456"
+)
+field_map = {f.name: f.id for f in fields_response.fields}
+
+# Create rule: required field completeness validation
+client.review.create_rule(
+    workspace_id="123",
+    repo_id=int(repo.repo_id),
+    group_id=group.group_id,
+    name="Required Field Completeness Validation",
+    prompt='Check if "Invoice Number", "Invoice Date", "Amount" are all filled, fail review if any field is empty',
+    category_ids=["456"],
+    risk_level=10,  # High risk
+    referenced_fields=[
+        {
+            "category_id": "456",
+            "category_name": "VAT Invoice",
+            "fields": [
+                {"field_id": field_map["Invoice Number"], "field_name": "Invoice Number"},
+                {"field_id": field_map["Invoice Date"], "field_name": "Invoice Date"},
+                {"field_id": field_map["Amount"], "field_name": "Amount"}
+            ],
+            "tables": []
+        }
+    ]
+)
+```
+
+### Cross-Document Review
+
+```python theme={null}
+# Create cross-document rule: verify invoice amount matches payment amount
+client.review.create_rule(
+    workspace_id="123",
+    repo_id=int(repo.repo_id),
+    group_id=group.group_id,
+    name="Cross-Document Amount Matching",
+    prompt="Verify invoice amount matches payment record transaction amount, allow ±0.1 margin of error",
+    category_ids=["456", "789"],  # Multiple categories
+    risk_level=10,
+    referenced_fields=[
+        {
+            "category_id": "456",
+            "category_name": "VAT Invoice",
+            "fields": [
+                {"field_id": invoice_field_map["Amount"], "field_name": "Amount"}
+            ],
+            "tables": []
+        },
+        {
+            "category_id": "789",
+            "category_name": "Payment Record",
+            "fields": [
+                {"field_id": payment_field_map["Transaction Amount"], "field_name": "Transaction Amount"}
+            ],
+            "tables": []
+        }
+    ]
+)
+```
+
+### Submit Review Task
+
+```python theme={null}
+# Submit review task
+review_task = client.review.submit_task(
+    workspace_id="123",
+    name="March 2024 Expense Reimbursement Review",
+    repo_id=repo.repo_id,
+    extract_task_ids=["task_001", "task_002", "task_003"]
+)
+
+task_id = review_task['task_id']
+print(f"Review Task ID: {task_id}")
+```
+
+### Get Review Results
+
+```python theme={null}
+import time
+
+# Poll until review completes
+max_wait = 120
+wait_interval = 5
+elapsed = 0
+
+while elapsed < max_wait:
+    result = client.review.get_task_result(
+        workspace_id="123",
+        task_id=task_id
+    )
+    
+    status = result.get('status')
+    # Status: 0=Pending, 1=Passed, 2=Failed, 4=Not Passed, 7=Recognition Failed
+    if status in (1, 2, 4, 7):
+        print("Review Complete")
+        
+        # Output review results
+        stats = result.get('statistics', {})
+        print(f"Rules Passed: {stats.get('pass_count', 0)}")
+        print(f"Rules Failed: {stats.get('failure_count', 0)}")
+        
+        # Detailed review results
+        for group in result.get('groups', []):
+            print(f"\n【{group['group_name']}】")
+            for task in group.get('review_tasks', []):
+                result_icon = "✓" if task['review_result'] == 0 else "✗"
+                print(f"  {result_icon} {task['rule_name']}")
+                print(f"    {task['reasoning']}")
+        
+        break
+    
+    time.sleep(wait_interval)
+    elapsed += wait_interval
+```
+
+## Enumeration Types
+
+The SDK provides complete enumeration type definitions to avoid parameter errors:
+
+```python theme={null}
+from docflow import (
+    ExtractModel,      # Extraction model type
+    EnabledStatus,     # Enabled status (for queries)
+    EnabledFlag,       # Enabled flag (for updates)
+    AuthScope,         # Permission scope
+    FieldType,         # Field type
+    MismatchAction,    # Mismatch handling mode
+    RecognitionStatus, # Recognition status
+)
+
+# ExtractModel - Extraction model
+ExtractModel.Model_1  # Fast speed, stable extraction results
+ExtractModel.Model_2  # Suitable for complex document understanding
+ExtractModel.Model_3  # Multimodal, suitable for simple extraction
+
+# AuthScope - Permission scope
+AuthScope.PRIVATE  # 0 - Private permission
+AuthScope.PUBLIC   # 1 - Public permission
+
+# EnabledStatus - Enabled status (for queries)
+EnabledStatus.ALL       # "all" - All
+EnabledStatus.DISABLED  # "0"   - Disabled
+EnabledStatus.ENABLED   # "1"   - Enabled
+
+# EnabledFlag - Enabled flag (for updates)
+EnabledFlag.DISABLED  # 0 - Disabled
+EnabledFlag.ENABLED   # 1 - Enabled
+
+# FieldType - Field transformation type
+FieldType.DATETIME   # "datetime"   - Date time
+FieldType.ENUMERATE  # "enumerate"  - Enumeration
+FieldType.REGEX      # "regex"      - Regular expression
+
+# RecognitionStatus - Recognition status
+RecognitionStatus.PENDING    # 0 - Pending recognition
+RecognitionStatus.SUCCESS    # 1 - Recognition successful
+RecognitionStatus.FAILED     # 2 - Recognition failed
+```
+
+## Auto-Pagination Iterator
+
+Use iterators to automatically handle pagination without manual looping:
+
+```python theme={null}
+# Workspace iterator
+for workspace in client.workspace.iter():
+    print(f"{workspace.workspace_id}: {workspace.name}")
+    if some_condition:
+        break  # Can break anytime
+
+# Category iterator
+for category in client.category.iter(workspace_id="123"):
+    print(f"{category.category_id}: {category.name}")
+
+# Limit maximum pages
+for category in client.category.iter(workspace_id="123", max_pages=5):
+    print(category.name)
+
+# Convert to list (get all data)
+all_workspaces = list(client.workspace.iter())
+```
+
+## Error Handling
+
+The SDK provides comprehensive error classification for precise handling of different exception scenarios.
+
+### Error Types
+
+| Error Class               | Description                                    |
+| ------------------------- | ---------------------------------------------- |
+| `DocflowException`        | Base error class, catches all SDK errors       |
+| `ValidationError`         | Parameter validation failure                    |
+| `AuthenticationError`     | Authentication failure (app-id or secret-code error) |
+| `PermissionDeniedError`   | Insufficient permissions                        |
+| `ResourceNotFoundError`   | Resource does not exist                         |
+| `APIError`                | API call failure (HTTP 4xx/5xx)                |
+| `NetworkError`            | Network connection error                        |
+
+### Error Handling Example
+
+```python theme={null}
+from docflow.exceptions import (
+    DocflowException,
+    AuthenticationError,
+    ValidationError,
+    ResourceNotFoundError,
+    APIError,
+)
+
+try:
+    workspace = client.workspace.get(workspace_id="123")
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+except ResourceNotFoundError as e:
+    print(f"Workspace not found: {e.message}")
+except ValidationError as e:
+    print(f"Validation failed: {e.message}")
+except APIError as e:
+    print(f"API error [HTTP {e.status_code}]: {e.message}")
+except DocflowException as e:
+    print(f"SDK error: {e.message}")
+```
+
+## Internationalization (i18n)
+
+The SDK supports multilingual error messages:
+
+```python theme={null}
+from docflow import DocflowClient, set_language
+
+# Use English
+set_language('en_US')
+client = DocflowClient.from_env()
+
+# Use Chinese (default)
+set_language('zh_CN')
+
+# Dynamically switch language
+client.set_language('en_US')
+
+# Get current language
+current_lang = client.get_language()  # 'en_US' or 'zh_CN'
+```
+
+## Advanced Configuration
+
+### Timeout and Retry
+
+```python theme={null}
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    timeout=60,           # Request timeout (seconds), default 30
+    max_retries=5,        # Maximum retry attempts, default 3
+    retry_backoff_factor=1.0,  # Backoff factor, default 1.0
+)
+```
+
+### Custom Retry Configuration
+
+```python theme={null}
+# Custom retry status codes
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    retry_status_codes=[429, 503],  # Only retry 429 and 503
+)
+
+# Custom retry methods
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    retry_methods=["GET"],  # Only allow GET request retry
+)
+
+# Disable retry
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    max_retries=0  # Disable retry
+)
+```
+
+### Custom API Address
+
+```python theme={null}
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    base_url="https://custom-api.example.com"
+)
+```
+
+### Resource Management
+
+Use context manager to automatically close connections:
+
+```python theme={null}
+with DocflowClient.from_env() as client:
+    workspaces = client.workspace.list()
+    # Automatically closes connection on exit
+```
+
+## Debug Logging
+
+Enable DEBUG level logging to view request details:
+
+```python theme={null}
+import logging
+logging.getLogger("docflow").setLevel(logging.DEBUG)
+```
+
+## Complete Examples
+
+See the [examples directory](https://github.com/intsig-textin/docflow-python-sdk/tree/master/examples) for complete usage examples:
+
+- **Quick Start**: [quick_start.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/quick_start.py) - End-to-end expense reimbursement workflow
+- **Complete Workflow**: [complete_workflow_example.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/complete_workflow_example.py) - Complete invoice processing workflow
+- **File Processing**: [file_examples.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/file_examples.py) - File upload, recognition, download examples
+- **Review Rules**: [review_examples.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/review_examples.py) - Review rule configuration examples
+
+## FAQ
+
+| Issue                     | Solution                                                    |
+| ------------------------- | ----------------------------------------------------------- |
+| `AuthenticationError`     | Check if `DOCFLOW_APP_ID` and `DOCFLOW_SECRET_CODE` are correct |
+| `ResourceNotFoundError`   | Verify workspace ID/category ID exists and you have access permission |
+| `ValidationError`         | Check parameter format and value range (e.g., workspace name max 50 characters) |
+| Empty recognition results | Confirm category configuration is correct (fields, tables, sample files), wait for recognition to complete before fetching results |
+| Review task failure       | Check rule configuration (field_id in referenced_fields must be correct) and extract_task_ids validity |
+
+## Related Links
+
+* [GitHub Repository](https://github.com/intsig-textin/docflow-python-sdk)
+* [PyPI Homepage](https://pypi.org/project/docflow-sdk/)
+* [Quick Start Guide](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/QUICKSTART.md)
+* [Complete API Documentation](https://github.com/intsig-textin/docflow-python-sdk/blob/master/README.md)
+

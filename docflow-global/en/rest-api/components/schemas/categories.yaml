@@ -22,15 +22,17 @@ Category:
       type: string
       description: |
         Extraction model
-        - Model 1: Fast speed with stable extraction results
-        - Model 2: Suitable for complex document understanding
-        - Model 3: VLM, suitable for simple extraction
+        - Auto: Automatically matches the extraction model
+        - Acgpt: Fast speed with stable extraction results
+        - Acgpt-VL: VLM, suitable for simple extraction (≤10 pages)
+        - DF-M1: Suitable for complex document understanding
         - mixed: Only in responses, indicates different models are used across fields/tables in this category
-      example: "Model 1"
+      example: "Acgpt"
       enum:
-        - Model 1
-        - Model 2
-        - Model 3
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
         - mixed
     enabled:
       $ref: '#/EnabledStatus'
@@ -57,12 +59,14 @@ CategoryFieldConfig:
       description: Whether to use semantic prompt
     alias:
       type: array
-      description: Field aliases
+      description: "Field aliases. On update: omit=no change, empty array []=clear aliases, non-empty array=override"
       items:
         type: string
+      example: ["Invoice No.", "Bill Number"]
     identity:
       type: string
-      description: Export field name
+      description: "Export field name. On update: omit=no change, empty string \"\"=clear, non-empty=override"
+      example: invoice_number
     multi_value:
       type: boolean
       description: Whether to enable multi-value extraction
@@ -70,58 +74,7 @@ CategoryFieldConfig:
       type: boolean
       description: Whether to deduplicate values, only effective when multi_value is true
     transform_settings:
-      type: object
-      description: Transform configuration
-      properties:
-        type:
-          type: string
-          description: Transform type
-          enum:
-            - datetime
-            - enumerate
-            - regex
-        datetime_settings:
-          type: object
-          description: Datetime type transform configuration
-          properties:
-            format:
-              type: string
-              description: Date time format, refer to DocFlow date format guide (https://docflow.textin.ai/markdown?key=dateFormatGuide)
-              example: yyyy-MM-dd HH:mm:ss
-        enumerate_settings:
-          type: object
-          description: Enumeration type transform configuration
-          properties:
-            items:
-              type: array
-              description: List of available enumeration values
-              items:
-                type: string
-        regex_settings:
-          type: object
-          description: Regex type transform configuration
-          properties:
-            match:
-              type: string
-              description: Regex pattern for matching
-              example: ^\d{4}-\d{2}-\d{2}$
-            replace:
-              type: string
-              description: Regex pattern for replacement
-              example: $1-$2-$3
-        mismatch_action:
-          type: object
-          description: Action when field value does not match
-          properties:
-            mode:
-              type: string
-              description: Mismatch handling mode
-              enum:
-                - default
-                - warning
-            default_value:
-              type: string
-              description: Default value when mode is default
+      $ref: '#/TransformSettings'
 
 CategoryField:
   allOf:
@@ -132,6 +85,50 @@ CategoryField:
           type: string
           description: Field ID
           example: "1234567890"
+        enabled:
+          $ref: '#/EnabledStatus'
+        extract_model:
+          type: string
+          description: |
+            Field extraction model
+            - Auto: Automatically matches the extraction model
+            - Acgpt: Fast speed with stable extraction results
+            - Acgpt-VL: VLM, suitable for simple extraction (≤10 pages)
+            - DF-M1: Suitable for complex document understanding
+            - For table fields, inherits from the table model; for regular fields, uses field-level config; legacy data inferred from category config
+          example: "Acgpt"
+
+CategoryTable:
+  type: object
+  properties:
+    id:
+      type: string
+      description: Table ID
+      example: "1234567890"
+    name:
+      type: string
+      description: Table name
+      example: "Table 1"
+    description:
+      type: string
+      description: Table description
+      example: "Table description"
+    prompt:
+      type: string
+      description: Table semantic extraction prompt
+      example: "Extract item name, quantity and amount from each row"
+    collect_from_multi_table:
+      type: boolean
+      description: Merge multiple tables
+      example: true
+    extract_model:
+      type: string
+      description: Table-level extraction model (Auto/Acgpt/Acgpt-VL/DF-M1)
+      example: "Acgpt"
+    fields:
+      type: array
+      items:
+        $ref: '#/CategoryField'
 
 CategorySample:
   type: object
@@ -148,6 +145,186 @@ CategorySample:
   required:
     - sample_id
     - file_name
+
+TransformSettings:
+  type: object
+  description: Field output transform configuration. Formats the extraction result before output.
+  properties:
+    type:
+      type: string
+      description: |
+        Transform type, determines which transform rule to apply:
+        - `datetime`: Normalize the extraction result to a specified date format
+        - `enumerate`: Restrict the extraction result to one of the preset enumeration values
+        - `regex`: Match and replace the extraction result using regular expressions
+      enum:
+        - datetime
+        - enumerate
+        - regex
+    datetime_settings:
+      type: object
+      description: Datetime formatting configuration. Required when type=datetime.
+      properties:
+        format:
+          type: string
+          description: Target date format. The extraction result will be normalized to this format.
+          example: yyyy-MM-dd
+    enumerate_settings:
+      type: object
+      description: Enumeration constraint configuration. Required when type=enumerate.
+      properties:
+        items:
+          type: array
+          description: Allowed enumeration values. If the extraction result is not in this list, mismatch_action applies.
+          items:
+            type: string
+          example: ["VAT Special Invoice", "VAT General Invoice", "Electronic Invoice"]
+    regex_settings:
+      type: object
+      description: Regex transform configuration. Required when type=regex.
+      properties:
+        match:
+          type: string
+          description: Regex pattern for matching or capturing the extraction result
+          example: ^(\d{4})-(\d{2})-(\d{2})$
+        replace:
+          type: string
+          description: Replacement expression, supports $1, $2 capture group references
+          example: $1/$2/$3
+    mismatch_action:
+      type: object
+      description: How to handle extraction results that don't match the transform rule (applies to all types, optional).
+      properties:
+        mode:
+          type: string
+          description: |
+            Handling mode:
+            - `default`: Output the specified default value (requires default_value)
+            - `warning`: Keep the original extraction result, flag a warning for manual review
+          enum:
+            - default
+            - warning
+        default_value:
+          type: string
+          description: Output value when mode=default
+          example: "N/A"
+
+CategoryTableConfig:
+  type: object
+  description: Table configuration for one-stop creation (with nested fields)
+  properties:
+    name:
+      type: string
+      description: Table name
+      example: "Detail Table"
+      maxLength: 50
+    prompt:
+      type: string
+      description: Table semantic extraction prompt
+      maxLength: 200
+    collect_from_multi_table:
+      type: boolean
+      description: Merge multiple tables
+    extract_model:
+      type: string
+      description: Table-level extraction model
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+    fields:
+      type: array
+      description: Nested field list within the table
+      items:
+        $ref: '#/CategoryFieldConfig'
+  required:
+    - name
+
+CategoryFieldUpdateItem:
+  type: object
+  description: "Field update item (multi_value/duplicate_value_distinct cannot be modified via this endpoint)"
+  properties:
+    field_id:
+      type: string
+      description: Field ID
+      example: "1234567890"
+    name:
+      type: string
+      description: Field name
+    description:
+      type: string
+      description: Field description
+    prompt:
+      type: string
+      description: Semantic extraction prompt
+    use_prompt:
+      type: boolean
+      description: Whether to use semantic prompt
+    alias:
+      type: array
+      description: "Field aliases. omit=no change, empty array []=clear, non-empty=override"
+      items:
+        type: string
+      example: ["Invoice No.", "Bill Number"]
+    identity:
+      type: string
+      description: "Export field name. omit=no change, empty string \"\"=clear, non-empty=override"
+      example: invoice_number
+    multi_value:
+      type: boolean
+      description: "Whether to enable multi-value extraction. Omit=no change"
+    duplicate_value_distinct:
+      type: boolean
+      description: "Whether to deduplicate values. Only effective when multi_value is true. Omit=no change"
+    transform_settings:
+      $ref: '#/TransformSettings'
+    extract_model:
+      type: string
+      description: |
+        Field-level extraction model. Only regular fields can be set independently; table fields cannot.
+        Omit to keep existing config.
+        - Auto: Automatically matches the extraction model
+        - Acgpt: Fast speed with stable extraction results
+        - Acgpt-VL: VLM, suitable for simple extraction (≤10 pages)
+        - DF-M1: Suitable for complex document understanding
+      example: "Acgpt"
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+  required:
+    - field_id
+
+CategoryTableUpdateItem:
+  type: object
+  properties:
+    table_id:
+      type: string
+      description: Table ID
+      example: "1234567890"
+    name:
+      type: string
+      description: Table name
+      maxLength: 50
+    prompt:
+      type: string
+      description: Table semantic extraction prompt
+      maxLength: 200
+    extract_model:
+      type: string
+      description: Table-level extraction model
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+    collect_from_multi_table:
+      type: boolean
+      description: Merge multiple tables
+  required:
+    - table_id
 
 EnabledStatus:
   type: integer

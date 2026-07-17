@@ -1,0 +1,47 @@
+---
+title: "エンタープライズマルチテナント"
+description: "エンタープライズマルチテナントシナリオでの API 呼び出し方法"
+---
+
+## 01 エンタープライズマルチテナントの概要
+
+ユーザーが複数のエンタープライズアカウントに所属しており、特定のエンタープライズアカウント配下の内容を操作またはアクセスする必要がある場合は、HTTP ヘッダーに `x-ti-enterprise-id` を追加してエンタープライズ ID を指定する必要があります。
+
+ユーザーが 1 つのエンタープライズにのみ所属している場合、この HTTP ヘッダーは不要です。
+
+## 02 使用方法
+
+### 2.1 複数エンタープライズのシナリオ
+
+ユーザーが複数のエンタープライズに所属している場合は、リクエストヘッダーに `x-ti-enterprise-id` を追加し、操作対象のエンタープライズを指定する必要があります。
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "x-ti-enterprise-id: <your-enterprise-id>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+### 2.2 単一エンタープライズのシナリオ
+
+ユーザーが 1 つのエンタープライズにのみ所属している場合、`x-ti-enterprise-id` ヘッダーを追加する必要はありません。
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+## 03 エンタープライズ ID を取得
+
+エンタープライズ ID の取得方法については、[Enterprise ID の取得方法](../100-faq/get_enterprise_id) を参照してください。

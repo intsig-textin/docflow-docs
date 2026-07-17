@@ -1,0 +1,47 @@
+---
+title: "Quick Start"
+description: "Integrate TextIn Docflow Document Skill in three steps"
+---
+
+<Tip>
+  This guide demonstrates how to quickly integrate Docflow Document Skill into an AI Coding Agent.\
+  If you haven't used Docflow before, we recommend trying the [Web UI](https://docflow.textin.ai/) first to experience how Docflow works.
+</Tip>
+
+## 01 Three Steps to Integrate
+
+### 1.1 Install Coding Agent
+
+Install an AI Coding tool that supports MCP and Skill. We recommend [Claude Code](https://claude.com/product/claude-code).
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### 1.2 Install TextIn Docflow Document MCP
+
+Add the TextIn Docflow Document MCP service to your Coding Agent.
+
+```bash
+claude mcp add textin-docflow-docs --transport sse http://docflow.textin.ai/textin-docs/mcp
+```
+
+### 1.3 Install TextIn Docflow Document Skill
+
+Install Docflow Document Skill using the following command:
+
+```bash
+mkdir -p "$HOME/.claude/skills/textin-docflow-document" && \
+curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+  -o "$HOME/.claude/skills/textin-docflow-document/SKILL.md"
+```
+
+## 02 Verify Installation
+
+After installation, enter the following in Claude Code to verify:
+
+```
+What are the parameters for the Docflow document parsing API?
+```
+
+If the Agent returns relevant documentation, the integration is successful.

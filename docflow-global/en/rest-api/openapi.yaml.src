@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: DocFlow API
   description: DocFlow REST API, providing file upload and file processing result retrieval capabilities
-  version: 2.4.2
+  version: 2.8.4
 servers:
 - url: https://docflow.textin.ai
   
@@ -53,33 +53,33 @@ paths:
   /api/app-api/sip/platform/v2/category/delete:
     $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1delete'
 
-  # Category Tables
-  /api/app-api/sip/platform/v2/category/tables/list:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1list'
-  /api/app-api/sip/platform/v2/category/tables/add:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1add'
-  /api/app-api/sip/platform/v2/category/tables/update:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1update'
-  /api/app-api/sip/platform/v2/category/tables/delete:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1delete'
-
   # Category Fields
   /api/app-api/sip/platform/v2/category/fields/list:
     $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1list'
-  /api/app-api/sip/platform/v2/category/fields/add:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1add'
-  /api/app-api/sip/platform/v2/category/fields/update:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1update'
+  /api/app-api/sip/platform/v2/category/fields/batch_add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1batch_add'
+  /api/app-api/sip/platform/v2/category/fields/batch_update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1batch_update'
   /api/app-api/sip/platform/v2/category/fields/delete:
     $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1delete'
 
+  # Category Tables
+  /api/app-api/sip/platform/v2/category/tables/list:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1list'
+  /api/app-api/sip/platform/v2/category/tables/batch_add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1batch_add'
+  /api/app-api/sip/platform/v2/category/tables/batch_update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1batch_update'
+  /api/app-api/sip/platform/v2/category/tables/delete:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1delete'
+
   # Category Samples
-  /api/app-api/sip/platform/v2/category/sample/upload:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1upload'
+  /api/app-api/sip/platform/v2/category/sample/batch_upload:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1batch_upload'
   /api/app-api/sip/platform/v2/category/sample/list:
     $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1list'
-  /api/app-api/sip/platform/v2/category/sample/download:
-    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1download'
+  /api/app-api/sip/platform/v2/category/sample/batch_download:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1batch_download'
   /api/app-api/sip/platform/v2/category/sample/delete:
     $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1delete'
 
@@ -119,6 +119,20 @@ paths:
   /api/app-api/sip/platform/v2/review/task/rule/retry:
     $ref: './paths/review-tasks.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1task~1rule~1retry'
 
+  # Deprecated
+  /api/app-api/sip/platform/v2/category/fields/add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1add'
+  /api/app-api/sip/platform/v2/category/fields/update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1update'
+  /api/app-api/sip/platform/v2/category/tables/add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1add'
+  /api/app-api/sip/platform/v2/category/tables/update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1update'
+  /api/app-api/sip/platform/v2/category/sample/upload:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1upload'
+  /api/app-api/sip/platform/v2/category/sample/download:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1download'
+
 components:
   parameters:
     WorkspaceId:
@@ -127,6 +141,8 @@ components:
       $ref: './components/parameters.yaml#/Category'
     BatchNumber:
       $ref: './components/parameters.yaml#/BatchNumber'
+    AutoVerifyVat:
+      $ref: './components/parameters.yaml#/AutoVerifyVat'
     SplitFlag:
       $ref: './components/parameters.yaml#/SplitFlag'
     CropFlag:

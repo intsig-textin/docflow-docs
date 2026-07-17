@@ -1,0 +1,49 @@
+RecognitionStatus:
+  type: integer
+  description: |
+    ファイル認識ステータス:
+    - 0: 認識待ち
+    - 1: 認識成功
+    - 2: 認識失敗
+    - 3: 分類中
+    - 4: 抽出中
+    - 5: 準備中
+    - 6: ファイル分割中
+    - 7: 画像クロップ中
+    - 10: 分類完了（アップロードインターフェースの target_process が classify の場合のみ使用可能）
+    - 20: 解析中
+  enum:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 10
+  - 20
+
+VerificationStatus:
+  type: integer
+  description: "ファイル検証ステータス 0: 検証待ち 2: 確認済み 3: 却下 4: 削除済み 5: 処理保留"
+  enum:
+    - 0
+    - 2
+    - 3
+    - 4
+    - 5
+
+CodeMessage:
+  type: object
+  properties:
+    code:
+      type: integer
+      description: ステータスコード
+      example: 200
+    msg:
+      type: string
+      description: ステータス説明
+  required:
+  - code
+  - msg

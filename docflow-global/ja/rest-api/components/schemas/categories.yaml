@@ -1,0 +1,339 @@
+Category:
+  type: object
+  description: ファイルカテゴリ
+  properties:
+    id:
+      type: string
+      description: ファイルカテゴリ ID
+      example: "1234567890"
+    name:
+      type: string
+      description: ファイルカテゴリ名
+      example: "インボイス"
+    description:
+      type: string
+      description: ファイルカテゴリの説明
+      example: "VAT インボイスタイプ"
+    category_prompt:
+      type: string
+      description: 分類用プロンプト
+      example: "VAT インボイス。インボイスコード、インボイス番号などのフィールドを含みます。"
+    extract_model:
+      type: string
+      description: |
+        抽出モデル
+        - Auto: 抽出モデルを自動でマッチング
+        - Acgpt: 高速で安定した抽出結果
+        - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+        - DF-M1: 複雑な文書理解に適しています
+        - mixed: レスポンスでのみ使用され、このカテゴリ内のフィールド/テーブルで異なるモデルが使用されていることを示します
+      example: "Acgpt"
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+        - mixed
+    enabled:
+      $ref: '#/EnabledStatus'
+  required:
+    - id
+    - name
+
+CategoryFieldConfig:
+  type: object
+  properties:
+    name:
+      type: string
+      description: フィールド名
+      example: インボイスコード
+    description:
+      type: string
+      description: フィールドの説明
+      example: インボイスコードの説明
+    prompt:
+      type: string
+      description: 意味抽出プロンプト
+    use_prompt:
+      type: boolean
+      description: 意味抽出プロンプトを使用するかどうか
+    alias:
+      type: array
+      description: "フィールド別名。更新時: 省略=変更なし、空配列 []=別名をクリア、空でない配列=上書き"
+      items:
+        type: string
+      example: ["インボイス No.", "請求書番号"]
+    identity:
+      type: string
+      description: "エクスポート時のフィールド名。更新時: 省略=変更なし、空文字列 \"\"=クリア、空でない値=上書き"
+      example: invoice_number
+    multi_value:
+      type: boolean
+      description: 複数値抽出を有効にするかどうか
+    duplicate_value_distinct:
+      type: boolean
+      description: multi_value が true の場合のみ有効な重複値除去を行うかどうか
+    transform_settings:
+      $ref: '#/TransformSettings'
+
+CategoryField:
+  allOf:
+    - $ref: '#/CategoryFieldConfig'
+    - type: object
+      properties:
+        id:
+          type: string
+          description: フィールド ID
+          example: "1234567890"
+        enabled:
+          $ref: '#/EnabledStatus'
+        extract_model:
+          type: string
+          description: |
+            フィールド抽出モデル
+            - Auto: 抽出モデルを自動でマッチング
+            - Acgpt: 高速で安定した抽出結果
+            - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+            - DF-M1: 複雑な文書理解に適しています
+            - テーブルフィールドではテーブルモデルを継承し、通常フィールドではフィールド単位の設定を使用します。既存データはカテゴリ設定から推定されます
+          example: "Acgpt"
+
+CategoryTable:
+  type: object
+  properties:
+    id:
+      type: string
+      description: テーブル ID
+      example: "1234567890"
+    name:
+      type: string
+      description: テーブル名
+      example: "Table 1"
+    description:
+      type: string
+      description: テーブルの説明
+      example: "テーブルの説明"
+    prompt:
+      type: string
+      description: テーブルの意味抽出プロンプト
+      example: "各行から品目名、数量、金額を抽出します"
+    collect_from_multi_table:
+      type: boolean
+      description: 複数テーブルを結合
+      example: true
+    extract_model:
+      type: string
+      description: テーブルレベルの抽出モデル（Auto/Acgpt/Acgpt-VL/DF-M1）
+      example: "Acgpt"
+    fields:
+      type: array
+      items:
+        $ref: '#/CategoryField'
+
+CategorySample:
+  type: object
+  description: ファイルカテゴリサンプル
+  properties:
+    sample_id:
+      type: string
+      description: サンプル ID
+      example: "1234567890"
+    file_name:
+      type: string
+      description: ファイル名
+      example: "invoice_sample.pdf"
+  required:
+    - sample_id
+    - file_name
+
+TransformSettings:
+  type: object
+  description: フィールド出力変換設定。抽出結果を出力前に整形します。
+  properties:
+    type:
+      type: string
+      description: |
+        変換タイプ。適用する変換ルールを決定します:
+        - `datetime`: 抽出結果を指定した日付形式に正規化します
+        - `enumerate`: 抽出結果を事前設定された列挙値のいずれかに制限します
+        - `regex`: 正規表現で抽出結果をマッチングして置換します
+      enum:
+        - datetime
+        - enumerate
+        - regex
+    datetime_settings:
+      type: object
+      description: 日時フォーマット設定。type=datetime の場合は必須です。
+      properties:
+        format:
+          type: string
+          description: 対象の日付形式。抽出結果はこの形式に正規化されます。
+          example: yyyy-MM-dd
+    enumerate_settings:
+      type: object
+      description: 列挙制約設定。type=enumerate の場合は必須です。
+      properties:
+        items:
+          type: array
+          description: 許可される列挙値。抽出結果がこのリストに含まれない場合は mismatch_action が適用されます。
+          items:
+            type: string
+          example: ["VAT 専用インボイス", "VAT 一般インボイス", "電子インボイス"]
+    regex_settings:
+      type: object
+      description: 正規表現変換設定。type=regex の場合は必須です。
+      properties:
+        match:
+          type: string
+          description: 抽出結果をマッチングまたはキャプチャする正規表現パターン
+          example: ^(\d{4})-(\d{2})-(\d{2})$
+        replace:
+          type: string
+          description: 置換式。$1、$2 などのキャプチャグループ参照をサポートします
+          example: $1/$2/$3
+    mismatch_action:
+      type: object
+      description: 変換ルールに一致しない抽出結果の処理方法（すべてのタイプに適用、任意）。
+      properties:
+        mode:
+          type: string
+          description: |
+            処理モード:
+            - `default`: 指定したデフォルト値を出力します（default_value が必要）
+            - `warning`: 元の抽出結果を保持し、手動レビュー用の警告を付けます
+          enum:
+            - default
+            - warning
+        default_value:
+          type: string
+          description: mode=default の場合の出力値
+          example: "N/A"
+
+CategoryTableConfig:
+  type: object
+  description: 一括作成用のテーブル設定（ネストされたフィールドを含む）
+  properties:
+    name:
+      type: string
+      description: テーブル名
+      example: "明細テーブル"
+      maxLength: 50
+    prompt:
+      type: string
+      description: テーブルの意味抽出プロンプト
+      maxLength: 200
+    collect_from_multi_table:
+      type: boolean
+      description: 複数テーブルを結合
+    extract_model:
+      type: string
+      description: テーブルレベルの抽出モデル
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+    fields:
+      type: array
+      description: テーブル内のネストされたフィールドリスト
+      items:
+        $ref: '#/CategoryFieldConfig'
+  required:
+    - name
+
+CategoryFieldUpdateItem:
+  type: object
+  description: "フィールド更新項目（multi_value/duplicate_value_distinct はこのエンドポイントでは変更できません）"
+  properties:
+    field_id:
+      type: string
+      description: フィールド ID
+      example: "1234567890"
+    name:
+      type: string
+      description: フィールド名
+    description:
+      type: string
+      description: フィールドの説明
+    prompt:
+      type: string
+      description: 意味抽出プロンプト
+    use_prompt:
+      type: boolean
+      description: 意味抽出プロンプトを使用するかどうか
+    alias:
+      type: array
+      description: "フィールド別名。省略=変更なし、空配列 []=クリア、空でない配列=上書き"
+      items:
+        type: string
+      example: ["インボイス No.", "請求書番号"]
+    identity:
+      type: string
+      description: "エクスポート時のフィールド名。省略=変更なし、空文字列 \"\"=クリア、空でない値=上書き"
+      example: invoice_number
+    multi_value:
+      type: boolean
+      description: "複数値抽出を有効にするかどうか。省略=変更なし"
+    duplicate_value_distinct:
+      type: boolean
+      description: "値を重複排除するかどうか。multi_value が true の場合のみ有効です。省略=変更なし"
+    transform_settings:
+      $ref: '#/TransformSettings'
+    extract_model:
+      type: string
+      description: |
+        フィールド単位の抽出モデル。通常フィールドのみ個別に設定でき、テーブルフィールドは設定できません。
+        省略すると既存設定を保持します。
+        - Auto: 抽出モデルを自動でマッチング
+        - Acgpt: 高速で安定した抽出結果
+        - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+        - DF-M1: 複雑な文書理解に適しています
+      example: "Acgpt"
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+  required:
+    - field_id
+
+CategoryTableUpdateItem:
+  type: object
+  properties:
+    table_id:
+      type: string
+      description: テーブル ID
+      example: "1234567890"
+    name:
+      type: string
+      description: テーブル名
+      maxLength: 50
+    prompt:
+      type: string
+      description: テーブルの意味抽出プロンプト
+      maxLength: 200
+    extract_model:
+      type: string
+      description: テーブルレベルの抽出モデル
+      enum:
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
+    collect_from_multi_table:
+      type: boolean
+      description: 複数テーブルを結合
+  required:
+    - table_id
+
+EnabledStatus:
+  type: integer
+  description: |
+    有効化ステータス
+    - 0: 無効
+    - 1: 有効
+    - 2: 下書き
+  enum:
+    - 0
+    - 1
+    - 2

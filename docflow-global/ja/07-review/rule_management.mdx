@@ -1,0 +1,1172 @@
+---
+title: "ルールリポジトリ管理"
+description: "REST API でレビュー規則リポジトリ、規則グループ、規則を管理する方法"
+---
+
+<Tip>
+  このページでは、REST API でレビュー規則リポジトリ、規則グループ、規則を管理する方法を説明します。規則リポジトリ管理は「規則リポジトリ → 規則グループ → 規則」の 3 階層で構成されます。最初に規則リポジトリを作成し、その配下に規則グループを作成してから、規則グループの配下に規則を作成します。
+</Tip>
+
+インテリジェントレビューの規則リポジトリ管理は、**規則リポジトリ（Rule Repository）** → **規則グループ（Rule Group）** → **規則（Rule）** の 3 階層で構成されます。このページでは、REST API で規則リポジトリを管理する方法を説明します。
+
+## 規則リポジトリ管理
+
+規則リポジトリはレビュー規則の最上位コンテナで、関連するレビュー規則を整理、管理するために使用します。
+
+### 規則リポジトリを作成
+
+レビュー規則リポジトリを作成します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "name": "Review Rule Repository 1"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/create"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/create"
+
+payload = {
+    "workspace_id": workspace_id,
+    "name": "Review Rule Repository 1"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    repo_id = result.get("result", {}).get("repo_id")
+    print(f"Rule repository created successfully, ID: {repo_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `name`（必須）: リポジトリ名。最大 30 文字
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "repo_id": "31415926"
+  }
+}
+```
+
+### 規則リポジトリ一覧を取得
+
+ワークスペース配下のすべてのレビュー規則リポジトリ一覧を取得します。規則グループと規則の情報も含まれます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/list?workspace_id=<your-workspace-id>&page=1&page_size=10"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "page": 1,
+        "page_size": 10
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    repos = result.get("result", {}).get("repos", [])
+    total = result.get("result", {}).get("total", 0)
+    print(f"Found {total} rule repositories")
+    for repo in repos:
+        print(f"Repository ID: {repo.get('repo_id')}, Name: {repo.get('name')}")
+        groups = repo.get("groups", [])
+        print(f"  Contains {len(groups)} rule groups")
+else:
+    print(f"Failed to retrieve: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `page`（任意）: ページ番号。デフォルトは `1`
+- `page_size`（任意）: 1 ページあたりの件数。デフォルトは `10`
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "repos": [
+      {
+        "repo_id": "31415926",
+        "name": "Review Rule Repository 1",
+        "category_ids": ["invoice_category_id"],
+        "groups": [
+          {
+            "group_id": "31415926",
+            "name": "Review Rule Group 1",
+            "rules": [
+              {
+                "rule_id": "31415926",
+                "name": "Review Rule 1",
+                "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+                "category_ids": ["invoice_category_id"],
+                "risk_level": 10,
+                "referenced_fields": [
+                  {
+                    "category_id": "invoice_category_id",
+                    "category_name": "Invoice",
+                    "fields": [
+                      {
+                        "field_id": "amount_field_id",
+                        "field_name": "Invoice Amount"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "page_size": 10
+  }
+}
+```
+
+### 規則リポジトリを取得
+
+リポジトリ ID を指定して、単一のレビュー規則リポジトリの詳細情報を取得します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/get?workspace_id=<your-workspace-id>&repo_id=31415926"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/get"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "repo_id": repo_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    repo = result.get("result", {})
+    print(f"Repository ID: {repo.get('repo_id')}")
+    print(f"Repository Name: {repo.get('name')}")
+    print(f"Applicable Categories: {repo.get('category_ids', [])}")
+    groups = repo.get("groups", [])
+    print(f"Contains {len(groups)} rule groups")
+    for group in groups:
+        print(f"  Rule Group: {group.get('name')} (ID: {group.get('group_id')})")
+        rules = group.get("rules", [])
+        print(f"    Contains {len(rules)} rules")
+else:
+    print(f"Failed to retrieve: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `repo_id`（必須）: レビュー規則リポジトリ ID
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "repo_id": "31415926",
+    "name": "Review Rule Repository 1",
+    "category_ids": ["invoice_category_id"],
+    "groups": [
+      {
+        "group_id": "31415926",
+        "name": "Review Rule Group 1",
+        "rules": [
+          {
+            "rule_id": "31415926",
+            "name": "Review Rule 1",
+            "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+            "category_ids": ["invoice_category_id"],
+            "risk_level": 10,
+            "referenced_fields": [
+              {
+                "category_id": "invoice_category_id",
+                "category_name": "Invoice",
+                "fields": [
+                  {
+                    "field_id": "amount_field_id",
+                    "field_name": "Invoice Amount"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 規則リポジトリを更新
+
+レビュー規則リポジトリの名前を更新します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_id": "31415926",
+    "name": "Updated Repository Name"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/update"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "name": "Updated Repository Name"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `repo_id`（必須）: 規則リポジトリ ID
+- `name`（必須）: 新しいリポジトリ名。最大 30 文字
+
+### 規則リポジトリを削除
+
+レビュー規則リポジトリを削除します。複数件の一括削除にも対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_ids": ["31415926", "31415927"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_repo/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_repo/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_ids": ["31415926", "31415927"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `repo_ids`（必須）: 規則リポジトリ ID の配列
+
+<Warning>
+  規則リポジトリを削除すると、その配下のすべての規則グループと規則も削除されます。慎重に操作してください。
+</Warning>
+
+## 規則グループ管理
+
+規則グループは規則リポジトリ配下の二次分類で、規則をより細かくグルーピングして管理するために使用します。
+
+### 規則グループを作成
+
+規則リポジトリの配下に規則グループを作成します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_id": "31415926",
+    "name": "Review Rule Group 1"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_group/create"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_group/create"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "name": "Review Rule Group 1"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    group_id = result.get("result", {}).get("group_id")
+    print(f"Rule group created successfully, ID: {group_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `repo_id`（必須）: 規則リポジトリ ID
+- `name`（必須）: 規則グループ名。最大 30 文字
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "group_id": "31415926"
+  }
+}
+```
+
+### 規則グループを更新
+
+規則グループの名前を更新します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "group_id": "31415926",
+    "name": "Updated Rule Group Name"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_group/update"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+group_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_group/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "group_id": group_id,
+    "name": "Updated Rule Group Name"
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `group_id`（必須）: 規則グループ ID
+- `name`（必須）: 新しい規則グループ名。最大 30 文字
+
+### 規則グループを削除
+
+規則グループを削除します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "group_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule_group/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+group_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule_group/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "group_id": group_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `group_id`（必須）: 規則グループ ID
+
+<Warning>
+  規則グループを削除すると、その配下のすべての規則も削除されます。慎重に操作してください。
+</Warning>
+
+## 規則管理
+
+規則はレビューの最小実行単位で、具体的なレビュー基準とロジックを定義します。
+
+### 規則を作成
+
+規則グループの配下にレビュー規則を作成します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "repo_id": "31415926",
+    "group_id": "31415926",
+    "name": "Review Rule 1",
+    "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 10,
+    "referenced_fields": [
+      {
+        "category_id": "invoice_category_id",
+        "category_name": "Invoice",
+        "fields": [
+          {
+            "field_id": "amount_field_id",
+            "field_name": "Invoice Amount"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule/create"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+repo_id = "31415926"
+group_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule/create"
+
+payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "group_id": group_id,
+    "name": "Review Rule 1",
+    "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 10,
+    "referenced_fields": [
+        {
+            "category_id": "invoice_category_id",
+            "category_name": "Invoice",
+            "fields": [
+                {
+                    "field_id": "amount_field_id",
+                    "field_name": "Invoice Amount"
+                }
+            ]
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    rule_id = result.get("result", {}).get("rule_id")
+    print(f"Rule created successfully, ID: {rule_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+### カテゴリ ID とフィールド ID を取得
+
+規則を作成する前に、カテゴリ ID（`category_id`）とフィールド ID（`field_id`）を取得する必要があります。これらの ID は次の API から取得できます。
+
+#### カテゴリ一覧を取得
+
+ワークスペース配下のすべてのカテゴリを取得し、カテゴリ ID を確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/list?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    categories = result.get("result", {}).get("categories", [])
+    for category in categories:
+        print(f"Category ID: {category.get('id')}, Category Name: {category.get('name')}")
+```
+
+</CodeGroup>
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "total": 10,
+    "page": 1,
+    "page_size": 1000,
+    "categories": [
+      {
+        "id": "invoice_category_id",
+        "name": "Invoice",
+        "description": "Invoice category description",
+        "enabled": 1
+      },
+      {
+        "id": "contract_category_id",
+        "name": "Contract",
+        "description": "Contract category description",
+        "enabled": 1
+      }
+    ]
+  }
+}
+```
+
+レスポンスの `categories[].id` をカテゴリ ID（`category_id`）として使用します。
+
+#### カテゴリフィールド一覧を取得
+
+指定したカテゴリ配下のすべてのフィールドを取得し、フィールド ID を確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/list?workspace_id=<your-workspace-id>&category_id=<category-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"  # Get from category list interface
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    fields = result.get("result", {}).get("fields", [])
+    tables = result.get("result", {}).get("tables", [])
+
+    print("Regular Fields:")
+    for field in fields:
+        print(f"  Field ID: {field.get('id')}, Field Name: {field.get('name')}")
+
+    print("Table Fields:")
+    for table in tables:
+        print(f"  Table ID: {table.get('id')}, Table Name: {table.get('name')}")
+        for field in table.get("fields", []):
+            print(f"    Field ID: {field.get('id')}, Field Name: {field.get('name')}")
+```
+
+</CodeGroup>
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "fields": [
+      {
+        "id": "amount_field_id",
+        "name": "Invoice Amount",
+        "description": "Invoice amount description",
+        "enabled": 1
+      },
+      {
+        "id": "invoice_code_field_id",
+        "name": "Invoice Code",
+        "description": "Invoice code description",
+        "enabled": 1
+      }
+    ],
+    "tables": [
+      {
+        "id": "invoice_items_table_id",
+        "name": "Invoice Items",
+        "description": "Invoice items table",
+        "fields": [
+          {
+            "id": "item_name_field_id",
+            "name": "Item Name",
+            "description": "Item name description",
+            "enabled": 1
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+レスポンスから次の ID を取得します。
+- `fields[].id`: 通常フィールド ID（`field_id`）
+- `tables[].id`: 表 ID（`table_id`）
+- `tables[].fields[].id`: 表フィールド ID（`field_id`）
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `repo_id`（必須）: 規則リポジトリ ID
+- `group_id`（必須）: 規則グループ ID
+- `name`（必須）: 規則名
+- `prompt`（必須）: レビュー規則を説明するプロンプト。AI のレビュー判定を導くために使用されます
+- `category_ids`（任意）: 適用カテゴリ ID の配列。この規則を適用する文書カテゴリを指定します。[カテゴリ一覧を取得](#カテゴリ一覧を取得) API で取得します
+- `risk_level`（任意）: リスクレベル。指定可能な値は `10`（高リスク）、`20`（中リスク）、`30`（低リスク）です
+- `referenced_fields`（任意）: 参照フィールドの配列。この規則が参照する必要のある抽出フィールドを指定します。フィールド ID は [カテゴリフィールド一覧を取得](#カテゴリフィールド一覧を取得) API で取得します
+
+**参照フィールドの構造:**
+
+```json
+{
+  "referenced_fields": [
+    {
+      "category_id": "Category ID",
+      "category_name": "Category Name",
+      "fields": [
+        {
+          "field_id": "Field ID",
+          "field_name": "Field Name"
+        }
+      ],
+      "tables": [
+        {
+          "table_id": "Table ID",
+          "table_name": "Table Name",
+          "fields": [
+            {
+              "field_id": "Field ID",
+              "field_name": "Field Name"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "rule_id": "31415926"
+  }
+}
+```
+
+### 規則を更新
+
+レビュー規則を更新します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "rule_id": "31415926",
+    "group_id": "31415926",
+    "name": "Updated Rule Name",
+    "prompt": "Updated Rule Prompt",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 20,
+    "referenced_fields": [
+      {
+        "category_id": "invoice_category_id",
+        "category_name": "Invoice",
+        "fields": [
+          {
+            "field_id": "amount_field_id",
+            "field_name": "Invoice Amount"
+          }
+        ]
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule/update"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+rule_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule/update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "rule_id": rule_id,
+    "group_id": "31415926",
+    "name": "Updated Rule Name",
+    "prompt": "Updated Rule Prompt",
+    "category_ids": ["invoice_category_id"],
+    "risk_level": 20,
+    "referenced_fields": [
+        {
+            "category_id": "invoice_category_id",
+            "category_name": "Invoice",
+            "fields": [
+                {
+                    "field_id": "amount_field_id",
+                    "field_name": "Invoice Amount"
+                }
+            ]
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `rule_id`（必須）: 規則 ID
+- その他のパラメータは規則作成時と同じで、規則の属性更新に使用します
+
+### 規則を削除
+
+レビュー規則を削除します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "rule_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/rule/delete"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+rule_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/rule/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "rule_id": rule_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+print(result)
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `rule_id`（必須）: 規則 ID
+
+## 規則作成フローの完全な例
+
+カテゴリ ID とフィールド ID の取得を含む、規則作成の一連の流れです。
+
+```python Python icon=python expandable
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+host = "https://docflow.textin.ai"
+
+# 1. Get category list to obtain category ID
+categories_resp = requests.get(
+    f"{host}/api/app-api/sip/platform/v2/category/list",
+    params={"workspace_id": workspace_id},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+categories = categories_resp.json()["result"]["categories"]
+# Assume we want to use "Invoice" category
+invoice_category = next((c for c in categories if c["name"] == "Invoice"), None)
+if not invoice_category:
+    print("Invoice category not found")
+    exit(1)
+category_id = invoice_category["id"]
+category_name = invoice_category["name"]
+print(f"Found category: {category_name}, ID: {category_id}")
+
+# 2. Get category fields list to obtain field ID
+fields_resp = requests.get(
+    f"{host}/api/app-api/sip/platform/v2/category/fields/list",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+fields_result = fields_resp.json()["result"]
+fields = fields_result.get("fields", [])
+# Assume we want to use "Invoice Amount" field
+amount_field = next((f for f in fields if f["name"] == "Invoice Amount"), None)
+if not amount_field:
+    print("Invoice Amount field not found")
+    exit(1)
+field_id = amount_field["id"]
+field_name = amount_field["name"]
+print(f"Found field: {field_name}, ID: {field_id}")
+
+# 3. Create rule repository
+repo_payload = {
+    "workspace_id": workspace_id,
+    "name": "Invoice Review Rule Repository"
+}
+repo_resp = requests.post(
+    f"{host}/api/app-api/sip/platform/v2/review/rule_repo/create",
+    json=repo_payload,
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+repo_id = repo_resp.json()["result"]["repo_id"]
+print(f"Rule repository created successfully, ID: {repo_id}")
+
+# 4. Create rule group
+group_payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "name": "Invoice Compliance Check"
+}
+group_resp = requests.post(
+    f"{host}/api/app-api/sip/platform/v2/review/rule_group/create",
+    json=group_payload,
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+group_id = group_resp.json()["result"]["group_id"]
+print(f"Rule group created successfully, ID: {group_id}")
+
+# 5. Create rule (using obtained category ID and field ID)
+rule_payload = {
+    "workspace_id": workspace_id,
+    "repo_id": repo_id,
+    "group_id": group_id,
+    "name": "Invoice Amount Validation",
+    "prompt": "Check if the invoice amount is greater than 0 and less than 1000000, if not within range, review fails",
+    "category_ids": [category_id],  # Use obtained category ID
+    "risk_level": 10,
+    "referenced_fields": [
+        {
+            "category_id": category_id,  # Use obtained category ID
+            "category_name": category_name,  # Use obtained category name
+            "fields": [
+                {
+                    "field_id": field_id,  # Use obtained field ID
+                    "field_name": field_name  # Use obtained field name
+                }
+            ]
+        }
+    ]
+}
+rule_resp = requests.post(
+    f"{host}/api/app-api/sip/platform/v2/review/rule/create",
+    json=rule_payload,
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+)
+rule_id = rule_resp.json()["result"]["rule_id"]
+print(f"Rule created successfully, ID: {rule_id}")
+```
+
+## 関連ページ
+
+- [レビューの概念](./quickstart) - レビュー機能の中核概念を確認します
+- [レビュータスクを作成](./create_task) - レビュータスクの作成方法を確認します
+- [レビュー結果を取得](./get_result) - レビュー結果の取得と利用方法を確認します

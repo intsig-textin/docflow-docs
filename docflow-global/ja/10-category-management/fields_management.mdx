@@ -1,0 +1,534 @@
+---
+title: "フィールド管理"
+description: "ファイルカテゴリ配下の通常フィールドと表フィールドを管理する方法"
+---
+
+<Tip>
+  フィールドは、ファイルカテゴリで抽出内容を定義するための中核設定です。DocFlow は通常フィールド（result.fields）と表フィールド（result.tables[].fields）の 2 種類をサポートしています。このガイドでは、これらのフィールドを API で管理する方法を説明します。
+</Tip>
+
+## フィールド一覧を取得
+
+指定したファイルカテゴリ配下のすべてのフィールドを取得します。通常フィールドと表フィールドの両方が含まれます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/list?workspace_id=<your-workspace-id>&category_id=<category-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    fields = result.get("result", {}).get("fields", [])
+    tables = result.get("result", {}).get("tables", [])
+
+    print("Regular fields:")
+    for field in fields:
+        print(f"  Field ID: {field.get('id')}, Name: {field.get('name')}")
+
+    print("\nTable fields:")
+    for table in tables:
+        print(f"  Table: {table.get('name')} (ID: {table.get('id')})")
+        for field in table.get("fields", []):
+            print(f"    Field ID: {field.get('id')}, Name: {field.get('name')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "fields": [
+      {
+        "id": "field_123",
+        "name": "Invoice Code",
+        "description": "Invoice code description",
+        "prompt": "Please extract the invoice code"
+      },
+      {
+        "id": "field_456",
+        "name": "Invoice Amount",
+        "description": "Invoice amount description"
+      }
+    ],
+    "tables": [
+      {
+        "id": "table_789",
+        "name": "Item Details",
+        "description": "Invoice item details table",
+        "fields": [
+          {
+            "id": "field_101",
+            "name": "Item Name",
+            "description": "Item name description"
+          },
+          {
+            "id": "field_102",
+            "name": "Quantity",
+            "description": "Item quantity"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## フィールドを追加
+
+指定したファイルカテゴリ配下にフィールドを追加します。通常フィールドと表フィールドの両方に対応しています。
+
+### 通常フィールドを追加
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "fields": [
+      {
+        "name": "Invoice Number",
+        "description": "Invoice number description",
+        "prompt": "Please extract the invoice number",
+        "use_prompt": true,
+        "alias": ["Invoice No", "Number"],
+        "identity": "invoice_number",
+        "multi_value": false
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/batch_add"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/batch_add"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "fields": [
+        {
+            "name": "Invoice Number",
+            "description": "Invoice number description",
+            "prompt": "Please extract the invoice number",
+            "use_prompt": True,
+            "alias": ["Invoice No", "Number"],
+            "identity": "invoice_number",
+            "multi_value": False
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    field_id = result.get("result", {}).get("field_id")
+    print(f"Field created successfully, ID: {field_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+### 表フィールドを追加
+
+表の配下にフィールドを追加する場合は、`table_id` パラメータを渡します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "table_id": "<table-id>",
+    "fields": [
+      {
+        "name": "Unit Price",
+        "description": "Item unit price"
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/batch_add"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+table_id = "<table-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/batch_add"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "table_id": table_id,  # Specify table ID to create table field
+    "fields": [
+        {
+            "name": "Unit Price",
+            "description": "Item unit price"
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    field_id = result.get("result", {}).get("field_id")
+    print(f"Table field created successfully, ID: {field_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `table_id`（任意）: 表 ID。未指定または空の場合は通常フィールドを作成し、指定した場合は表フィールドを作成します
+- `fields`（必須）: フィールドオブジェクトの配列。各オブジェクトには次の項目を含めます。
+  - `name`（必須）: フィールド名
+  - `description`（任意）: フィールド説明
+  - `prompt`（任意）: セマンティック抽出プロンプト
+  - `use_prompt`（任意）: セマンティックプロンプトを使用するかどうか
+  - `alias`（任意）: フィールド別名の配列
+  - `identity`（任意）: エクスポート時のフィールド名
+  - `multi_value`（任意）: 複数値を抽出するかどうか
+  - `duplicate_value_distinct`（任意）: 値を重複排除するかどうか（multi_value が true の場合のみ有効）
+  - `transform_settings`（任意）: 変換設定
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "field_id": "field_new_123"
+  }
+}
+```
+
+## フィールドを更新
+
+指定したフィールドの情報を更新します。通常フィールドと表フィールドの両方に対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "fields": [
+      {
+        "field_id": "<field-id>",
+        "name": "Updated Field Name",
+        "description": "Updated description",
+        "prompt": "Updated prompt"
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/batch_update"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/batch_update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "fields": [
+        {
+            "field_id": "<field-id>",
+            "name": "Updated Field Name",
+            "description": "Updated description",
+            "prompt": "Updated prompt"
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Field updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `table_id`（任意）: 表 ID。通常フィールドでは省略できます。表フィールドの場合は所属する表を指定するために必須です
+- `fields`（必須）: フィールドオブジェクトの配列。各オブジェクトには次の項目を含めます。
+  - `field_id`（必須）: フィールド ID
+  - その他のパラメータはフィールド作成時と同じです
+
+<Note>
+  表フィールドを更新する場合は、`table_id` パラメータを渡して、対象フィールドが所属する表を指定してください。
+</Note>
+
+## フィールドを削除
+
+指定したフィールドを削除します。通常フィールドと表フィールドの一括削除に対応しています。
+
+### 通常フィールドを削除
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "field_ids": ["field_123", "field_456"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "field_ids": ["field_123", "field_456"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Regular fields deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+### テーブルフィールドを削除
+
+表フィールドを削除する場合は、`table_id` パラメータを渡します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "table_id": "<table-id>",
+    "field_ids": ["field_101", "field_102"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/fields/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+table_id = "<table-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/fields/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "table_id": table_id,  # Specify table ID to delete table fields
+    "field_ids": ["field_101", "field_102"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Table fields deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `field_ids`（必須）: 削除するフィールド ID の配列
+- `table_id`（任意）: 表 ID。未指定の場合は通常フィールドを削除し、指定した場合は表フィールドを削除します
+
+<Warning>
+  フィールド削除は元に戻せません。慎重に操作してください。
+</Warning>
+
+## フィールド設定
+
+### フィールドタイプ
+
+- **通常フィールド**: `result.fields` に格納されるキーと値のフィールド
+- **表フィールド**: `result.tables[].fields` に格納される表の列フィールド
+
+### フィールド属性
+
+- **name**: フィールド名。必須
+- **description**: フィールド説明。任意
+- **prompt**: AI のフィールド抽出を導くセマンティック抽出プロンプト
+- **use_prompt**: セマンティックプロンプトを使用するかどうか
+- **alias**: フィールド認識に使用するフィールド別名の配列
+- **identity**: 結果エクスポート時にフィールド識別子として使用するエクスポートフィールド名
+- **multi_value**: 複数値を抽出するかどうか。単一フィールドから複数値を抽出できます
+- **duplicate_value_distinct**: 値を重複排除します。multi_value が true の場合のみ有効です
+- **transform_settings**: 変換設定。datetime、enum、regex などの変換をサポートします
+
+### 変換設定の例
+
+```json
+{
+  "transform_settings": {
+    "type": "datetime",
+    "datetime_settings": {
+      "format": "yyyy-MM-dd HH:mm:ss"
+    },
+    "mismatch_action": {
+      "mode": "warning",
+      "default_value": ""
+    }
+  }
+}
+```
+
+## 次のステップ
+
+- [テーブル管理](./tables_management) - ファイルカテゴリ配下の表を管理します
+- [サンプル管理](./samples_management) - ファイルカテゴリ用のサンプルファイルを管理します
+- [カテゴリのクイックスタート](./quickstart) に戻る - ファイルカテゴリの基本操作を確認します

@@ -1,0 +1,318 @@
+---
+title: "ファイルカテゴリの修正（複数画像クロップ）"
+description: "複数画像クロップタスクに対してカテゴリ修正 API を使用し、クロップされたファイルのカテゴリを変更する"
+---
+
+## 概要
+
+処理が完了した複数画像クロップタスクにおいて、クロップされた子ファイルのカテゴリが不正確な場合、**カテゴリ修正** API を使用してクロップファイルのカテゴリを変更できます。
+
+<Tip>
+この API は、複数画像クロップタスク（`task_type = 2`、親タスク）によって生成された子ファイルのカテゴリを変更するために使用します。事前に親タスクの `task_id` と子タスクの `crop_child_task_id` を取得する必要があります。
+</Tip>
+
+## 利用シーン
+
+1. **クロップカテゴリの修正**：自動クロップ後、一部の子ファイルのカテゴリ認識が不正確で、手動で修正が必要な場合
+2. **カテゴリの調整**：業務要件が変更され、クロップされたファイルの再分類が必要な場合
+
+## API エンドポイント
+
+**エンドポイント**: `POST /api/app-api/sip/platform/v2/file/amend_category`
+
+## リクエストパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| `workspace_id` | string | はい | ワークスペース ID |
+| `task_id` | string | はい | 親タスク ID（複数画像クロップタスク ID） |
+| `crop_tasks` | array | はい | 複数画像クロップタスクリスト。各要素に `crop_child_task_id` と `category` を含む |
+
+### crop_tasks パラメータ説明
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| `crop_child_task_id` | string | はい | 複数画像クロップの子タスク ID |
+| `category` | string | はい | 子タスクのファイルカテゴリ |
+
+### パラメータ説明
+
+- `task_id`：親タスク ID（`task_type = 2`）。`file/fetch` API を通じて取得できます
+- `crop_child_task_id`：子タスク ID（`task_type = 3`）。`child_files` から取得できます
+- `category`：新しいファイルカテゴリ名。DocFlow ワークスペースで設定済みのファイルカテゴリである必要があります
+
+## サンプルコード
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "1234567890",
+    "task_id": "1234567890",
+    "crop_tasks": [
+      {
+        "crop_child_task_id": "1981692246135111680",
+        "category": "Electronic Invoice (Regular)"
+      },
+      {
+        "crop_child_task_id": "1981692246135111681",
+        "category": "Train Ticket"
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def amend_crop_category(workspace_id, task_id, crop_tasks, app_id, secret_code):
+    """
+    Amend category for multi-image crop tasks
+
+    Args:
+        workspace_id: Workspace ID
+        task_id: Parent task ID (multi-image crop task ID)
+        crop_tasks: Crop task list, format:
+            [
+                {
+                    "crop_child_task_id": "Child task ID",
+                    "category": "Category name"
+                },
+                ...
+            ]
+        app_id: Application ID
+        secret_code: Secret code
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "crop_tasks": crop_tasks
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+if __name__ == "__main__":
+    WORKSPACE_ID = "1234567890"
+    PARENT_TASK_ID = "1234567890"  # Parent task ID (task_type = 2)
+    APP_ID = "<your-app-id>"
+    SECRET_CODE = "<your-secret-code>"
+
+    # Define crop tasks: modify category for different child files
+    crop_tasks = [
+        {
+            "crop_child_task_id": "1981692246135111680",  # Child task ID
+            "category": "Electronic Invoice (Regular)"
+        },
+        {
+            "crop_child_task_id": "1981692246135111681",
+            "category": "Train Ticket"
+        }
+    ]
+
+    result = amend_crop_category(WORKSPACE_ID, PARENT_TASK_ID, crop_tasks, APP_ID, SECRET_CODE)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## 親タスク ID と子ファイル情報の取得
+
+ファイルカテゴリを変更する前に、親タスクの `task_id` と子ファイルの `crop_child_task_id` を取得する必要があります。`file/fetch` API で確認できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_crop_task_info(workspace_id, file_id, app_id, secret_code):
+    """
+    Get multi-image crop task information, including parent task ID and child file information
+    """
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+
+    params = {
+        "workspace_id": workspace_id,
+        "file_id": file_id
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    data = response.json()
+
+    files = data.get("result", {}).get("files", [])
+    if files:
+        file_data = files[0]
+        task_id = file_data.get("task_id")
+        task_type = file_data.get("task_type")
+        child_files = file_data.get("child_files", [])
+
+        # Extract child file information
+        crop_children = []
+        for child in child_files:
+            if child.get("task_type") == 3:  # Child files generated by multi-image crop
+                crop_children.append({
+                    "crop_child_task_id": child.get("task_id"),
+                    "category": child.get("category"),
+                    "name": child.get("name"),
+                    "from_parent_position_list": child.get("from_parent_position_list", []),
+                    "crop_info": child.get("crop_info", {})
+                })
+
+        return {
+            "parent_task_id": task_id,
+            "parent_task_type": task_type,
+            "crop_children": crop_children
+        }
+    return None
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+task_info = get_crop_task_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+if task_info:
+    print("Parent task ID:", task_info["parent_task_id"])
+    print("Parent task type:", task_info["parent_task_type"])
+    print("Child file information:")
+    for child in task_info["crop_children"]:
+        print(json.dumps(child, indent=2, ensure_ascii=False))
+```
+
+</CodeGroup>
+
+## レスポンス
+
+ファイルカテゴリの変更が成功すると、API は成功レスポンスを返します。
+
+```json expandable
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## 完全な例
+
+以下は、複数画像クロップタスク情報を確認し、子ファイルのカテゴリを変更する完全な例です：
+
+```python Python icon=python expandable
+import requests
+import json
+
+def get_crop_task_info(workspace_id, file_id, app_id, secret_code):
+    """Get multi-image crop task information"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code
+    }
+    params = {"workspace_id": workspace_id, "file_id": file_id}
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+def amend_crop_category(workspace_id, task_id, crop_tasks, app_id, secret_code):
+    """Amend category for multi-image crop tasks"""
+    url = "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/amend_category"
+    headers = {
+        "x-ti-app-id": app_id,
+        "x-ti-secret-code": secret_code,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "workspace_id": workspace_id,
+        "task_id": task_id,
+        "crop_tasks": crop_tasks
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
+
+# Usage example
+WORKSPACE_ID = "1234567890"
+FILE_ID = "202412190001"
+APP_ID = "<your-app-id>"
+SECRET_CODE = "<your-secret-code>"
+
+# 1. Get multi-image crop task information
+file_info = get_crop_task_info(WORKSPACE_ID, FILE_ID, APP_ID, SECRET_CODE)
+files = file_info.get("result", {}).get("files", [])
+if files:
+    file_data = files[0]
+    parent_task_id = file_data.get("task_id")
+    task_type = file_data.get("task_type")
+    child_files = file_data.get("child_files", [])
+
+    # Confirm it's a multi-image crop parent task (task_type = 2)
+    if task_type == 2:
+        print(f"Parent task ID: {parent_task_id}")
+        print("Current child file information:")
+
+        # Build crop_tasks parameter
+        crop_tasks = []
+        for child in child_files:
+            if child.get("task_type") == 3:  # Child files generated by multi-image crop
+                crop_child_task_id = child.get("task_id")
+                current_category = child.get("category")
+                child_name = child.get("name")
+
+                print(f"  - Child task ID: {crop_child_task_id}")
+                print(f"    File name: {child_name}")
+                print(f"    Current category: {current_category}")
+
+                # Example: Modify category for all child files
+                # You can modify this based on actual requirements, such as judging by file name or other conditions
+                crop_tasks.append({
+                    "crop_child_task_id": crop_child_task_id,
+                    "category": "Electronic Invoice (Regular)"  # New category, can be modified based on actual requirements
+                })
+
+        # 2. Amend file category
+        if crop_tasks:
+            result = amend_crop_category(WORKSPACE_ID, parent_task_id, crop_tasks, APP_ID, SECRET_CODE)
+            print(f"Amendment result: {json.dumps(result, indent=2, ensure_ascii=False)}")
+    else:
+        print(f"This task is not a multi-image crop parent task (task_type={task_type})")
+```
+
+## 子タスク ID に関する注意事項
+
+- `crop_child_task_id` は子タスクの `task_id` です。`file/fetch` API が返す `child_files` から取得できます
+- 複数画像クロップによって生成された各子ファイルには一意の `task_id` があります
+- 子ファイルの `task_type` は `3` で、複数画像クロップによって生成されたことを示します
+
+## 注意事項
+
+1. **タスクタイプの制限**：複数画像クロップの親タスク（`task_type = 2`）のみ `crop_tasks` パラメータの使用に対応しています
+2. **カテゴリが存在すること**：指定する `category` は DocFlow ワークスペースで設定済みである必要があります。そうでない場合、エラーが返されます
+3. **カテゴリ名の一致**：カテゴリ名は設定された内容と完全に一致する必要があります（大文字・小文字を区別）
+4. **子タスク ID が有効であること**：`crop_child_task_id` が有効な子タスク ID であることを確認してください
+5. **変更後の再処理**：ファイルカテゴリを変更すると、システムは新しいカテゴリに従ってデータを再処理します

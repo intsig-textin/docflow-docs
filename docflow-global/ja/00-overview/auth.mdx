@@ -1,0 +1,144 @@
+---
+title: "アクセス認証情報"
+description: "API アクセス認証情報の取得方法と利用方法"
+---
+
+## 01 アクセス認証情報の取得
+
+### 1.1 パブリッククラウドでの利用
+
+DocFlow は [TextIn](https://www.textin.ai/) アカウントを使用します。
+
+まず [TextIn](https://www.textin.ai/) に登録し、[TextIn ホーム - アカウントと請求 - アカウントと開発者情報](https://www.textin.ai/console/dashboard/setting) ページで、リクエスト認証に使用する `x-ti-app-id` と `x-ti-secret-code` を取得してください。
+
+### 1.2 **プライベートクラウドでの利用**
+
+オンプレミス環境向けの API 呼び出し認証情報は、担当のテクニカルサポートにお問い合わせください。
+
+## 02 リクエスト認証
+
+DocFlow API は次の 2 種類のリクエスト認証方式をサポートしています。
+
+1. **簡易認証**。実装は簡単ですが、セキュリティは限定的です。通常は DocFlow の処理フローや効果をすばやく試すために使用します。
+2. **署名認証**。実装は複雑ですが、より高いセキュリティを提供します。中間者攻撃による認証情報の取得やリクエスト改ざんを防ぐのに役立ちます。
+
+### 2.1 簡易認証
+
+`x-ti-app-id` と `x-ti-secret-code` を HTTP ヘッダーとして使用して認証します。
+
+例:
+
+<CodeGroup>
+
+```bash curl
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload"
+```
+
+</CodeGroup>
+
+### 2.2 署名認証
+
+署名を使用してリクエストを認証します。次の 3 つの HTTP ヘッダーが必要です。
+
+| Header           | 説明                                                     |
+| ---------------- | -------------------------------------------------------- |
+| `x-ti-app-id`    | TextIn 開発者情報から取得した `x-ti-app-id`              |
+| `x-ti-timestamp` | Unix Epoch タイムスタンプ（秒）                         |
+| `x-ti-signature` | リクエスト署名。計算方法は下記を参照                    |
+
+#### 署名計算
+
+署名の計算方法は次のとおりです。
+
+```
+signature = lower(hex(HMAC_SHA256(signing_key, string_to_sign)))
+```
+
+注意事項:
+
+1. `lower()` は小文字変換関数です
+2. `hex()` はバイト配列を 16 進文字列に変換します
+3. `HMAC_SHA256` は暗号学的ハッシュ関数です。各開発言語のライブラリを参照してください
+4. `signing_key = HMAC_SHA256(x-ti-secret-code, epoch)`。`x-ti-secret-code` は TextIn 開発者認証情報、`epoch` は Unix Epoch タイムスタンプ（秒）です
+5. `string_to_sign` の詳細は下記を参照してください
+
+##### string_to_sign
+
+`string_to_sign` は次の内容を連結した文字列です。
+
+```
+"HTTP Method" + "\n"
+"Request URL" + "\n"
+"Sorted URL Parameters" + "\n"
+"sha256(HTTP Request Body)"
+```
+
+注意事項:
+
+1. HTTP メソッドは大文字です。例: `GET`、`POST`
+2. リクエスト URL は URL のパス部分です（プロトコルとドメインを除く）。例: `/api/app-api/sip/platform/v2/file/upload`
+3. URL パラメータのソートでは、すべてのリクエストパラメータをパラメータ名の辞書順（ASCII コード順）で昇順に並べます。パラメータ値はソートに関与しません。例:
+
+   パラメータが `workspace_id=12345&batch_num=54321&file_name=invoice.pdf` の場合、\
+   ソート結果は `batch_num=54321&file_name=invoice.pdf&workspace_id=12345` です。
+
+   重要:
+   1. 署名計算時、パラメータ値に URL エンコードは不要です
+   2. パラメータは `&` で連結し、末尾に `&` は付けません
+
+例:
+
+<CodeGroup>
+
+```python Python expandable {7,8,9,10,11,23,24,25,26,27,28,29,30,31,32,33,34} icon=python lines
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import hashlib
+import hmac
+import time
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+filename = "file.pdf"
+filepath = "/path/to/your/file.pdf"
+params = {"workspace_id":"1871454238893576192","category":"采购订单"}
+
+epoch_time = int(time.time())
+http_method = "POST"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+payload = MultipartEncoder(
+    fields={
+        "file": (filename, open(filepath, "rb"), "application/pdf"),
+    }
+)
+
+signing_key = hmac.new(ti_secret_code.encode('utf-8'), str(epoch_time).encode('utf-8'), hashlib.sha256).digest()
+payload_raw = payload.to_string()
+payload_hash = hashlib.sha256(payload_raw).hexdigest()
+string_to_sign = f"{http_method}\n{url}\n{'&'.join(f'{k}={v}' for k, v in sorted(params.items()))}\n{payload_hash}"
+signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+
+print(f"epoch_time: {epoch_time}")
+print(f"http_method: {http_method}")
+print(f"signing_key: {signing_key}")
+print(f"payload_hash: {payload_hash}")
+print(f"string_to_sign: {string_to_sign}")
+print(f"signature: {signature}")
+
+resp = requests.post(url=f"https://docflow.textin.ai{url}",
+                     params=params,
+                     data=payload_raw,
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-timestamp": str(epoch_time),
+                              "x-ti-signature": signature,
+                              })
+
+print(resp.text)
+```
+
+</CodeGroup>

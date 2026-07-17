@@ -1,0 +1,260 @@
+---
+title: "クイックスタート"
+description: "API で文書アップロード機能をすばやく利用するための例"
+---
+
+<Tip>
+  このページでは、REST API で DocFlow にファイルをアップロードする方法を説明します。対応ファイル形式の詳細は [対応ファイル形式](./support_format) を参照してください。
+</Tip>
+
+Docflow の業務処理フローは非同期です。アップロード API では、1 件または複数のファイルを Docflow にアップロードできます。アップロードに成功すると、後続の業務フロー確認や結果取得に使用するバッチ番号（`batch_number`）とファイル ID（`file_id`）を取得できます。
+
+Docflow は一般的な画像形式、PDF、Office ファイル形式に対応しており、複数ページ文書は最大 **1000 ページ** まで対応します。詳細は [対応ファイル形式と制限](./support_format) ページを参照してください。
+
+## 01 単一ファイルをアップロード
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@</path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+### パラメータ説明
+
+#### 必須パラメータ
+
+- `workspace_id`: ワークスペース ID。[Workspace ID の取得方法](../100-faq/get_workspace_id) を参照してください。
+
+#### 任意パラメータ
+
+必要に応じて URL クエリパラメータに追加できます。
+
+- `category`: ファイルカテゴリ（例: invoice）
+- `batch_number`: バッチ番号。未指定の場合はシステムが自動生成します（同じバッチの複数ファイルには同じバッチ番号を使用すると、後続確認がしやすくなります）
+- `auto_verify_vat`: 請求書検証を有効にするかどうか。デフォルトは false
+- `split_flag`: ファイル分割を実行するかどうか。デフォルトは false（[ファイル分割](../05-split/split) を参照）
+- `crop_flag`: 複数画像クロップを実行するかどうか。デフォルトは false（[複数画像クロップ](../05-split/crop) を参照）
+- `target_process`: 対象処理タイプ。指定可能な値は `classify` または `extract` です。\
+  Docflow はデフォルトで「解析 → 分類 → 抽出」の完全なワークフローを実行します。`target_process` が `classify` の場合、分類でワークフローを終了し、**分類のみ** の要件を実現します。
+
+Example:
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+## 02 バッチアップロード
+
+複数のファイルを 1 つのバッチに関連付けたい場合は、バッチアップロードを使用できます。
+
+バッチアップロードには 2 つの方法があります。
+
+1. 1 回のリクエストで複数ファイルをアップロードします。この方法は比較的シンプルで、同じリクエスト内に複数の `file` フィールドを繰り返し含めることでバッチアップロードを実現できます。
+
+例:
+
+<CodeGroup>
+
+```bash curl icon=terminal
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/1.pdf" \
+  -F "file=@/path/to/2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import time
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+
+host = "https://docflow.textin.ai"
+epoch_time = int(time.time())
+http_method = "POST"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = {
+    "workspace_id":workspace_id,
+    }
+
+payload = MultipartEncoder(
+    fields=[
+        ("file", ("file1.jpg", open("/path/to/file1.jpg", "rb"), "image/jpeg")),
+        ("file", ("file2.jpg", open(filepath, "rb"), "image/jpeg")),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}",
+                     params=params,
+                     data=payload_raw,
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+レスポンスには `result.batch_number` と、アップロードに成功した `files` のリストが返されます。
+
+2. 複数回のリクエストでアップロードし、`batch_number` によってファイルを関連付けます。\
+   複数ファイルの合計サイズが大きすぎる場合は、この方法で複数ファイルを関連付けられます。
+   最初のリクエストで `batch_number` が返され、後続リクエストではこの `batch_number` を再利用して残りのファイルを関連付けます。
+
+例:
+
+<CodeGroup>
+
+```python Python expandable {35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50} icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import time
+import os
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+filepaths = ["/path/to/your/file1.png", "/path/to/your/file2.png"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = {
+    "workspace_id":workspace_id,
+    }
+
+payload = MultipartEncoder(
+    fields=[
+        ("file", (os.path.basename(filepaths[0]), open(filepaths[0], "rb"), "image/png")),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}",
+                     params=params,
+                     data=payload.to_string(),
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+
+# get and reuse `batch_number`
+batch_number = resp_json["result"]["batch_number"]
+params["batch_number"] = batch_number
+payload = MultipartEncoder(
+    fields=[
+        ("file", (os.path.basename(filepaths[1]), open(filepaths[1], "rb"), "image/png")),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}",
+                     params=params,
+                     data=payload.to_string(),
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+## 03 バッチ番号で処理結果を確認
+
+アップロード完了後、`batch_number` を使用してそのバッチの処理結果を確認できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f["id"], f.get("name"), f.get("recognition_status"), f.get("category"))
+```
+
+</CodeGroup>

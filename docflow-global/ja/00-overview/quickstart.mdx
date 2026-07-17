@@ -1,0 +1,142 @@
+---
+title: "クイックスタート"
+description: "API で Docflow 機能をすばやく連携するための参考例"
+---
+
+<Tip>
+  このページでは、API で DocFlow ワークフローをすばやく連携するための例を紹介します。\
+  Web UI で DocFlow をまだ利用したことがない場合は、まず [Web ページ](https://docflow.textin.ai/) でファイルをアップロードし、DocFlow の動作を確認することをおすすめします。
+</Tip>
+
+## 01 前提条件: アクセス認証情報を取得
+
+### 1.1 パブリッククラウドでの利用
+
+Docflow API を利用するには、まず API Key を取得する必要があります。\
+ログイン後、[TextIn コンソール - アカウントと開発者情報](https://www.textin.ai/console/dashboard/setting) で `x-ti-app-id` と `x-ti-secret-code` を取得してください。
+
+### 1.2 プライベートクラウドでの利用
+
+プライベートデプロイ用の API 呼び出し認証情報は、担当のテクニカルサポートにお問い合わせください。
+
+## 02 準備
+
+### 2.1 Docflow ワークスペースと分類を設定
+
+まず [Workspace ID の取得方法](../100-faq/get_workspace_id) と [ファイルカテゴリの設定方法](../100-faq/setup_category) を参照し、設定を完了してワークスペース ID を取得します。
+
+## 2.2 ファイルをアップロード
+
+例:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F file=@</path/to/your/file.pdf \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable {6,7,8,9} icon=python lines
+import requests
+import json
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import os
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+workspace_id = "your-workspace-id"
+filepath = "/your/file/path.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+params = { "workspace_id":workspace_id}
+
+# ファイルパスが画像か PDF かを判定
+if filepath.endswith(".jpg") or filepath.endswith(".jpeg") or filepath.endswith(".png"):
+    mime_type = "image/jpeg"
+else:
+    mime_type = "application/pdf"
+
+payload = MultipartEncoder(
+    fields=[
+        "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type),
+    ]
+)
+
+resp = requests.post(url=f"{host}{url}",
+                     params=params,
+                     data=payload.to_string(),
+                     headers={"Content-Type": payload.content_type,
+                              "x-ti-app-id": ti_app_id,
+                              "x-ti-secret-code": ti_secret_code,
+                              })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+上記のサンプルコードに実際のパラメータを設定して実行すると、Web ページ上の対応するワークスペースで、アップロードしたファイルを確認できます。
+
+## 2.3 結果を取得
+
+例:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>"
+```
+
+
+```python Python expandable {4,5,6} icon=python lines
+import requests
+import json
+
+ti_app_id = "your-app-id"
+ti_secret_code = "your-app-secret"
+workspace_id = "your-workspace-id"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+params = { "workspace_id":workspace_id}
+
+resp = requests.get(url=f"{host}{url}",
+                    params=params,
+                    headers={"x-ti-app-id": ti_app_id,
+                             "x-ti-secret-code": ti_secret_code,
+                             })
+
+print(resp.text)
+resp_json = json.loads(resp.text)
+```
+
+</CodeGroup>
+
+## 2.4 結果の解析
+
+取得した結果は、処理済みドキュメントの結果を含む JSON 形式です。JSON を解析することで、ドキュメント解析、分類、抽出の結果を取得できます。
+
+<Tip>
+  以下の例では、出力内の抽出済みドキュメントフィールドを表示しています。その他の情報の解析については、このドキュメントの関連セクションを参照してください。
+</Tip>
+
+<CodeGroup>
+
+```python Python icon=python lines
+# 「結果を取得」のサンプルコードから続けて実行します
+
+for file in resp_json["result"]["files"]:
+  for item in file["data"]["items"]:
+    print(f"{item['key']}: {item['value']}")
+```
+
+</CodeGroup>

@@ -1,0 +1,111 @@
+---
+title: "Docflow Document MCP のインストール"
+description: "TextIn Docflow Document MCP サービスに接続し、Agent でドキュメント検索を有効にする方法"
+---
+
+## 01 Docflow Document MCP とは
+
+TextIn Docflow Document MCP は、[Model Context Protocol](https://modelcontextprotocol.io/) にもとづくサービスです。AI Coding Agent に TextIn Docflow のドキュメント検索機能を提供します。
+
+連携後、Agent は次のことができるようになります。
+- Docflow API ドキュメントを確認する
+- API パラメータ説明を取得する
+- 利用例やベストプラクティスを検索する
+
+## 02 インストール
+
+<Tabs>
+  <Tab title="Claude Code">
+    ### MCP サービスを追加
+
+    ターミナルで次のコマンドを実行します。
+
+    ```bash
+    claude mcp add textin-docflow-docs --transport sse http://docflow.textin.ai/textin-docs/mcp
+    ```
+
+    ### インストールを確認
+
+    追加済みの MCP サービスを確認するには、次のコマンドを実行します。
+
+    ```bash
+    claude mcp list
+    ```
+
+    出力に `textin-docflow-docs` が含まれていれば設定できています。
+  </Tab>
+  <Tab title="Codex">
+    ### MCP サービスを追加
+
+    ターミナルで次のコマンドを実行します。
+
+    ```bash
+    codex mcp add textin-docflow-docs --url http://docflow.textin.ai/textin-docs/mcp
+    ```
+
+    ### インストールを確認
+
+    追加済みの MCP サービスを確認するには、次のコマンドを実行します。
+
+    ```bash
+    codex mcp list
+    ```
+
+    出力に `textin-docflow-docs` が含まれていれば設定できています。
+  </Tab>
+  <Tab title="Cursor">
+    ### MCP サービスを追加
+
+    1. **Cursor** → **Preferences** → **Cursor Settings** を開きます
+    2. 左側ナビゲーションで **Tools & MCPs** を選択します
+    3. **Add Custom MCP** をクリックします
+    4. 次の JSON を入力します。
+
+    ```json
+    {
+      "mcpServers": {
+        "textin-docflow-docs": {
+          "url": "http://docflow.textin.ai/textin-docs/mcp"
+        }
+      }
+    }
+    ```
+
+    5. 保存し、`textin-docflow-docs` のステータスが connected と表示されることを確認します
+  </Tab>
+  <Tab title="VS Code Chat">
+    ### MCP サービスを追加
+
+    コマンドパレット（`Ctrl+Shift+P` / `Cmd+Shift+P`）を開き、**MCP: Add Server** を検索して、次の手順を実行します。
+    1. **HTTP (http or sse)** を選択します
+    2. サーバー URL として `http://docflow.textin.ai/textin-docs/mcp` を入力します
+    3. サーバー ID として `textin-docflow-docs` を入力します
+
+    ### インストールを確認
+
+    コマンドパレット（`Ctrl+Shift+P` / `Cmd+Shift+P`）を開き、**MCP: List Servers** を実行して、`textin-docflow-docs` のステータスが connected と表示されることを確認します。
+  </Tab>
+  <Tab title="Trae">
+    ### MCP サービスを追加
+
+    1. Trae の **Settings** → **MCP** を開きます
+    2. **Add** ドロップダウンをクリックし、**Manual Configuration** を選択します
+    3. 次の JSON を入力します。
+
+    ```json
+    {
+      "mcpServers": {
+        "textin-docflow-docs": {
+          "url": "http://docflow.textin.ai/textin-docs/mcp"
+        }
+      }
+    }
+    ```
+
+    4. 保存し、`textin-docflow-docs` のステータスが connected と表示されることを確認します
+  </Tab>
+</Tabs>
+
+<Warning>
+  ネットワークから `docflow.textin.ai` にアクセスできることを確認してください。ネットワーク制限がある場合は、管理者に連絡してこのドメインを許可リストに追加してください。
+</Warning>

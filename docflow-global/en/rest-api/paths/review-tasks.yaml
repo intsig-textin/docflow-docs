@@ -35,6 +35,19 @@
                 type: string
                 description: Batch number
                 example: "1234567890"
+              model:
+                type: string
+                description: |
+                  Review task model (optional). Available values: `deepseek-v4-pro`, `qwen3.6-plus`, `qwen3.7-max`, `ORM-O1`. If omitted, the rule repository's default review model is used.
+
+                  Starting July 8, 2026, the following legacy models were deprecated. Use the corresponding replacement model:
+
+                  | Legacy model | Replacement model |
+                  | --- | --- |
+                  | `deepseek-r1` | `deepseek-v4-pro` |
+                  | `qwq-32b` | `qwen3.6-plus` |
+                  | `qwen3-max` | `qwen3.7-max` |
+                example: "deepseek-v4-pro"
             required:
               - workspace_id
               - name
@@ -56,6 +69,10 @@
                           type: string
                           description: Review task ID
                           example: "31415926"
+                        model:
+                          type: string
+                          description: Display name of the review model actually used for this task. If a deprecated default model was replaced by platform rules, this field returns the replacement model display name.
+                          example: "deepseek-v4-pro"
 
 /api/app-api/sip/platform/v2/review/task/result:
   post:
@@ -143,6 +160,10 @@
                             error_count:
                               type: integer
                               description: Task execution error count
+                              example: 100
+                            not_triggered_count:
+                              type: integer
+                              description: Not-triggered count
                               example: 100
                         groups:
                           type: array
@@ -251,6 +272,10 @@
                                       type: string
                                       description: Manual review comments
                                       example: "Manual review comments"
+                        model:
+                          type: string
+                          description: Review task model display name. Historical tasks may continue to return the original model with a deprecated marker, such as `deepseek-r1 (deprecated)`.
+                          example: "deepseek-v4-pro"
 
 /api/app-api/sip/platform/v2/review/task/delete:
   post:

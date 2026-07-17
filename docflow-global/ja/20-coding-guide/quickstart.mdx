@@ -1,0 +1,47 @@
+---
+title: "クイックスタート"
+description: "3 つの手順で TextIn Docflow Document Skill を連携する方法"
+---
+
+<Tip>
+  このガイドでは、Docflow Document Skill を AI Coding Agent にすばやく連携する方法を説明します。\
+  Docflow をまだ利用したことがない場合は、まず [Web UI](https://docflow.textin.ai/) で Docflow の動作を体験することをおすすめします。
+</Tip>
+
+## 01 3 ステップで連携
+
+### 1.1 Coding Agent をインストール
+
+MCP と Skill をサポートする AI Coding ツールをインストールします。[Claude Code](https://claude.com/product/claude-code) を推奨します。
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### 1.2 TextIn Docflow Document MCP をインストール
+
+TextIn Docflow Document MCP サービスを Coding Agent に追加します。
+
+```bash
+claude mcp add textin-docflow-docs --transport sse http://docflow.textin.ai/textin-docs/mcp
+```
+
+### 1.3 TextIn Docflow Document Skill をインストール
+
+次のコマンドで Docflow Document Skill をインストールします。
+
+```bash
+mkdir -p "$HOME/.claude/skills/textin-docflow-document" && \
+curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+  -o "$HOME/.claude/skills/textin-docflow-document/SKILL.md"
+```
+
+## 02 インストールを確認
+
+インストール後、Claude Code で次のように入力して確認します。
+
+```
+What are the parameters for the Docflow document parsing API?
+```
+
+Agent が関連ドキュメントを返せば、連携は成功です。

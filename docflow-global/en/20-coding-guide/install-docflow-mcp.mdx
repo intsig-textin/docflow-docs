@@ -1,0 +1,111 @@
+---
+title: "Install Docflow Document MCP"
+description: "Connect to TextIn Docflow Document MCP service to enable document retrieval for your Agent"
+---
+
+## 01 What is Docflow Document MCP
+
+TextIn Docflow Document MCP is a service based on [Model Context Protocol](https://modelcontextprotocol.io/) that provides AI Coding Agents with document retrieval capabilities for TextIn Docflow.
+
+After integration, your Agent can:
+- Query Docflow API documentation
+- Get API parameter descriptions
+- Search for usage examples and best practices
+
+## 02 Installation
+
+<Tabs>
+  <Tab title="Claude Code">
+    ### Add MCP Service
+
+    Run the following command in your terminal:
+
+    ```bash
+    claude mcp add textin-docflow-docs --transport sse http://docflow.textin.ai/textin-docs/mcp
+    ```
+
+    ### Verify Installation
+
+    Run the following command to view added MCP services:
+
+    ```bash
+    claude mcp list
+    ```
+
+    The output should include `textin-docflow-docs`.
+  </Tab>
+  <Tab title="Codex">
+    ### Add MCP Service
+
+    Run the following command in your terminal:
+
+    ```bash
+    codex mcp add textin-docflow-docs --url http://docflow.textin.ai/textin-docs/mcp
+    ```
+
+    ### Verify Installation
+
+    Run the following command to view added MCP services:
+
+    ```bash
+    codex mcp list
+    ```
+
+    The output should include `textin-docflow-docs`.
+  </Tab>
+  <Tab title="Cursor">
+    ### Add MCP Service
+
+    1. Open **Cursor** → **Preferences** → **Cursor Settings**
+    2. Select **Tools & MCPs** in the left navigation
+    3. Click **Add Custom MCP**
+    4. Enter the following JSON:
+
+    ```json
+    {
+      "mcpServers": {
+        "textin-docflow-docs": {
+          "url": "http://docflow.textin.ai/textin-docs/mcp"
+        }
+      }
+    }
+    ```
+
+    5. Save and confirm `textin-docflow-docs` status shows connected
+  </Tab>
+  <Tab title="VS Code Chat">
+    ### Add MCP Service
+
+    Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`), search for **MCP: Add Server**, then:
+    1. Select **HTTP (http or sse)**
+    2. Enter the server URL: `http://docflow.textin.ai/textin-docs/mcp`
+    3. Enter the server ID: `textin-docflow-docs`
+
+    ### Verify Installation
+
+    Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`), run **MCP: List Servers**, and confirm `textin-docflow-docs` status shows connected.
+  </Tab>
+  <Tab title="Trae">
+    ### Add MCP Service
+
+    1. Open Trae **Settings** → **MCP**
+    2. Click the dropdown **Add**, select **Manual Configuration**
+    3. Enter the following JSON:
+
+    ```json
+    {
+      "mcpServers": {
+        "textin-docflow-docs": {
+          "url": "http://docflow.textin.ai/textin-docs/mcp"
+        }
+      }
+    }
+    ```
+
+    4. Save and confirm `textin-docflow-docs` status shows connected
+  </Tab>
+</Tabs>
+
+<Warning>
+  Ensure your network can access `docflow.textin.ai`. If there are network restrictions, contact your administrator to whitelist the domain.
+</Warning>

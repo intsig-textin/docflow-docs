@@ -12,16 +12,18 @@ ExtractFieldReqVO:
     extract_model:
       type: string
       description: |
-        Field-level extraction model, defaults to Model 1 if not specified
-        - Model 1: Fast speed with stable extraction results
-        - Model 2: Suitable for complex document understanding
-        - Model 3: VLM, suitable for simple extraction
+        Field-level extraction model, defaults to Acgpt if not specified
+        - Auto: Automatically matches the extraction model
+        - Acgpt: Fast speed with stable extraction results
+        - Acgpt-VL: VLM, suitable for simple extraction (≤10 pages)
+        - DF-M1: Suitable for complex document understanding
         Note: For table fields, the extraction model is determined by the table-level extract_model, this field is ignored
-      example: "Model 1"
+      example: "Acgpt"
       enum:
-        - Model 1
-        - Model 2
-        - Model 3
+        - Auto
+        - Acgpt
+        - Acgpt-VL
+        - DF-M1
 
 TaskProcessResult:
   type: object
@@ -151,7 +153,10 @@ TaskProcessResult:
                           type: string
                           example: 0
                         extractModel:
-                          description: Table-level extraction model
+                          description: Table-level actual hit model (Acgpt / Acgpt-VL / DF-M1)
+                          type: string
+                        configModel:
+                          description: Table-level configured model (Auto / Acgpt / Acgpt-VL / DF-M1); null for legacy data that was not configured
                           type: string
                         items:
                           type: array
@@ -197,6 +202,28 @@ TaskProcessResult:
                         position:
                           - page: 0
                             vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+                  invoiceVerifyResult:
+                    description: Invoice verification result
+                    type: object
+                    properties:
+                      invoiceVerifyStatus:
+                        type: integer
+                        description: |
+                          Whether invoice verification is successful (0: No, 1: Yes, null: Not verified)
+                        example: 0
+                      invoiceVerifyErrorCode:
+                        type: integer
+                        description: Invoice verification error code
+                        example: 0
+                      invoiceVerifyCanRetry:
+                        type: integer
+                        description: |
+                          Whether invoice verification can be retried/initiated (0: No, 1: Yes)
+                        example: 0
+                      invoiceVerifyFailMsg:
+                        type: string
+                        description: Invoice verification failure reason
+                        example: Exceeded daily limit
               document:
                 $ref: '#/Document'
               child_files:
@@ -214,6 +241,10 @@ TaskProcessResult:
                 type: integer
                 description: Total number of pages in the current file
                 example: 10
+              parser_params:
+                description: File parsing parameter configuration
+                allOf:
+                  - $ref: '#/DocumentParserParam'
             required:
               - id
               - name
@@ -253,9 +284,12 @@ FieldRespKeyValue:
       format: float
       description: Confidence score, range 0~1
       example: 0.95
-    extract_model:
+    extractModel:
       type: string
-      description: Actual extraction model used
+      description: Actual hit model (Acgpt / Acgpt-VL / DF-M1)
+    configModel:
+      type: string
+      description: Configured model (Auto / Acgpt / Acgpt-VL / DF-M1); null for legacy data that was not configured
 
 StampValue:
   type: object
@@ -506,7 +540,10 @@ SubFileDetailInfo:
                 type: string
                 example: 0
               extractModel:
-                description: Table-level extraction model
+                description: Table-level actual hit model (Acgpt / Acgpt-VL / DF-M1)
+                type: string
+              configModel:
+                description: Table-level configured model (Auto / Acgpt / Acgpt-VL / DF-M1); null for legacy data that was not configured
                 type: string
               items:
                 type: array
@@ -552,6 +589,28 @@ SubFileDetailInfo:
               position:
                 - page: 0
                   vertices: [ 0, 0, 100, 0, 100, 100, 0, 100 ]
+        invoiceVerifyResult:
+          description: Invoice verification result
+          type: object
+          properties:
+            invoiceVerifyStatus:
+              type: integer
+              description: |
+                Whether invoice verification is successful (0: No, 1: Yes, null: Not verified)
+              example: 0
+            invoiceVerifyErrorCode:
+              type: integer
+              description: Invoice verification error code
+              example: 0
+            invoiceVerifyCanRetry:
+              type: integer
+              description: |
+                Whether invoice verification can be retried/initiated (0: No, 1: Yes)
+              example: 0
+            invoiceVerifyFailMsg:
+              type: string
+              description: Invoice verification failure reason
+              example: Exceeded daily limit
     document:
       $ref: '#/Document'
     from_parent_position_list:
@@ -670,6 +729,21 @@ DocumentParserParam:
       enum:
         - 144
         - 216
+    parse_mode:
+      type: string
+      description: |
+        Parse mode
+        - `auto`: Automatic (default)
+        - `scan`: Scanned document mode
+        - `vlm`: VLM mode
+      example: auto
+      enum:
+        - auto
+        - scan
+        - vlm
+    pdf_pwd:
+      type: string
+      description: PDF file password for decrypting encrypted PDF files
 
 TokenResult:
   type: object

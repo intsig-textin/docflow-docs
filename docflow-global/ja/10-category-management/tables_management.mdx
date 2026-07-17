@@ -1,0 +1,411 @@
+---
+title: "テーブル管理"
+description: "ファイルカテゴリ配下の表設定を管理する方法"
+---
+
+<Tip>
+  表は、ファイルカテゴリ内で構造化された表データを抽出するための設定です。各表には複数のフィールドを含め、表の列を定義できます。このガイドでは、ファイルカテゴリ配下の表を API で管理する方法を説明します。
+</Tip>
+
+## テーブル一覧を取得
+
+指定したファイルカテゴリ配下のすべての表を取得します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/list?workspace_id=<your-workspace-id>&category_id=<category-id>"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/tables/list"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "category_id": category_id
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    tables = result.get("result", {}).get("tables", [])
+    print(f"Found {len(tables)} tables")
+    for table in tables:
+        print(f"Table ID: {table.get('id')}, Name: {table.get('name')}")
+        print(f"  Prompt: {table.get('prompt')}")
+        print(f"  Multi-table merge: {table.get('collect_from_multi_table')}")
+else:
+    print(f"Retrieval failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "tables": [
+      {
+        "id": "table_123",
+        "name": "Item Details",
+        "prompt": "Please extract item name, quantity, and amount for each row",
+        "collect_from_multi_table": true
+      },
+      {
+        "id": "table_456",
+        "name": "Fee Details",
+        "prompt": "Please extract fee item and amount for each row",
+        "collect_from_multi_table": false
+      }
+    ]
+  }
+}
+```
+
+## 表を追加
+
+指定したファイルカテゴリ配下に表を追加します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "tables": [
+      {
+        "name": "Item Details",
+        "prompt": "Please extract item name, quantity, and amount for each row",
+        "collect_from_multi_table": true
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/batch_add"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/tables/batch_add"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "tables": [
+        {
+            "name": "Item Details",
+            "prompt": "Please extract item name, quantity, and amount for each row",
+            "collect_from_multi_table": True  # Whether to merge multiple tables in document
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    table_id = result.get("result", {}).get("table_id")
+    print(f"Table created successfully, ID: {table_id}")
+else:
+    print(f"Creation failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `tables`（必須）: 表オブジェクトの配列。各オブジェクトには次の項目を含めます。
+  - `name`（必須）: 表名。最大 50 文字
+  - `prompt`（任意）: 表用のセマンティック抽出プロンプト。最大 200 文字
+  - `collect_from_multi_table`（任意）: 複数の表を統合するかどうか。デフォルトは false
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "result": {
+    "table_id": "table_new_789"
+  }
+}
+```
+
+<Note>
+  **複数表統合の説明**: 文書内に同じ構造の表が複数存在する場合、`collect_from_multi_table` を有効にすると、それらを 1 つの表結果に統合します。たとえば、請求書の明細が複数ページにまたがる場合、複数表統合を有効にすると、すべてのページの明細を 1 つにまとめられます。
+</Note>
+
+## テーブルを更新
+
+指定した表の情報を更新します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "tables": [
+      {
+        "table_id": "<table-id>",
+        "name": "Updated Table Name",
+        "prompt": "Updated prompt",
+        "collect_from_multi_table": true
+      }
+    ]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/batch_update"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/tables/batch_update"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "tables": [
+        {
+            "table_id": "<table-id>",
+            "name": "Updated Table Name",
+            "prompt": "Updated prompt",
+            "collect_from_multi_table": True
+        }
+    ]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Table updated successfully")
+else:
+    print(f"Update failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `tables`（必須）: 表オブジェクトの配列。各オブジェクトには次の項目を含めます。
+  - `table_id`（必須）: 表 ID
+  - `name`（任意）: 表名。最大 50 文字
+  - `prompt`（任意）: 表用のセマンティック抽出プロンプト。最大 200 文字
+  - `collect_from_multi_table`（必須）: 複数の表を統合するかどうか
+
+## テーブルを削除
+
+指定した表を削除します。複数件の一括削除にも対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "category_id": "<category-id>",
+    "table_ids": ["table_123", "table_456"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/tables/delete"
+```
+
+```python Python icon=python expandable lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/category/tables/delete"
+
+payload = {
+    "workspace_id": workspace_id,
+    "category_id": category_id,
+    "table_ids": ["table_123", "table_456"]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=30,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("Table deleted successfully")
+else:
+    print(f"Deletion failed: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `category_id`（必須）: ファイルカテゴリ ID
+- `table_ids`（必須）: 削除する表 ID の配列
+
+<Warning>
+  表を削除すると、その配下のすべてのフィールドも削除されます。慎重に操作してください。
+</Warning>
+
+## 表フィールド管理
+
+表を作成した後は、表の列を定義するためにフィールドを追加する必要があります。表フィールドの管理については、[フィールド管理](./fields_management) の「表フィールドを追加」セクションを参照してください。
+
+### 例: 表を作成してフィールドを追加
+
+```python Python icon=python expandable
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+category_id = "<category-id>"
+host = "https://docflow.textin.ai"
+
+# 1. Create table
+table_resp = requests.post(
+    url=f"{host}/api/app-api/sip/platform/v2/category/tables/batch_add",
+    json={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "tables": [
+            {
+                "name": "Item Details",
+                "prompt": "Please extract item name, quantity, and amount for each row",
+                "collect_from_multi_table": True
+            }
+        ]
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+)
+table_id = table_resp.json()["result"]["table_id"]
+print(f"Table created successfully, ID: {table_id}")
+
+# 2. Add fields to table (batch)
+field_resp = requests.post(
+    url=f"{host}/api/app-api/sip/platform/v2/category/fields/batch_add",
+    json={
+        "workspace_id": workspace_id,
+        "category_id": category_id,
+        "table_id": table_id,  # Specify table ID
+        "fields": [
+            {"name": "Item Name", "description": "Name of goods or services"},
+            {"name": "Quantity", "description": "Item quantity"},
+            {"name": "Unit Price", "description": "Item unit price"},
+            {"name": "Amount", "description": "Item amount"}
+        ]
+    },
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+)
+result = field_resp.json()
+if result.get("code") == 200:
+    print("All fields created successfully")
+else:
+    print(f"Field creation failed: {result.get('msg')}")
+
+print("Table and fields creation completed")
+```
+
+## 表設定
+
+### 表属性
+
+- **name**: 表名。必須
+- **prompt**: 表用のセマンティック抽出プロンプト。AI の表抽出を導くために使用します
+- **collect_from_multi_table**: 複数の表を統合するかどうか
+
+### 複数表統合が適した場面
+
+次のような場面では、複数表統合を有効にするのが適しています。
+
+1. **複数ページにまたがる表**: 表の内容が複数ページにまたがっている
+2. **繰り返し表**: 同じ構造の表が文書内に複数存在する
+3. **分割された表**: 表が他の内容によって分割されている
+
+例: 請求書の明細が複数ページにまたがる場合、複数表統合を有効にすると、すべてのページの明細を 1 つの完全な表結果にまとめられます。
+
+## 次のステップ
+
+- [フィールド管理](./fields_management) - 表にフィールドを追加します
+- [サンプル管理](./samples_management) - ファイルカテゴリ用のサンプルファイルを管理します
+- [カテゴリのクイックスタート](./quickstart) に戻る - ファイルカテゴリの基本操作を確認します

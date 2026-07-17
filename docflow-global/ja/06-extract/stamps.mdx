@@ -1,0 +1,138 @@
+---
+title: "印影情報"
+description: "文書抽出における印影情報の構造と処理方法の詳細説明"
+---
+
+文書抽出機能は、文書内の印影情報を認識できます。印影の種類、色、位置などの詳細情報が含まれます。印影情報は、文書の真正性の検証やコンプライアンスチェックにおいて重要な意味を持ちます。
+
+## 印影の構造
+
+印影情報は `result.files[].data.stamps[]` に格納されており、各印影には以下の属性が含まれます：
+
+- `page`：印影が位置するページ番号（0 から開始）
+- `text`：印影内のテキスト内容
+- `type`：印影の種類（「請求書専用印」「財務専用印」など）
+- `color`：印影の色（「赤」「青」など）
+- `shape`：印影の形状（「丸印」「角印」など）
+
+### 印影データ構造
+
+```json
+{
+  "page": 0,                    // ページ番号
+  "text": "全国統一発票監製印",  // 印影テキスト
+  "type": "Other",               // 印影の種類
+  "color": "Red"               // 印影の色
+}
+```
+
+
+## サンプルコード
+
+<CodeGroup>
+
+```python Python icon=python expandable
+import requests
+import json
+
+def extract_stamps(workspace_id, batch_number, app_id, secret_code):
+    """Extract stamp information from documents"""
+
+    host = "https://docflow.textin.ai"
+    url = "/api/app-api/sip/platform/v2/file/fetch"
+
+    resp = requests.get(
+        f"{host}{url}",
+        params={
+            "workspace_id": workspace_id,
+            "batch_number": batch_number
+        },
+        headers={
+            "x-ti-app-id": app_id,
+            "x-ti-secret-code": secret_code
+        },
+        timeout=60,
+    )
+
+    if resp.status_code != 200:
+        print(f"Request failed: {resp.status_code}")
+        return None
+
+    data = resp.json()
+
+    for file in data.get("result", {}).get("files", []):
+        print(f"File name: {file.get('name')}")
+
+        # Extract stamp information
+        stamps = file.get("data", {}).get("stamps", [])
+
+        if stamps:
+            print(f"\n=== 印影情報 ===")
+            print(f"Number of stamps: {len(stamps)}")
+
+            for i, stamp in enumerate(stamps):
+                page = stamp.get("page", 0)
+                text = stamp.get("text", "")
+                stamp_type = stamp.get("type", "")
+                color = stamp.get("color", "")
+
+                print(f"\nStamp {i+1}:")
+                print(f"  Page: Page {page+1}")
+                print(f"  Text: {text}")
+                print(f"  Type: {stamp_type}")
+                print(f"  Color: {color}")
+        else:
+            print("No stamp information found")
+
+    return data
+
+# Usage example
+if __name__ == "__main__":
+    workspace_id = "<your-workspace-id>"
+    batch_number = "<your-batch-number>"
+    app_id = "<your-app-id>"
+    secret_code = "<your-secret-code>"
+
+    result = extract_stamps(workspace_id, batch_number, app_id, secret_code)
+```
+
+</CodeGroup>
+
+## 返却データ例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "recognition_status": 1,
+        "data": {
+          "stamps": [
+            {
+              "page": 0,
+              "text": "National Unified Invoice Supervision Seal",
+              "type": "Other",
+              "color": "Red"
+            },
+            {
+              "page": 0,
+              "text": "Shanghai XX Technology Co., Ltd. Invoice Special Seal",
+              "type": "Invoice Special Seal",
+              "color": "Red"
+            },
+            {
+              "page": 0,
+              "text": "December 19, 2024",
+              "type": "Date Seal",
+              "color": "Blue"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```

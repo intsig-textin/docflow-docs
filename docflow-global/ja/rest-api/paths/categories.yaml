@@ -1,0 +1,1453 @@
+/api/app-api/sip/platform/v2/category/create:
+  post:
+    summary: ファイルカテゴリを作成
+    description: |
+      指定したワークスペースに新しいファイルカテゴリを作成します。少なくとも 1 つのサンプルファイルと 1 つのフィールド設定が必要です。
+
+      一括作成に対応しています。`tables` パラメータを渡すことで、ネストされたフィールドを含むテーブルも同時に作成できます。
+    operationId: createCategory
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              name:
+                type: string
+                description: ファイルカテゴリ名
+                example: "インボイス"
+                maxLength: 50
+              category_prompt:
+                type: string
+                description: 分類用プロンプト
+                example: "VAT インボイス。インボイスコード、インボイス番号などのフィールドを含みます。"
+                maxLength: 150
+              description:
+                type: string
+                description: ファイルカテゴリの説明
+              extract_model:
+                type: string
+                description: |
+                  抽出モデル
+                  - Auto: 抽出モデルを自動でマッチング
+                  - Acgpt: 高速で安定した抽出結果
+                  - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                  - DF-M1: 複雑な文書理解に適しています
+                example: "Acgpt"
+                enum:
+                  - Auto
+                  - Acgpt
+                  - Acgpt-VL
+                  - DF-M1
+              sample_files:
+                type: array
+                description: サンプルファイルリスト。少なくとも 1 つのサンプルファイルをアップロードする必要があります。1 つのカテゴリには最大 20 個のサンプルファイルを設定できます
+                items:
+                  type: string
+                  format: binary
+                minItems: 1
+                maxItems: 10
+              fields:
+                type: array
+                description: フィールド設定リスト。少なくとも 1 つのフィールドを設定する必要があります
+                items:
+                  $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+                minItems: 1
+              tables:
+                type: array
+                description: 任意。テーブル設定リスト（一括作成）。ネストされたフィールドに対応しています
+                items:
+                  $ref: '../components/schemas/categories.yaml#/CategoryTableConfig'
+              with_detail:
+                type: boolean
+                description: |
+                  完全な詳細を返すかどうか。true の場合、レスポンスにカテゴリの完全な情報（フィールド、テーブル、サンプルを含む）が含まれます。
+                  未設定または false の場合、category_id のみを返します。
+            required:
+              - workspace_id
+              - name
+              - extract_model
+              - sample_files
+              - fields
+    responses:
+      '200':
+        description: ファイルカテゴリの作成に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        category_id:
+                          type: string
+                          description: ファイルカテゴリ ID
+                          example: "1234567890"
+                        name:
+                          type: string
+                          description: ファイルカテゴリ名（with_detail=true の場合に返却）
+                        description:
+                          type: string
+                          description: ファイルカテゴリの説明（with_detail=true の場合に返却）
+                        category_prompt:
+                          type: string
+                          description: 分類プロンプト（with_detail=true の場合に返却）
+                        extract_model:
+                          type: string
+                          description: 抽出モデル（with_detail=true の場合に返却）
+                        enabled:
+                          type: integer
+                          description: 有効化ステータス（with_detail=true の場合に返却）
+                        fields:
+                          type: array
+                          description: フィールドリスト（with_detail=true の場合に返却）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryField'
+                        tables:
+                          type: array
+                          description: テーブルリスト（with_detail=true の場合に返却）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryTable'
+                        samples:
+                          type: array
+                          description: サンプルリスト（with_detail=true の場合に返却）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategorySample'
+                      required:
+                        - category_id
+
+/api/app-api/sip/platform/v2/category/list:
+  get:
+    summary: ワークスペースのファイルカテゴリ一覧を取得
+    tags:
+      - ファイルカテゴリ
+    description: ワークスペースのファイルカテゴリ一覧を取得します
+    operationId: listCategories
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: page
+        in: query
+        description: ページ番号
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: ページサイズ
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: enabled
+        in: query
+        description: |
+          有効化ステータス
+          - all: All
+          - 1: 有効
+          - 0: 無効
+          - 2: 下書き
+        required: false
+        schema:
+          type: string
+          default: "1"
+          enum:
+            - "all"
+            - "1"
+            - "0"
+            - "2"
+    responses:
+      '200':
+        description: ワークスペースのファイルカテゴリリストを正常に取得しました
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: ファイルカテゴリ総数
+                          example: 100
+                        page:
+                          type: integer
+                          description: 現在のページ番号
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: ページサイズ
+                          example: 20
+                        categories:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/Category'
+
+/api/app-api/sip/platform/v2/category/update:
+  post:
+    summary: ファイルカテゴリを更新
+    description: |
+      指定したファイルカテゴリ情報を更新します。
+
+      注意: extract_model を設定すると、このカテゴリ配下のすべてのフィールドとテーブルの抽出モデルが連鎖的に上書きされます。
+    operationId: updateCategory
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              name:
+                type: string
+                description: ファイルカテゴリ名
+                example: "インボイス"
+                maxLength: 50
+              category_prompt:
+                type: string
+                description: 分類用プロンプト
+                example: "VAT インボイス。インボイスコード、インボイス番号などのフィールドを含みます。"
+                maxLength: 150
+              enabled:
+                $ref: '../components/schemas/categories.yaml#/EnabledStatus'
+              extract_model:
+                type: string
+                description: |
+                  抽出モデル, cascades to all fields and tables when set
+                  - Auto: 抽出モデルを自動でマッチング
+                  - Acgpt: 高速で安定した抽出結果
+                  - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                  - DF-M1: 複雑な文書理解に適しています
+                example: "Acgpt"
+                enum:
+                  - Auto
+                  - Acgpt
+                  - Acgpt-VL
+                  - DF-M1
+              with_detail:
+                type: boolean
+                description: |
+                  完全な詳細を返すかどうか。true の場合、子レベルのフィールド/テーブルを除くカテゴリ自身の情報を返します。
+                  未設定または false の場合、code/msg のみを返します。
+            required:
+              - workspace_id
+              - category_id
+    responses:
+      '200':
+        description: ファイルカテゴリの更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      description: with_detail=true の場合はカテゴリ自身の情報、それ以外は null
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: カテゴリ ID
+                        name:
+                          type: string
+                          description: カテゴリ名
+                        description:
+                          type: string
+                          description: カテゴリ説明
+                        category_prompt:
+                          type: string
+                          description: 分類プロンプト
+                        extract_model:
+                          type: string
+                          description: 抽出モデル
+                        enabled:
+                          type: integer
+                          description: 有効化ステータス
+
+/api/app-api/sip/platform/v2/category/delete:
+  post:
+    summary: ファイルカテゴリを削除
+    description: 指定したファイルカテゴリを削除します
+    operationId: deleteCategory
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_ids:
+                type: array
+                items:
+                  type: string
+                description: 削除するファイルカテゴリ ID のリスト
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_ids
+    responses:
+      '200':
+        description: ファイルカテゴリの削除に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/category/fields/list:
+  get:
+    summary: ファイルカテゴリのフィールド一覧を取得
+    description: ファイルカテゴリのフィールド一覧を取得します。通常フィールドとテーブル（テーブルフィールドを含む）を含みます
+    operationId: listCategoryFields
+    tags:
+      - ファイルカテゴリ
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: ファイルカテゴリ ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: ファイルカテゴリフィールド一覧の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        fields:
+                          type: array
+                          description: 通常フィールドリスト
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryField'
+                        tables:
+                          type: array
+                          description: テーブルリスト（テーブルフィールドを含む）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryTable'
+
+/api/app-api/sip/platform/v2/category/fields/batch_add:
+  post:
+    summary: ファイルカテゴリのフィールドを追加
+    description: 指定したファイルカテゴリ配下に複数のフィールドを追加します。全件成功または全件失敗のセマンティクスを採用しており、いずれかのフィールドが検証に失敗するとバッチ全体が失敗します。
+    operationId: batchAddCategoryFields
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: |
+                  テーブル ID
+                  - 未指定または空の場合: 通常フィールドを作成します
+                  - テーブル ID を指定した場合: 指定したテーブル配下にテーブルフィールドを作成します
+              fields:
+                type: array
+                description: 追加するフィールドのリスト
+                items:
+                  $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+                minItems: 1
+              with_detail:
+                type: boolean
+                description: 各フィールドの完全な詳細を返すかどうか
+            required:
+              - workspace_id
+              - category_id
+              - fields
+    responses:
+      '200':
+        description: フィールドの追加に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: array
+                      description: 作成結果リスト。リクエストと同じ順序です
+                      items:
+                        type: object
+                        properties:
+                          field_id:
+                            type: string
+                            description: フィールド ID
+                          name:
+                            type: string
+                            description: フィールド名（with_detail=true の場合に返却）
+                          description:
+                            type: string
+                          prompt:
+                            type: string
+                          use_prompt:
+                            type: boolean
+                          alias:
+                            type: array
+                            items:
+                              type: string
+                          identity:
+                            type: string
+                          multi_value:
+                            type: boolean
+                          duplicate_value_distinct:
+                            type: boolean
+                          transform_settings:
+                            $ref: '../components/schemas/categories.yaml#/TransformSettings'
+                          extract_model:
+                            type: string
+                          enabled:
+                            type: integer
+                        required:
+                          - field_id
+
+/api/app-api/sip/platform/v2/category/fields/batch_update:
+  post:
+    summary: ファイルカテゴリのフィールドを更新
+    description: 指定したファイルカテゴリ配下の複数フィールドを更新します。全件成功または全件失敗のセマンティクスを採用しています。
+    operationId: batchUpdateCategoryFields
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              fields:
+                type: array
+                description: 更新するフィールドのリスト
+                items:
+                  $ref: '../components/schemas/categories.yaml#/CategoryFieldUpdateItem'
+                minItems: 1
+              with_detail:
+                type: boolean
+                description: 更新後の各フィールドの完全な詳細を返すかどうか
+            required:
+              - workspace_id
+              - category_id
+              - fields
+    responses:
+      '200':
+        description: フィールドの更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: array
+                      description: with_detail=true の場合は更新後のフィールドリスト、それ以外は null
+                      items:
+                        type: object
+                        properties:
+                          field_id:
+                            type: string
+                          name:
+                            type: string
+                          description:
+                            type: string
+                          prompt:
+                            type: string
+                          use_prompt:
+                            type: boolean
+                          alias:
+                            type: array
+                            items:
+                              type: string
+                          identity:
+                            type: string
+                          multi_value:
+                            type: boolean
+                          duplicate_value_distinct:
+                            type: boolean
+                          transform_settings:
+                            $ref: '../components/schemas/categories.yaml#/TransformSettings'
+                          extract_model:
+                            type: string
+                          enabled:
+                            type: integer
+
+/api/app-api/sip/platform/v2/category/fields/delete:
+  post:
+    summary: ファイルカテゴリのフィールドを削除
+    description: 指定したファイルカテゴリフィールドを削除します。通常フィールドとテーブルフィールドの一括削除に対応しています
+    operationId: deleteCategoryFields
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              field_ids:
+                type: array
+                description: 削除するフィールド ID のリスト
+                items:
+                  type: string
+                example: ["1234567890", "0987654321"]
+              table_id:
+                type: string
+                description: |
+                  テーブル ID
+                  - 未指定の場合: 通常フィールド（result.fields 内のフィールド）を削除します
+                  - テーブル ID を指定した場合: 指定したテーブル配下のテーブルフィールド（result.tables[].fields 内のフィールド）を削除します
+                example: "1234567890"
+            required:
+              - workspace_id
+              - category_id
+              - field_ids
+    responses:
+      '200':
+        description: ファイルカテゴリフィールドの削除に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+# 廃止済み - 上記のバッチエンドポイントを使用してください
+/api/app-api/sip/platform/v2/category/fields/add:
+  post:
+    summary: 単一ファイルカテゴリフィールドを追加
+    description: |
+      指定したファイルカテゴリ配下に新しいフィールドを追加します。通常フィールドとテーブルフィールドの両方に対応しています
+
+      > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに [ファイルカテゴリのフィールドを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E8%BF%BD%E5%8A%A0) を使用してください。
+    operationId: addCategoryField
+    tags:
+      - 廃止済み
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/categories.yaml#/CategoryFieldConfig'
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: |
+                  テーブル ID
+                  - 未指定または空の場合: 通常フィールドを作成し、結果は result.fields に表示されます
+                  - テーブル ID を指定した場合: 指定したテーブル配下にテーブルフィールドを作成し、結果は result.tables[].fields に表示されます
+                example: "1234567890"
+              extract_model:
+                type: string
+                description: |
+                  任意。フィールドレベルの抽出モデル。通常フィールド（テーブルフィールド以外）のみ対応し、未指定の場合は分類レベルの設定に従います（分類レベルが mixed または null の場合は Auto がデフォルト）
+                  - Auto: 抽出モデルを自動でマッチング
+                  - Acgpt: 高速で安定した抽出結果
+                  - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                  - DF-M1: 複雑な文書理解に適しています
+                example: "Acgpt"
+                enum:
+                  - Auto
+                  - Acgpt
+                  - Acgpt-VL
+                  - DF-M1
+              with_detail:
+                type: boolean
+                description: |
+                  完全な詳細を返すかどうか。true の場合、レスポンスにフィールドの完全な情報が含まれます。
+                  未設定または false の場合、field_id のみを返します。
+            required:
+              - workspace_id
+              - category_id
+              - name
+    responses:
+      '200':
+        description: ファイルカテゴリフィールドの追加に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        field_id:
+                          type: string
+                          description: 新規作成されたフィールド ID
+                          example: "1234567890"
+                        name:
+                          type: string
+                          description: フィールド名（with_detail=true の場合に返却）
+                        description:
+                          type: string
+                          description: フィールドの説明（with_detail=true の場合に返却）
+                        prompt:
+                          type: string
+                          description: 意味抽出プロンプト（with_detail=true の場合に返却）
+                        use_prompt:
+                          type: boolean
+                          description: 意味抽出プロンプトを使用するかどうか（with_detail=true の場合に返却）
+                        alias:
+                          type: array
+                          items:
+                            type: string
+                          description: フィールド別名（with_detail=true の場合に返却）
+                        identity:
+                          type: string
+                          description: エクスポート時のフィールド名（with_detail=true の場合に返却）
+                        multi_value:
+                          type: boolean
+                          description: 複数値抽出を有効にするかどうか（with_detail=true の場合に返却）
+                        duplicate_value_distinct:
+                          type: boolean
+                          description: 重複値除去を有効にするかどうか（with_detail=true の場合に返却）
+                        transform_settings:
+                          $ref: '../components/schemas/categories.yaml#/TransformSettings'
+                        extract_model:
+                          type: string
+                          description: フィールド抽出モデル（with_detail=true の場合に返却）
+                        enabled:
+                          type: integer
+                          description: 有効化ステータス（with_detail=true の場合に返却）
+                      required:
+                        - field_id
+
+/api/app-api/sip/platform/v2/category/fields/update:
+  post:
+    summary: 単一ファイルカテゴリフィールドを更新
+    description: |
+      指定したファイルカテゴリフィールドを更新します。通常フィールドとテーブルフィールドの両方に対応しています
+
+      > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに [ファイルカテゴリのフィールドを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0) を使用してください。
+    operationId: updateCategoryField
+    tags:
+      - 廃止済み
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../components/schemas/categories.yaml#/CategoryFieldUpdateItem'
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: |
+                  テーブル ID
+                  - 通常フィールドでは不要です
+                  - テーブルフィールドでは必須です（フィールドが属するテーブル ID を指定してください）
+                example: "1234567890"
+              with_detail:
+                type: boolean
+                description: |
+                  完全な詳細を返すかどうか。true の場合、更新後フィールドの完全な情報を返します。
+                  未設定または false の場合、code/msg のみを返します。
+            required:
+              - workspace_id
+              - category_id
+              - field_id
+    responses:
+      '200':
+        description: ファイルカテゴリフィールドの更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+# カテゴリテーブルエンドポイント
+/api/app-api/sip/platform/v2/category/tables/list:
+  get:
+    summary: ファイルカテゴリのテーブル一覧を取得
+    description: 指定したファイルカテゴリに設定されているすべてのテーブルを取得します
+    operationId: listCategoryTables
+    tags:
+      - ファイルカテゴリ
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: ファイルカテゴリ ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: ファイルカテゴリテーブル一覧の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        tables:
+                          type: array
+                          description: テーブルリスト
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: テーブル ID
+                                example: "1234567890"
+                              name:
+                                type: string
+                                description: テーブル名
+                                example: "Table 1"
+                              prompt:
+                                type: string
+                                description: テーブルの意味抽出プロンプト
+                                example: "各行から品目名、数量、金額を抽出します"
+                              collect_from_multi_table:
+                                type: boolean
+                                description: 複数テーブルを結合
+                                example: true
+                              extract_model:
+                                type: string
+                                description: テーブルレベルの抽出モデル（Auto/Acgpt/Acgpt-VL/DF-M1）
+                                example: "Acgpt"
+
+/api/app-api/sip/platform/v2/category/tables/batch_add:
+  post:
+    summary: ファイルカテゴリのテーブルを追加
+    description: 指定したファイルカテゴリ配下に複数のテーブルを追加します（ネストされたフィールドに対応）。全件成功または全件失敗のセマンティクスを採用しています。
+    operationId: batchAddCategoryTables
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              tables:
+                type: array
+                description: 追加するテーブルのリスト
+                items:
+                  $ref: '../components/schemas/categories.yaml#/CategoryTableConfig'
+                minItems: 1
+              with_detail:
+                type: boolean
+                description: 各テーブルの完全な詳細（フィールドリストを含む）を返すかどうか
+            required:
+              - workspace_id
+              - category_id
+              - tables
+    responses:
+      '200':
+        description: テーブルの追加に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: array
+                      description: 作成結果リスト。リクエストと同じ順序です
+                      items:
+                        type: object
+                        properties:
+                          table_id:
+                            type: string
+                            description: テーブル ID
+                          name:
+                            type: string
+                            description: テーブル名（with_detail=true の場合に返却）
+                          description:
+                            type: string
+                          prompt:
+                            type: string
+                          collect_from_multi_table:
+                            type: boolean
+                          extract_model:
+                            type: string
+                          fields:
+                            type: array
+                            description: テーブルフィールドリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '../components/schemas/categories.yaml#/CategoryField'
+                        required:
+                          - table_id
+
+/api/app-api/sip/platform/v2/category/tables/batch_update:
+  post:
+    summary: ファイルカテゴリのテーブルを更新
+    description: 指定したファイルカテゴリ配下の複数テーブルを更新します。全件成功または全件失敗のセマンティクスを採用しています。
+    operationId: batchUpdateCategoryTables
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              tables:
+                type: array
+                description: 更新するテーブルのリスト
+                items:
+                  $ref: '../components/schemas/categories.yaml#/CategoryTableUpdateItem'
+                minItems: 1
+            required:
+              - workspace_id
+              - category_id
+              - tables
+    responses:
+      '200':
+        description: テーブルの更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/category/tables/delete:
+  post:
+    summary: ファイルカテゴリのテーブルを削除
+    description: 指定したファイルカテゴリテーブルを削除します。一括削除に対応しています
+    operationId: deleteCategoryTables
+    tags:
+      - ファイルカテゴリ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              table_ids:
+                type: array
+                description: 削除するテーブル ID のリスト
+                items:
+                  type: string
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_id
+              - table_ids
+    responses:
+      '200':
+        description: ファイルカテゴリテーブルの削除に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+# 廃止済み - 上記のバッチエンドポイントを使用してください
+/api/app-api/sip/platform/v2/category/tables/add:
+  post:
+    summary: 単一ファイルカテゴリテーブルを追加
+    description: |
+      指定したファイルカテゴリ配下に新しいテーブルを追加します
+
+      > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに [ファイルカテゴリのテーブルを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E8%BF%BD%E5%8A%A0) を使用してください。
+    operationId: addCategoryTable
+    tags:
+      - 廃止済み
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              name:
+                type: string
+                description: テーブル名
+                example: "Table 1"
+                maxLength: 50
+              prompt:
+                type: string
+                description: テーブルの意味抽出プロンプト
+                example: "各行から品目名、数量、金額を抽出します"
+                maxLength: 200
+              collect_from_multi_table:
+                type: boolean
+                description: 複数テーブルを結合
+                example: true
+              extract_model:
+                type: string
+                description: |
+                  テーブルレベルの抽出モデル
+                  - Auto: 抽出モデルを自動でマッチング
+                  - Acgpt: 高速で安定した抽出結果
+                  - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                  - DF-M1: 複雑な文書理解に適しています
+                example: "Acgpt"
+                enum:
+                  - Auto
+                  - Acgpt
+                  - Acgpt-VL
+                  - DF-M1
+              with_detail:
+                type: boolean
+                description: |
+                  完全な詳細を返すかどうか。true の場合、レスポンスにテーブルの完全な情報（フィールドリストを含む）が含まれます。
+                  未設定または false の場合、table_id のみを返します。
+            required:
+              - workspace_id
+              - category_id
+              - name
+    responses:
+      '200':
+        description: ファイルカテゴリテーブルの追加に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        table_id:
+                          type: string
+                          description: 新規テーブル ID
+                          example: "1234567890"
+                        name:
+                          type: string
+                          description: テーブル名（with_detail=true の場合に返却）
+                        description:
+                          type: string
+                          description: テーブルの説明（with_detail=true の場合に返却）
+                        prompt:
+                          type: string
+                          description: テーブルの意味抽出プロンプト（with_detail=true の場合に返却）
+                        collect_from_multi_table:
+                          type: boolean
+                          description: 複数テーブルを結合（with_detail=true の場合に返却）
+                        extract_model:
+                          type: string
+                          description: テーブルレベルの抽出モデル（with_detail=true の場合に返却）
+                        fields:
+                          type: array
+                          description: テーブルフィールドリスト（with_detail=true の場合に返却）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategoryField'
+                      required:
+                        - table_id
+
+/api/app-api/sip/platform/v2/category/tables/update:
+  post:
+    summary: 単一ファイルカテゴリテーブルを更新
+    description: |
+      指定したファイルカテゴリテーブルの情報を更新します
+
+      > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに [ファイルカテゴリのテーブルを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E6%9B%B4%E6%96%B0) を使用してください。
+    operationId: updateCategoryTable
+    tags:
+      - 廃止済み
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              table_id:
+                type: string
+                description: テーブル ID
+                example: "1234567890"
+              name:
+                type: string
+                description: テーブル名
+                example: "Table 1"
+                maxLength: 50
+              prompt:
+                type: string
+                description: テーブルの意味抽出プロンプト
+                example: "各行から品目名、数量、金額を抽出します"
+                maxLength: 200
+              collect_from_multi_table:
+                type: boolean
+                description: 複数テーブルを結合。Acgpt-VL は複数テーブルの結合に対応していません
+                example: true
+              extract_model:
+                type: string
+                description: |
+                  テーブルレベルの抽出モデル
+                  - Auto: 抽出モデルを自動でマッチング
+                  - Acgpt: 高速で安定した抽出結果
+                  - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                  - DF-M1: 複雑な文書理解に適しています
+                example: "Acgpt"
+                enum:
+                  - Auto
+                  - Acgpt
+                  - Acgpt-VL
+                  - DF-M1
+              with_detail:
+                type: boolean
+                description: 完全な詳細を返すかどうか
+            required:
+              - workspace_id
+              - category_id
+              - table_id
+              - collect_from_multi_table
+    responses:
+      '200':
+        description: ファイルカテゴリテーブルの更新に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+# カテゴリサンプルエンドポイント
+/api/app-api/sip/platform/v2/category/sample/upload:
+  post:
+    summary: 単一カテゴリサンプルをアップロード
+    description: |
+      指定したファイルカテゴリにサンプルファイルをアップロードします
+
+      > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに [カテゴリサンプルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89) を使用してください。
+    operationId: uploadCategorySample
+    tags:
+      - 廃止済み
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              file:
+                type: string
+                format: binary
+                description: サンプルファイル
+              with_detail:
+                type: boolean
+                description: |
+                  完全な詳細を返すかどうか。true の場合、レスポンスにこのカテゴリの完全なサンプルリストも返します。
+                  未設定または false の場合、sample_id のみを返します。
+            required:
+              - workspace_id
+              - category_id
+              - file
+    responses:
+      '200':
+        description: カテゴリサンプルのアップロードに成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        sample_id:
+                          type: string
+                          description: サンプル ID
+                          example: "1234567890"
+                        samples:
+                          type: array
+                          description: このカテゴリの完全なサンプルリスト（with_detail=true の場合に返却）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategorySample'
+                      required:
+                        - sample_id
+
+/api/app-api/sip/platform/v2/category/sample/batch_upload:
+  post:
+    summary: カテゴリサンプルをアップロード
+    description: 指定したファイルカテゴリに複数のサンプルファイルをアップロードします。最大 20 ファイルまで対応します
+    operationId: batchUploadCategorySample
+    tags:
+      - ファイルカテゴリサンプル
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              files:
+                type: array
+                description: サンプルファイルリスト。最大 20 ファイル
+                items:
+                  type: string
+                  format: binary
+                minItems: 1
+                maxItems: 10
+              with_detail:
+                type: boolean
+                description: true の場合、レスポンスにこのカテゴリの完全なサンプルリストを返します
+            required:
+              - workspace_id
+              - category_id
+              - files
+    responses:
+      '200':
+        description: サンプルの一括アップロードに成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        samples:
+                          type: array
+                          description: このカテゴリの完全なサンプルリスト（with_detail=true の場合に返却）
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategorySample'
+
+/api/app-api/sip/platform/v2/category/sample/list:
+  get:
+    summary: カテゴリサンプル一覧を取得
+    description: 指定したファイルカテゴリのサンプル一覧を取得します
+    operationId: listCategorySamples
+    tags:
+      - ファイルカテゴリサンプル
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: ファイルカテゴリ ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: page
+        in: query
+        description: ページ番号
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: ページサイズ
+        required: false
+        schema:
+          type: integer
+          default: 20
+    responses:
+      '200':
+        description: カテゴリサンプル一覧の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          description: サンプル総数
+                          example: 10
+                        page:
+                          type: integer
+                          description: 現在のページ番号
+                          example: 1
+                        page_size:
+                          type: integer
+                          description: ページサイズ
+                          example: 20
+                        samples:
+                          type: array
+                          items:
+                            $ref: '../components/schemas/categories.yaml#/CategorySample'
+
+/api/app-api/sip/platform/v2/category/sample/download:
+  get:
+    summary: 単一カテゴリサンプルをダウンロード
+    description: |
+      指定したカテゴリサンプルファイルをダウンロードします
+
+      > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに [カテゴリサンプルをダウンロード（ZIP）](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%EF%BC%88ZIP%EF%BC%89) を使用してください。
+    operationId: downloadCategorySample
+    tags:
+      - 廃止済み
+    parameters:
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: category_id
+        in: query
+        description: ファイルカテゴリ ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+      - name: sample_id
+        in: query
+        description: サンプル ID
+        required: true
+        schema:
+          type: string
+          example: "1234567890"
+    responses:
+      '200':
+        description: サンプルファイルのダウンロードに成功
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+
+/api/app-api/sip/platform/v2/category/sample/batch_download:
+  post:
+    summary: カテゴリサンプルをダウンロード（ZIP）
+    description: 指定したカテゴリの複数サンプルファイルを ZIP ファイルにまとめてダウンロードします。sample_ids を指定しない場合は、すべてのサンプルをダウンロードします。
+    operationId: batchDownloadCategorySample
+    tags:
+      - ファイルカテゴリサンプル
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              sample_ids:
+                type: array
+                description: ダウンロードするサンプル ID のリスト。指定しない場合、このカテゴリのすべてのサンプルをダウンロードします。
+                items:
+                  type: string
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_id
+    responses:
+      '200':
+        description: サンプル ZIP ファイルのダウンロードに成功
+        content:
+          application/zip:
+            schema:
+              type: string
+              format: binary
+
+/api/app-api/sip/platform/v2/category/sample/delete:
+  post:
+    summary: カテゴリサンプルを削除
+    description: 指定したカテゴリサンプルを削除します
+    operationId: deleteCategorySample
+    tags:
+      - ファイルカテゴリサンプル
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: "1234567890"
+              category_id:
+                type: string
+                description: ファイルカテゴリ ID
+                example: "1234567890"
+              sample_ids:
+                type: array
+                items:
+                  type: string
+                description: 削除するサンプル ID のリスト
+                example: ["1234567890", "0987654321"]
+            required:
+              - workspace_id
+              - category_id
+              - sample_ids
+    responses:
+      '200':
+        description: カテゴリサンプルの削除に成功
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/CodeMessage'

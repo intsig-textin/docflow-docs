@@ -1,0 +1,248 @@
+---
+title: "レビュータスクの再試行"
+description: "REST API を使用してレビュータスク、またはレビュータスク内の特定ルールを再試行します"
+---
+
+<Tip>
+  このドキュメントでは、REST API を使用してレビュータスクを再試行する方法を説明します。レビュータスクの実行に失敗した場合や再レビューが必要な場合、レビュータスク全体を再試行するか、レビュータスク内の特定ルールのみを再試行できます。
+</Tip>
+
+レビュータスクには 2 種類の再試行方法があります。
+1. **レビュータスク全体を再試行**: レビュータスク内のすべてのルールを再実行します。
+2. **特定ルールを再試行**: レビュータスク内の特定のルールのみを再実行します。
+
+## レビュータスク全体を再試行
+
+レビュータスク全体を再実行し、タスク内のすべてのルールを再レビューします。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/retry"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("レビュータスクの再試行に成功しました")
+else:
+    print(f"再試行に失敗しました: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `task_id`（必須）: レビュータスク ID
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## レビュータスク内の特定ルールを再試行
+
+レビュータスク内の特定ルールのみを再実行します。特定のルールだけを再レビューしたい場合に適しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -d '{
+    "workspace_id": "<your-workspace-id>",
+    "task_id": "31415926",
+    "rule_id": "31415926"
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/review/task/rule/retry"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+rule_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/rule/retry"
+
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id,
+    "rule_id": rule_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    print("ルールの再試行に成功しました")
+else:
+    print(f"再試行に失敗しました: {result.get('msg')}")
+```
+
+</CodeGroup>
+
+**リクエストパラメータ:**
+- `workspace_id`（必須）: ワークスペース ID
+- `task_id`（必須）: レビュータスク ID
+- `rule_id`（必須）: レビュー規則 ID
+
+**レスポンス例:**
+
+```json
+{
+  "code": 200,
+  "msg": "success"
+}
+```
+
+## パラメータ説明
+
+### レビュータスク ID（task_id）
+
+レビュータスク ID は、作成済みレビュータスクの識別子です。以下の方法で取得できます。
+
+- [レビュータスクを作成](./create_task) API でタスクを作成した際のレスポンスから取得
+- [レビュー結果を取得](./get_result) API でタスクを確認した際に取得
+
+### レビュー規則 ID（rule_id）
+
+レビュー規則 ID は、レビュータスク内の特定ルールの識別子です。以下の方法で取得できます。
+
+- [レビュー結果を取得](./get_result) API でタスク結果を確認し、`groups[].review_tasks[].rule_id` フィールドから取得
+- [規則リポジトリ管理](./rule_management) API で規則リポジトリ内の規則 ID を取得
+
+**例: レビュー結果から規則 ID を取得**
+
+```python Python icon=python expandable
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "31415926"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/review/task/result"
+
+# レビュー結果を取得
+payload = {
+    "workspace_id": workspace_id,
+    "task_id": task_id
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+result = resp.json()
+if result.get("code") == 200:
+    review_result = result.get("result", {})
+    groups = review_result.get("groups", [])
+
+    # すべてのルールを走査し、規則 ID を取得
+    rule_ids = []
+    for group in groups:
+        review_tasks = group.get("review_tasks", [])
+        for review_task in review_tasks:
+            rule_id = review_task.get("rule_id")
+            rule_name = review_task.get("rule_name")
+            if rule_id:
+                rule_ids.append({
+                    "rule_id": rule_id,
+                    "rule_name": rule_name
+                })
+
+    print(f"{len(rule_ids)} 件のルールが見つかりました:")
+    for rule in rule_ids:
+        print(f"  規則 ID: {rule['rule_id']}, 規則名: {rule['rule_name']}")
+```
+
+## 利用シーン
+
+### レビュータスク全体を再試行
+
+以下のようなシーンに適しています。
+
+1. **レビュータスクの実行失敗**: レビュータスク全体の実行に失敗した場合、タスク全体を再試行できます。
+2. **規則リポジトリ更新後**: 規則リポジトリ内の規則を更新した場合、レビュータスク全体を再試行して新しい規則を適用できます。
+3. **抽出結果更新後**: 関連する抽出タスクの結果が更新された場合、新しい抽出結果に基づいてレビュータスクを再実行できます。
+
+### 特定ルールを再試行
+
+以下のようなシーンに適しています。
+
+1. **単一ルールの実行失敗**: 特定のルールのみ実行に失敗した場合、他のルールに影響を与えず、そのルールだけを再試行できます。
+2. **ルール設定の調整後**: 特定ルールの設定を調整した場合、そのルールだけを再試行できます。
+3. **効率向上**: 特定ルールだけを再レビューしたい場合、タスク全体を再試行するよりも効率的です。
+
+## 注意事項
+
+1. **非同期実行**: 再試行操作は非同期で実行されます。再試行後は、[レビュー結果を取得](./get_result) API でレビュー状態を確認してください。
+2. **タスク状態**: レビュータスクが存在し、再試行可能であることを確認してください。削除済みタスクは再試行できません。
+3. **ルール状態**: ルールを再試行する場合、規則 ID が正しく、指定したレビュータスクに属していることを確認してください。
+4. **再試行頻度**: システム負荷が高くなりすぎないよう、頻繁な再試行は避け、再試行頻度を適切に制御することを推奨します。
+5. **結果の上書き**: 再試行するとレビュー結果が再生成され、元のレビュー結果は上書きされます。
+
+## 関連ページ
+
+- [レビュータスクを作成](./create_task) - レビュータスクの作成方法
+- [レビュー結果を取得](./get_result) - レビュー結果の取得方法
+- [規則リポジトリ管理](./rule_management) - レビュー規則リポジトリの管理方法

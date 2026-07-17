@@ -1,0 +1,335 @@
+---
+title: "同期アップロード"
+description: "ファイルを同期アップロードし、処理完了を待って処理結果を直接返す方法"
+---
+
+<Tip>
+  このページでは、同期アップロード API を使用して REST API から DocFlow にファイルをアップロードする方法を説明します。
+  同期アップロード API はファイル処理が完了するまで待ってから結果を返すため、処理結果をすぐに取得したい場面に適しています。
+</Tip>
+
+DocFlow は同期アップロード API `/api/app-api/sip/platform/v2/file/upload/sync` を提供しています。通常アップロード API `/api/app-api/sip/platform/v2/file/upload` との違いは次のとおりです。
+
+- **通常アップロード API**: ファイルアップロード後すぐに返ります。処理結果は後続で `/file/fetch` API で確認する必要があります
+- **同期アップロード API**: ファイルアップロード後、処理完了まで待機します。追加確認なしで完全な処理結果を直接返します
+
+<Warning>
+  同期アップロード API はファイル処理が完了するまで待機します。処理時間はファイルサイズと複雑さによって異なります。
+  大きなファイルや複雑な文書では待機時間が長くなる場合があります。適切なタイムアウトを設定することをおすすめします。
+</Warning>
+
+## 01 単一ファイルを同期アップロード
+
+`multipart/form-data` 形式でファイルをアップロードします。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,  # Synchronous interface requires longer timeout
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    for f in files:
+        print(f"File ID: {f['id']}, File Name: {f.get('name')}, Status: {f.get('recognition_status')}")
+        # Can directly access processing results
+        if f.get("data"):
+            print(f"Extracted fields: {f['data'].get('fields', [])}")
+```
+
+</CodeGroup>
+
+## 02 複数ファイルを同期アップロード
+
+1 回のリクエストで複数ファイルをアップロードできます。システムはすべてのファイルの処理が完了してからレスポンスを返します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/1.pdf" \
+  -F "file=@/path/to/2.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>&batch_number=202412190001"
+```
+
+```python Python expandable icon=python lines
+import requests
+import os
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepaths = ["/path/to/file1.pdf", "/path/to/file2.pdf"]
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+fields = []
+for filepath in filepaths:
+    mime_type = "application/pdf"
+    if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+        mime_type = "image/jpeg"
+    fields.append(("file", (os.path.basename(filepath), open(filepath, "rb"), mime_type)))
+
+payload = MultipartEncoder(fields=fields)
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "batch_number": "202412190001",
+        "category": "invoice"
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    print(f"Processing completed, {len(files)} files")
+    for f in files:
+        print(f"File: {f.get('name')}, Status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## 03 URL から同期アップロード
+
+同期アップロード API は、ファイル URL からのアップロードにも対応しています。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://example.com/document.pdf"]
+  }' \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload/sync?workspace_id=<your-workspace-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_url = "https://example.com/document.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload/sync"
+
+payload = {
+    "urls": [file_url]
+}
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id},
+    json=payload,
+    headers={
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=300,
+)
+
+print(resp.status_code, resp.text)
+result = resp.json()
+if result.get("code") == 200:
+    files = result.get("result", {}).get("files", [])
+    for f in files:
+        print(f"File ID: {f['id']}, Processing Status: {f.get('recognition_status')}")
+        # Directly access processing results
+        if f.get("data") and f.get("data").get("fields"):
+            for field in f["data"]["fields"]:
+                print(f"  {field.get('key')}: {field.get('value')}")
+```
+
+</CodeGroup>
+
+## 04 パラメータ説明
+
+同期アップロード API のパラメータは、通常アップロード API と同じです。
+
+### 必須パラメータ
+
+- `workspace_id`: ワークスペース ID。[Workspace ID の取得方法](../100-faq/get_workspace_id) を参照してください。
+
+### 任意パラメータ
+
+必要に応じて URL クエリパラメータに追加できます。
+
+- `category`: ファイルカテゴリ（例: invoice）
+- `batch_number`: バッチ番号。未指定の場合はシステムが自動生成します
+- `auto_verify_vat`: 請求書検証を有効にするかどうか。デフォルトは false
+- `split_flag`: ファイル分割を実行するかどうか。デフォルトは false（[ファイル分割](../05-split/split) を参照）
+- `crop_flag`: 複数画像クロップを実行するかどうか。デフォルトは false（[複数画像クロップ](../05-split/crop) を参照）
+- `target_process`: 対象処理タイプ。`classify` または `extract` を指定できます。\
+  Docflow はデフォルトで「解析 → 分類 → 抽出」の完全な処理を実行します。`target_process` が `classify` の場合、分類後に処理を終了します
+
+### リクエストボディパラメータ
+
+次の 2 つの方式に対応しています。
+
+1. **ファイルアップロード**: `multipart/form-data` 形式を使用します。フィールド名は `file` です（複数回指定可能）
+2. **URL アップロード**: `application/json` 形式を使用し、`urls` 配列を含めます（最大 10 URL）
+
+## 05 レスポンス形式
+
+同期アップロード API が返すレスポンス形式は `/file/fetch` API と同じで、完全な処理結果を含みます。
+
+```json expandable
+{
+   "code": 200,
+   "msg": "Success",
+   "result": {
+      "total": 1,
+      "page": 1,
+      "page_size": 20,
+      "files": [
+         {
+            "id": "1955840505753140508",
+            "task_id": "1955840505753140509",
+            "task_type": 1,
+            "batch_number": "202412190001",
+            "name": "invoice.pdf",
+            "format": "pdf",
+            "recognition_status": 1,
+            "verification_status": 0,
+            "category": "invoice",
+            "pages": [
+               {
+                  "page": 0,
+                  "angle": 0,
+                  "width": 1024,
+                  "height": 1448,
+                  "dpi": 144
+               }
+            ],
+            "data": {
+               "fields": [
+                  {
+                     "key": "Invoice Code",
+                     "identifier": "Invoice Code Identifier",
+                     "value": "3100231130",
+                     "position": [
+                        {
+                           "page": 0,
+                           "vertices": [100, 200, 300, 200, 300, 250, 100, 250]
+                        }
+                     ]
+                  },
+                  {
+                     "key": "Invoice Number",
+                     "identifier": "Invoice Number Identifier",
+                     "value": "28737000",
+                     "position": [
+                        {
+                           "page": 0,
+                           "vertices": [350, 200, 500, 200, 500, 250, 350, 250]
+                        }
+                     ]
+                  }
+               ],
+               "items": [],
+               "tables": [],
+               "stamps": [],
+               "handwritings": []
+            },
+            "duration_ms": 5000
+         }
+      ]
+   }
+}
+```
+
+レスポンス内の主なフィールド:
+
+- `result.files[]`: ファイル一覧。各ファイルには完全な処理結果が含まれます
+- `result.files[].data.fields[]`: 抽出フィールド一覧
+- `result.files[].data.items[]`: 表データ一覧
+- `result.files[].data.tables[]`: すべての表データ一覧
+- `result.files[].data.stamps[]`: 印影情報
+- `result.files[].data.handwritings[]`: 手書き情報
+- `result.files[].recognition_status`: 認識ステータス（1 は成功を表します）
+- `result.files[].duration_ms`: 処理時間（ミリ秒）
+
+## 06 利用シーン
+
+### 同期アップロードに適した場面
+
+- 処理結果をすぐに取得する必要がある場面
+- 単一ファイル、または少数ファイルの処理
+- ファイル処理時間が短い場合（通常は数秒〜数十秒）
+- コードロジックを簡略化し、ポーリング確認を避けたい場合
+
+### 同期アップロードに適さない場面
+
+- 大量ファイルのバッチ処理
+- ファイル処理時間が長い場合（1 分を超える場合）
+- 非同期処理が必要な場面
+- ネットワークが不安定な場合、または再開可能なアップロードが必要な場面
+
+<Info>
+  同期アップロードに適さない場面では、通常アップロード API `/file/upload` と確認 API `/file/fetch` を組み合わせて、非同期処理フローを実装することをおすすめします。
+</Info>
+
+## 07 注意事項
+
+1. **タイムアウト設定**: 同期アップロード API は処理完了まで待機する必要があります。長めのタイムアウト（少なくとも 300 秒）を設定することをおすすめします
+2. **処理時間**: 処理時間はファイルサイズ、ページ数、複雑さによって異なります。大きなファイルでは処理時間が長くなる場合があります
+3. **エラーハンドリング**: 処理に失敗した場合、レスポンスにエラー情報が含まれます。`recognition_status` が 2 の場合は失敗を表します
+4. **バッチ処理**: 複数ファイルを一度にアップロードすると、すべてのファイルの処理完了を待つため、合計処理時間が長くなる可能性があります
+5. **ネットワーク安定性**: 長時間接続を維持する必要があるため、ネットワーク接続が安定していることを確認してください

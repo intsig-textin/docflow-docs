@@ -1,0 +1,129 @@
+---
+title: "Install Docflow Document Skill"
+description: "Install Docflow Document Skill for your Coding Agent to enhance document understanding and code generation"
+---
+
+## 01 What is Docflow Document Skill
+
+Skill is an extension for Coding Agents that automatically activates in relevant scenarios. Docflow Document Skill enables your Agent to understand the TextIn Docflow API system and generate code that follows best practices.
+
+## 02 Installation
+
+### Option 1: Let Agent Install Automatically
+
+Type the following in your chat:
+
+```
+Install Docflow Document Skill
+```
+
+The Agent will automatically download and configure the Skill.
+
+<Note>
+  This method requires the Agent to already be connected to the Docflow Document MCP service.
+</Note>
+
+### Option 2: Manual Installation
+
+<Tabs>
+  <Tab title="Claude Code">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.claude/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.claude/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.claude\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="Codex">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.codex/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.codex/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.codex\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="Cursor">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.cursor/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.cursor/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.cursor\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="VS Code Chat">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.copilot/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.copilot/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.copilot\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.copilot\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="Trae">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.trae/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.trae/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.trae\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.trae\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## 03 Verify Installation
+
+After installation, restart your tool to reload Skills. Then find or search for `textin-docflow-document` in the Skills page to confirm the Skill is loaded.
+
+## 04 Capabilities After Installation
+
+Once installed, your Agent will have the following enhanced capabilities:
+
+| Capability | Description |
+|-----------|-------------|
+| Document Awareness | Automatically identifies Docflow-related development needs |
+| API Understanding | Accurately understands Docflow API parameters and responses |
+| Code Generation | Generates code following best practices |
+| Error Handling | Includes proper exception handling logic |

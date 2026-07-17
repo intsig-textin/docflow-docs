@@ -1,0 +1,129 @@
+---
+title: "Docflow Document Skill のインストール"
+description: "Coding Agent に Docflow Document Skill をインストールし、文書理解とコード生成を強化する方法"
+---
+
+## 01 Docflow Document Skill とは
+
+Skill は Coding Agent 向けの拡張機能で、関連する場面で自動的に有効になります。Docflow Document Skill を導入すると、Agent が TextIn Docflow API 体系を理解し、ベストプラクティスに沿ったコードを生成できるようになります。
+
+## 02 インストール
+
+### 方法 1: Agent に自動インストールさせる
+
+チャットで次のように入力します。
+
+```
+Docflow Document Skill をインストールして
+```
+
+Agent が Skill を自動でダウンロードし、設定します。
+
+<Note>
+  この方法では、Agent があらかじめ Docflow Document MCP サービスに接続されている必要があります。
+</Note>
+
+### 方法 2: 手動インストール
+
+<Tabs>
+  <Tab title="Claude Code">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.claude/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.claude/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.claude\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="Codex">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.codex/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.codex/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.codex\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="Cursor">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.cursor/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.cursor/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.cursor\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="VS Code Chat">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.copilot/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.copilot/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.copilot\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.copilot\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+  <Tab title="Trae">
+    <CodeGroup>
+
+    ```bash macOS / Linux
+    mkdir -p "$HOME/.trae/skills/textin-docflow-document" && \
+    curl -sS -L "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" \
+      -o "$HOME/.trae/skills/textin-docflow-document/SKILL.md"
+    ```
+
+    ```powershell Windows
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.trae\skills\textin-docflow-document" | Out-Null
+    Invoke-WebRequest -Uri "http://docflow.textin.ai/textin-docs/skills/docflow-global/document" `
+      -OutFile "$env:USERPROFILE\.trae\skills\textin-docflow-document\SKILL.md"
+    ```
+
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## 03 インストールを確認
+
+インストール後、ツールを再起動して Skills を再読み込みします。その後、Skills ページで `textin-docflow-document` を検索し、Skill が読み込まれていることを確認します。
+
+## 04 インストール後に使える機能
+
+インストール後、Agent では次の強化機能を利用できます。
+
+| 機能 | 説明 |
+|-----------|-------------|
+| ドキュメント認識 | Docflow 関連の開発ニーズを自動で識別します |
+| API 理解 | Docflow API のパラメータとレスポンスを正確に理解します |
+| コード生成 | ベストプラクティスに沿ったコードを生成します |
+| エラーハンドリング | 適切な例外処理ロジックを含めます |

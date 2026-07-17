@@ -1,0 +1,172 @@
+---
+title: "クイックスタート"
+description: "API で文書抽出機能をすばやく利用するための例"
+---
+
+文書抽出では、構造化されたフィールド、表、印影、手書き情報が出力されます。このページでは、抽出の実行方法と主要な結果の解析方法を説明します。
+
+## 抽出を実行
+
+Docflow のデフォルト業務フローは「解析 → 分類 → 抽出」です。\
+そのため、ファイルをアップロードすると、通常は最終ステップで抽出結果を取得できます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+</CodeGroup>
+
+`category` と組み合わせて文書カテゴリを指定することもできます。この場合、自動分類をスキップし、対応するフィールドテンプレートに直接マッチさせます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/invoice.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&category=invoice"
+```
+
+</CodeGroup>
+
+## 抽出結果を取得して解析
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+</CodeGroup>
+
+結果は JSON 構造で返されます。
+
+`result.files[].recognition_status` はファイルの認識ステータスを表します。抽出に関連するステータスは次のとおりです。
+
+- `0`: 認識待ち
+- `1`: 抽出成功
+- `2`: 抽出失敗
+
+フィールドデータと表データは `result.files[].data` に格納されます。主なプロパティは次のとおりです。
+
+- `fields[]`: キーと値のペア。各要素に `key`、`value`、`position[]` が含まれます（座標描画に利用できます）
+- `items[][]`: 表の行単位のキーと値のペア集合
+- `stamps[]`: 印影情報
+- `handwritings[]`: 手書き情報
+
+### Python 例: フィールドと表を出力
+
+```python Python icon=python lines
+import requests, json
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    f"{host}{url}",
+    params={"workspace_id": "<your-workspace-id>", "batch_number": "<your-batch-number>"},
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for file in data.get("result", {}).get("files", []):
+    print("==>", file.get("name"))
+    # Basic fields
+    for kv in (file.get("data", {}).get("fields", []) or []):
+        print(kv.get("key"), ":", kv.get("value"))
+
+    # Tables (items by row)
+    for row in (file.get("data", {}).get("items", []) or []):
+        row_dict = {cell.get("key"): cell.get("value") for cell in row}
+        print("ROW:", json.dumps(row_dict, ensure_ascii=False))
+```
+
+### 可視化のためにページ座標を関連付ける
+
+`files[].pages[]` のプロパティ（`width`、`height`、`angle`、`dpi`）と `fields[].position[].vertices` を組み合わせると、フロントエンドでフィールドの境界ボックスを正確に描画できます。詳細は [解析結果の可視化](../03-parse/visualization) を参照してください。
+
+## 主要な返却フィールド例（抜粋）
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "format": "pdf",
+        "pages": [
+          {"angle": 0, "width": 1024, "height": 1448, "dpi": 144}
+        ],
+        "data": {
+          "fields": [
+            {
+              "key": "Invoice Code",
+              "value": "3100231130",
+              "position": [
+                {"page": 0, "vertices": [0,0,100,0,100,100,0,100]}
+              ]
+            }
+          ],
+          "items": [
+            [
+              {"key": "Goods/Services Name", "value": "*Electronic Computer*Microcomputer Host"},
+              {"key": "Specification/Model", "value": "DMS-SC68"}
+            ]
+          ],
+          "tables": [
+            {"tableName": "table1", "tableType": "0", "items": []}
+          ],
+          "stamps": [
+            {"page": 0, "text": "National Unified Invoice Supervision Seal", "type": "Other", "color": "Red"}
+          ],
+          "handwritings": [
+            {
+              "page": 0,
+              "text": "March 1st",
+              "position": [{"page": 0, "vertices": [0,0,100,0,100,100,0,100]}]
+            }
+          ],
+          "invoiceVerifyResult": {
+            "invoiceVerifyStatus": 0,
+            "invoiceVerifyErrorCode": 0,
+            "invoiceVerifyCanRetry": 1
+          }
+        },
+        "document": {
+          "pages": [
+            {
+              "angle": 0,
+              "width": 1024,
+              "height": 1448,
+              "lines": [
+                {"text": "Electronic Invoice (General Invoice)", "position": [389,45,767,45,767,87,389,87]}
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## 関連ページ
+
+- [基本フィールド情報](./fields) - 基本フィールド情報の構造と処理方法の詳細説明
+- [テーブルフィールド情報](./tables) - テーブルフィールド情報の構造と処理方法の詳細説明
+- [印影情報](./stamps) - 印影情報の構造と処理方法の詳細説明
+- [手書き情報](./handwritings) - 手書き情報の構造と処理方法の詳細説明
+- [特定フィールドを抽出](./extract_specific_fields) - 抽出済みタスクに対して追加フィールドの抽出や既存フィールドの再抽出を行う

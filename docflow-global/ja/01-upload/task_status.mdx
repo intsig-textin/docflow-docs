@@ -1,0 +1,320 @@
+---
+title: "タスクステータス確認"
+description: "タスクステータス、失敗理由、処理時間などの確認方法"
+---
+
+<Tip>
+  このページでは、DocFlow タスクの処理ステータス、失敗理由、処理時間を確認する方法を説明します。タスクステータスを確認することで、ファイル処理の進行状況と結果を把握できます。
+</Tip>
+
+DocFlow は非同期処理モードを使用します。ファイルアップロード後、ファイルは処理キューに入ります。複数の方法でタスクステータスを確認し、処理進行状況、失敗理由、処理時間を確認できます。
+
+## タスクステータスの説明
+
+DocFlow のタスクステータスは `recognition_status` フィールドで表されます。具体的なステータスは次のとおりです。
+
+| ステータス値 | ステータス名 | 説明 |
+|--------------|-------------|-------------|
+| 0 | 認識待ち | ファイルアップロード済み、処理開始待ち |
+| 1 | 認識成功 | ファイル処理が正常に完了 |
+| 2 | 認識失敗 | ファイル処理に失敗。失敗理由を確認可能 |
+| 3 | 分類中 | ファイル分類処理中 |
+| 4 | 抽出中 | フィールド抽出処理中 |
+| 5 | 準備中 | タスク準備段階 |
+| 6 | ファイル分割 | ファイル分割処理中 |
+| 7 | 画像クロップ | 複数画像クロップ処理中 |
+| 10 | 分類完了 | 分類のみモードの完了ステータス |
+| 20 | 解析中 | 文書解析処理中 |
+
+## タスクステータスを確認
+
+### バッチ番号で確認
+
+`batch_number` を使用して、バッチ全体のタスクステータスを確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&batch_number=<your-batch-number>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File Name: {f.get('name')}")
+    print(f"Task Status: {f.get('recognition_status')}")
+    print(f"ファイルカテゴリ: {f.get('category')}")
+    if f.get('recognition_status') == 2:
+        print(f"Failure Reason: {f.get('failure_causes')}")
+    print("---")
+```
+
+</CodeGroup>
+
+### ファイル ID で確認
+
+`file_id` を使用して、特定ファイルのタスクステータスを確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+file_id = "<your-file-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "file_id": file_id},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+file_info = data.get("result", {}).get("files", [{}])[0]
+print(f"File ID: {file_info.get('id')}")
+print(f"File Name: {file_info.get('name')}")
+print(f"Task Status: {file_info.get('recognition_status')}")
+print(f"ファイルカテゴリ: {file_info.get('category')}")
+if file_info.get('recognition_status') == 2:
+    print(f"Failure Reason: {file_info.get('failure_causes')}")
+```
+
+</CodeGroup>
+
+### タスク ID で確認
+
+`task_id` を使用して、特定タスクのステータスを確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&task_id=<your-task-id>"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+task_id = "<your-task-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "task_id": task_id},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+file_info = data.get("result", {}).get("files", [{}])[0]
+print(f"Task ID: {file_info.get('task_id')}")
+print(f"File ID: {file_info.get('id')}")
+print(f"File Name: {file_info.get('name')}")
+print(f"Task Status: {file_info.get('recognition_status')}")
+print(f"ファイルカテゴリ: {file_info.get('category')}")
+if file_info.get('recognition_status') == 2:
+    print(f"Failure Reason: {file_info.get('failure_causes')}")
+```
+
+</CodeGroup>
+
+## タスク処理時間を確認
+
+タスク処理完了後、`duration_ms` フィールドで処理時間を確認できます（単位: ミリ秒）。
+
+<CodeGroup>
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File Name: {f.get('name')}")
+    print(f"Task Status: {f.get('recognition_status')}")
+
+    # View task duration
+    if f.get('duration_ms'):
+        duration_seconds = f['duration_ms'] / 1000
+        print(f"Task Duration: {duration_seconds:.2f} seconds")
+
+    print("---")
+```
+
+</CodeGroup>
+
+## 失敗理由の分析
+
+タスクステータスが `2`（認識失敗）の場合、`failure_causes` フィールドで具体的な失敗理由を確認できます。
+
+<CodeGroup>
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+batch_number = "<your-batch-number>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "batch_number": batch_number},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    if f.get('recognition_status') == 2:
+        print(f"File ID: {f['id']}")
+        print(f"File Name: {f.get('name')}")
+        print(f"Failure Reason: {f.get('failure_causes')}")
+        print("---")
+```
+
+</CodeGroup>
+
+## ステータスフィルタ確認
+
+`recognition_status` パラメータを使用して、特定ステータスのタスクを絞り込めます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&recognition_status=2"
+```
+
+```python Python expandable icon=python lines
+import requests
+import json
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+
+# Query all failed tasks
+resp = requests.get(
+    url=f"{host}{url}",
+    params={"workspace_id": workspace_id, "recognition_status": 2},
+    headers={"x-ti-app-id": ti_app_id, "x-ti-secret-code": ti_secret_code},
+    timeout=60,
+)
+
+data = resp.json()
+print(f"Failed Task Count: {len(data.get('result', {}).get('files', []))}")
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File Name: {f.get('name')}")
+    print(f"Failure Reason: {f.get('failure_causes')}")
+    print("---")
+```
+
+</CodeGroup>
+
+## レスポンス例
+
+タスクステータス確認のレスポンス例:
+
+```json expandable
+{
+  "code": 200,
+  "msg": "Success",
+  "result": {
+    "files": [
+      {
+        "id": "1955840505753140508",
+        "task_id": "1981692246135111680",
+        "name": "Corporate Credit Report.pdf",
+        "format": "pdf",
+        "recognition_status": 1,
+        "verification_status": 0,
+        "category": "credit_report",
+        "duration_ms": 15000,
+        "failure_causes": null
+      },
+      {
+        "id": "1955840505753140509",
+        "task_id": "1981692246135111681",
+        "name": "Invoice.pdf",
+        "format": "pdf",
+        "recognition_status": 2,
+        "verification_status": 0,
+        "category": "invoice",
+        "duration_ms": 8000,
+        "failure_causes": "Unsupported file format"
+      }
+    ]
+  }
+}
+```

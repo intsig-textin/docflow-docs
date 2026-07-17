@@ -1,0 +1,96 @@
+---
+title: "クイックスタート"
+description: "API で文書分類機能をすばやく利用するための例"
+---
+
+DocFlow のワークスペース設定ページで [ファイル分類テンプレートを設定](../100-faq/setup_category) した後、ファイルタイプを指定せずにファイルをアップロードすると、Docflow が後続の抽出やレビューに利用するためにファイルを自動分類します。
+
+ファイル分類の利用例:
+
+1. 経費精算では、飲食店領収書、タクシー領収書、航空旅程表など、分類が必要な複数種類の文書があります
+2. 物流輸出入では、輸入通関申告書、輸出通関申告書、貨物保険証券、原産地証明書など、分類が必要な資料があります
+
+<Tip>
+  分類機能を利用するには、Docflow ワークスペースで分類テンプレートを設定する必要があります。
+</Tip>
+
+<Tip>
+  Docflow はデフォルトで「解析 → 分類 → 抽出」の完全なワークフローを実行します。\
+  分類結果のみが必要な場合は、[分類のみ](./target_process) を参照してください。
+</Tip>
+
+## 分類の仕組み
+
+Docflow で分類用サンプルファイルを設定すると、まずサンプルファイルが解析されます。その後、サンプルファイルのタイトル、ファイルタイプ、フィールド設定、分類プロンプトなどの属性がベクトル化され、分析されます。
+
+新しいファイルがアップロードされて解析が完了すると、アルゴリズムが設定済みの分類サンプルと比較し、最も一致する分類結果を判定します。
+
+## 分類結果を取得
+
+結果取得 API `file/fetch` から確認できます。\
+API は JSON 構造を返し、ファイル分類情報は `result.files[].category` フィールドに格納されます。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file_id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f["id"], f.get("name"), " Category:", f.get("category"))
+```
+
+</CodeGroup>
+
+## 分類結果の構造とステータス
+
+`file/fetch` のレスポンスでは、各ファイルの主なフィールドは次のとおりです。
+
+- `id`: ファイル ID
+- `name`: ファイル名
+- `category`: 分類結果（例: `invoice`）
+- `recognition_status`: 認識ステータス
+
+よく使うステータス（完全な値は OpenAPI の `RecognitionStatus` を参照）:
+
+- `0` 認識待ち
+- `1` 認識成功（完全なワークフローが終了した場合）
+- `2` 認識失敗
+- `3` 分類中
+- `10` 分類完了（`target_process=classify` でアップロードした場合のみ最終状態として表示）
+
+### 返却例（抜粋）
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "sample.pdf",
+        "category": "invoice",
+        "recognition_status": 1
+      }
+    ]
+  }
+}
+```

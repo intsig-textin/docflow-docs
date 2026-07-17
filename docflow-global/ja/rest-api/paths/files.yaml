@@ -1,0 +1,535 @@
+/api/app-api/sip/platform/v2/file/upload:
+  post:
+    summary: ファイルをアップロード
+    description: ""
+    operationId: uploadFile
+    parameters:
+      - $ref: '../components/parameters.yaml#/WorkspaceId'
+      - $ref: '../components/parameters.yaml#/Category'
+      - $ref: '../components/parameters.yaml#/BatchNumber'
+      - $ref: '../components/parameters.yaml#/AutoVerifyVat'
+      - $ref: '../components/parameters.yaml#/SplitFlag'
+      - $ref: '../components/parameters.yaml#/CropFlag'
+      - $ref: '../components/parameters.yaml#/TargetProcess'
+      - $ref: '../components/parameters.yaml#/ParserRemoveWatermark'
+      - $ref: '../components/parameters.yaml#/ParserCropDewarp'
+      - $ref: '../components/parameters.yaml#/ParserApplyMerge'
+      - $ref: '../components/parameters.yaml#/ParserFormulaLevel'
+      - $ref: '../components/parameters.yaml#/ParserTableTextSplitMode'
+      - $ref: '../components/parameters.yaml#/ParserDpi'
+      - $ref: '../components/parameters.yaml#/ParserParseMode'
+      - $ref: '../components/parameters.yaml#/ParserPdfPwd'
+    requestBody:
+      $ref: '../components/request-bodies.yaml#/FileUploadRequestBody'
+    responses:
+      '200':
+        description: ファイルアップロードに成功
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      batch_number:
+                        type: string
+                        description: バッチ番号
+                        example: 202412190001
+                      files:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: ファイル ID
+                              example: 202412190001
+                            task_id:
+                              type: string
+                              description: タスク ID
+                              example: 1981692246135111680
+                            name:
+                              type: string
+                              description: ファイル名
+                              example: invoice.pdf
+                            format:
+                              type: string
+                              description: ファイル形式
+                              example: pdf
+                          required:
+                          - id
+                          - name
+                          - format
+                    required:
+                    - batch_number
+                    - files
+
+/api/app-api/sip/platform/v2/file/upload/sync:
+  post:
+    summary: ファイルを同期アップロード
+    description: ファイルをアップロードし、処理完了を待ってから処理結果を直接返します
+    operationId: uploadFileSync
+    parameters:
+      - $ref: '../components/parameters.yaml#/WorkspaceId'
+      - $ref: '../components/parameters.yaml#/Category'
+      - $ref: '../components/parameters.yaml#/BatchNumber'
+      - $ref: '../components/parameters.yaml#/AutoVerifyVat'
+      - $ref: '../components/parameters.yaml#/SplitFlag'
+      - $ref: '../components/parameters.yaml#/CropFlag'
+      - $ref: '../components/parameters.yaml#/TargetProcess'
+      - $ref: '../components/parameters.yaml#/ParserRemoveWatermark'
+      - $ref: '../components/parameters.yaml#/ParserCropDewarp'
+      - $ref: '../components/parameters.yaml#/ParserApplyMerge'
+      - $ref: '../components/parameters.yaml#/ParserFormulaLevel'
+      - $ref: '../components/parameters.yaml#/ParserTableTextSplitMode'
+      - $ref: '../components/parameters.yaml#/ParserDpi'
+      - $ref: '../components/parameters.yaml#/ParserParseMode'
+      - $ref: '../components/parameters.yaml#/ParserPdfPwd'
+      - $ref: '../components/parameters.yaml#/WithTaskDetailUrl'
+    requestBody:
+      $ref: '../components/request-bodies.yaml#/FileUploadRequestBody'
+    responses:
+      '200':
+        description: ファイルのアップロードと処理に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - $ref: '../components/schemas/files.yaml#/TaskProcessResult'
+
+/api/app-api/sip/platform/v2/file/fetch:
+  get:
+    summary: ファイル処理結果一覧を取得
+    description: ""
+    operationId: getFiles
+    parameters:
+      - name: page
+        in: query
+        description: ページ番号。デフォルトは 1
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        description: 1 ページあたりの件数。デフォルトは 1000
+        required: false
+        schema:
+          type: integer
+          default: 1000
+      - name: workspace_id
+        in: query
+        description: ワークスペース ID
+        required: true
+        schema:
+          type: string
+      - name: batch_number
+        in: query
+        description: バッチ番号
+        required: false
+        schema:
+          type: string
+      - name: file_id
+        in: query
+        description: ファイル ID
+        required: false
+        schema:
+          type: string
+      - name: category
+        in: query
+        description: ファイルカテゴリ
+        required: false
+        schema:
+          type: string
+      - name: recognition_status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas/common.yaml#/RecognitionStatus'
+      - name: verification_status
+        in: query
+        description: "ファイル検証ステータス 0: 検証待ち 2: 確認済み 3: 却下 4: 削除済み 5: 処理保留"
+        required: false
+        schema:
+          $ref: '../components/schemas/common.yaml#/VerificationStatus'
+      - name: start_time
+        in: query
+        description: "更新時刻で検索する開始時刻。RFC3339 形式（YYYY-MM-DDTHH:MM:SSZ）"
+        required: false
+        schema:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00Z
+      - name: end_time
+        in: query
+        description: "更新時刻で検索する終了時刻。RFC3339 形式（YYYY-MM-DDTHH:MM:SSZ）"
+        required: false
+        schema:
+          type: string
+          format: date-time
+          example: 2024-01-01T10:00:00Z
+      - name: with_document
+        in: query
+        description: 文書の完全なテキスト認識結果を返すかどうか
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: with_task_detail_url
+        in: query
+        description: タスク詳細ページ URL を返すかどうか
+        required: false
+        schema:
+          type: boolean
+          default: false
+    responses:
+      '200':
+        description: ファイル一覧の取得に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - $ref: '../components/schemas/files.yaml#/TaskProcessResult'
+
+/api/app-api/sip/platform/v2/file/delete:
+  post:
+    summary: タスクを削除
+    description: 条件を指定してファイルを削除します。いずれかの条件に一致するファイルが削除されます。
+    operationId: deleteFile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: 1234567890
+              batch_number:
+                type: array
+                items:
+                  type: string
+                description: バッチ番号リスト
+                example: ["202412190001", "202412190002"]
+              task_id:
+                type: array
+                items:
+                  type: string
+                description: タスク ID リスト
+                example: ["1978297791713619968", "1978297791713619969"]
+              file_id:
+                type: array
+                items:
+                  type: string
+                description: ファイル ID リスト
+                example: ["1978297792124661760", "1978297792124661761"]
+              start_time:
+                type: integer
+                description: "開始時刻（エポックタイムスタンプ、単位: 秒）"
+                example: 1760523600
+              end_time:
+                type: integer
+                description: "終了時刻（エポックタイムスタンプ、単位: 秒）"
+                example: 1760523600
+            required:
+              - workspace_id
+    responses:
+      '200':
+        description: タスクの削除に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        deleted_count:
+                          type: integer
+                          description: 削除されたファイル数
+                          example: 1
+
+/api/app-api/sip/platform/v2/file/update:
+  post:
+    summary: ファイル処理結果を更新
+    description: ファイル処理結果を更新します。通常は手動確認や校正後に、修正済みのキー値ペアをアップロードして自動認識結果を上書きするために使用します。
+    operationId: updateFile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: 1234567890
+                file_id:
+                  type: string
+                  description: ファイル ID
+                  example: 202412190001
+                data:
+                  description: |
+                    フィールド全体を更新します。
+                    注意: 一部のフィールドのみを更新する場合でも、すべてのフィールドを含める必要があります。
+                    入力フィールドが元のフィールドより多い場合、追加分のフィールドが追加されます。
+                    入力フィールドが元のフィールドより少ない場合、不足しているフィールドは削除されます。
+                    入力フィールド値が元のフィールド値と異なる場合、フィールド値が更新されます。
+                    入力フィールドが元のフィールドと同一の場合、フィールドは保持されます。
+                  type: object
+                  properties:
+                    fields:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/files.yaml#/KeyValue'
+                      example:
+                      - key: インボイスコード
+                        value: "3100231130"
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - key: インボイス番号
+                        value: "28737000"
+                        position:
+                        - page: 0
+                          vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                    items:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          $ref: '../components/schemas/files.yaml#/KeyValue'
+                      example:
+                      - - key: 商品・サービス名
+                          value: ＊Electronic Computer＊Microcomputer Host
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - key: 仕様モデル
+                          value: DMS-SC68
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                      - - key: 商品・サービス名
+                          value: ＊Mechanical Computer＊Supercomputer Host
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+                        - key: 仕様モデル
+                          value: AN/FSQ-7
+                          position:
+                          - page: 0
+                            vertices: [0, 0, 100, 0, 100, 100, 0, 100]
+              required:
+              - workspace_id
+              - file_id
+              - data
+    responses:
+      '200':
+        description: ファイル処理結果の更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../components/schemas/common.yaml#/CodeMessage'
+              - type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      files:
+                        description: 更新後のファイルリスト
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            workspace_id:
+                              type: string
+                              description: ワークスペース ID
+                              example: 1234567890
+                            id:
+                              type: string
+                              description: ファイル ID
+                              example: 202412190001
+
+/api/app-api/sip/platform/v2/file/amend_category:
+  post:
+    summary: ファイルカテゴリを修正
+    description: |
+      - 通常タスクの場合、通常タスクのファイルカテゴリを修正します
+      - 文書分割タスクの場合、分割後ファイルのファイルタイプとページ番号を修正します
+      - 複数画像クロップタスクの場合、クロップ後ファイルのファイルタイプを修正します
+    operationId: amendCategory
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: 1234567890
+              task_id:
+                type: string
+                description: タスク ID
+                example: 1234567890
+              category:
+                type: string
+                description: |
+                  新しいファイルカテゴリ。
+                  タスクタイプが通常タスクの場合のみ対応しています。
+                example: 電子インボイス（普通インボイス）
+              split_tasks:
+                description: 文書分割タスクリスト
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category:
+                      type: string
+                      description: サブタスクのファイルカテゴリ
+                      example: 電子インボイス（普通インボイス）
+                    pages:
+                      type: array
+                      items:
+                        type: integer
+                        description: サブファイルのページ番号。0 から開始します
+                      example: [0, 1]
+              crop_tasks:
+                description: 複数画像クロップタスクリスト
+                type: array
+                items:
+                  type: object
+                  properties:
+                    crop_child_task_id:
+                      type: string
+                      description: 複数画像クロップのサブタスク ID
+                      example: 1234567890
+                    category:
+                      type: string
+                      description: サブタスクのファイルカテゴリ
+                      example: 電子インボイス（普通インボイス）
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: ファイルカテゴリの更新に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/file/retry:
+  post:
+    summary: ファイル処理を再試行
+    description: ファイル処理を再試行します。
+    operationId: retryFile
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: 1234567890
+              task_id:
+                type: string
+                description: タスク ID
+                example: 1234567890
+              parser_params:
+                $ref: '../components/schemas/files.yaml#/DocumentParserParam'
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: ファイル処理の再試行に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+
+/api/app-api/sip/platform/v2/file/extract_fields:
+  post:
+    summary: 特定フィールドを抽出
+    description: |
+      抽出が完了したタスクに対して、追加フィールドを抽出するか、既存フィールドを個別に再抽出します。
+      すべてのフィールドの完全な抽出結果を返します。戻り構造は `/api/app-api/sip/platform/v2/file/fetch` と同じです。
+    operationId: extractFields
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              workspace_id:
+                type: string
+                description: ワークスペース ID
+                example: 1234567890
+              task_id:
+                type: string
+                description: タスク ID
+                example: 1234567890
+              fields:
+                type: array
+                items:
+                  $ref: '../components/schemas/files.yaml#/ExtractFieldReqVO'
+              tables:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: テーブル名
+                      example: Table1
+                    extract_model:
+                      type: string
+                      description: |
+                        テーブルレベルの抽出モデル。未指定の場合は Acgpt がデフォルトです。テーブル内のすべてのフィールドがこのモデルを使用します
+                        - Auto: 抽出モデルを自動でマッチング
+                        - Acgpt: 高速で安定した抽出結果
+                        - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                        - DF-M1: 複雑な文書理解に適しています
+                      example: "Acgpt"
+                      enum:
+                        - Auto
+                        - Acgpt
+                        - Acgpt-VL
+                        - DF-M1
+                    fields:
+                      type: array
+                      items:
+                        $ref: '../components/schemas/files.yaml#/ExtractFieldReqVO'
+            required:
+              - workspace_id
+              - task_id
+    responses:
+      '200':
+        description: フィールド抽出に成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/schemas/common.yaml#/CodeMessage'
+                - $ref: '../components/schemas/files.yaml#/TaskProcessResult'

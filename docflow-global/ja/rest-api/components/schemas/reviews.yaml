@@ -1,0 +1,173 @@
+ReviewTaskStatus:
+  type: integer
+  description: |
+    タスクステータス
+    - 0: 保留中
+    - 1: 承認済み
+    - 2: レビュー失敗
+    - 3: レビュー中
+    - 4: 却下
+    - 5: 認識中
+    - 6: キュー待ち
+    - 7: 認識失敗
+  enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+
+ReviewRuleProperties:
+  type: object
+  properties:
+    group_id:
+      type: string
+      description: レビュー規則グループ ID
+      example: "31415926"
+    name:
+      type: string
+      description: 規則名
+      example: "レビュー規則 1"
+    prompt:
+      type: string
+      description: 規則プロンプト
+      example: "レビュー規則プロンプト"
+    category_ids:
+      type: array
+      items:
+        type: string
+        description: カテゴリ ID
+        example: "1234567890"
+    risk_level:
+      $ref: '#/RiskLevel'
+    referenced_fields:
+      type: array
+      items:
+        $ref: '#/ReviewRuleReferencedField'
+
+ReviewRuleReferencedField:
+  type: object
+  properties:
+    category_id:
+      type: string
+      description: カテゴリ ID
+      example: "1234567890"
+    category_name:
+      type: string
+      description: カテゴリ名
+      example: "インボイス"
+    fields:
+      type: array
+      items:
+        $ref: '#/ReviewRuleField'
+    tables:
+      type: array
+      items:
+        type: object
+        properties:
+          table_id:
+            type: string
+            description: テーブル ID
+            example: "1234567890"
+          table_name:
+            type: string
+            description: テーブル名
+            example: "インボイステーブル"
+          fields:
+            type: array
+            items:
+              $ref: '#/ReviewRuleField'
+
+RiskLevel:
+  type: integer
+  description: |
+    リスクレベル
+    - 10: 高リスク
+    - 20: 中リスク
+    - 30: 低リスク
+  enum:
+    - 10
+    - 20
+    - 30
+
+ReviewRuleField:
+  type: object
+  properties:
+    field_id:
+      type: string
+      description: フィールド ID
+      example: "1234567890"
+    field_name:
+      type: string
+      description: フィールド名
+      example: "インボイスコード"
+
+ReviewRuleRepo:
+  type: object
+  properties:
+    repo_id:
+      type: string
+      description: レビュー規則リポジトリ ID
+      example: "31415926"
+    name:
+      type: string
+      description: レビュー規則リポジトリ名
+      example: "レビュー規則リポジトリ 1"
+    groups:
+      description: 規則リポジトリ配下の規則グループリスト
+      type: array
+      items:
+        $ref: '#/ReviewRuleGroup'
+    category_ids:
+      type: array
+      items:
+        type: string
+        description: カテゴリ ID
+        example: "1234567890"
+
+ReviewRuleGroup:
+  type: object
+  properties:
+    group_id:
+      type: string
+      description: 規則グループ ID
+      example: "31415926"
+    name:
+      type: string
+      description: 規則グループ名
+      example: "レビュー規則グループ 1"
+    rules:
+      type: array
+      items:
+        $ref: '#/ReviewRule'
+
+ReviewRule:
+  type: object
+  properties:
+    rule_id:
+      type: string
+      description: 規則 ID
+      example: "31415926"
+    name:
+      type: string
+      description: 規則名
+      example: "レビュー規則 1"
+    prompt:
+      type: string
+      description: 規則プロンプト
+      example: "レビュー規則プロンプト"
+    category_ids:
+      type: array
+      items:
+        type: string
+        description: カテゴリ ID
+        example: "1234567890"
+    risk_level:
+      $ref: '#/RiskLevel'
+    referenced_fields:
+      type: array
+      items:
+        $ref: '#/ReviewRuleReferencedField'

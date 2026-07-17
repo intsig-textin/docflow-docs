@@ -18,7 +18,7 @@ Sample files are typical example documents of the file category. DocFlow uses th
 - **Optimize extraction performance**: Improve field extraction accuracy by learning format and layout patterns from samples
 - **Establish recognition templates**: Provide reference benchmarks for automatically recognizing similar documents
 
-**Requirements**: Each file category requires at least 1 sample file, with a maximum of 10. We recommend uploading 3-5 representative samples for best results.
+**Requirements**: Each file category requires at least 1 sample file, with a maximum of 20. We recommend uploading 3-5 representative samples for best results.
 
 ### Regular Fields
 
@@ -75,7 +75,7 @@ curl -X POST \
   -F "workspace_id=<your-workspace-id>" \
   -F "name=Invoice" \
   -F "category_prompt=VAT invoice with fields such as invoice code, invoice number, etc." \
-  -F "extract_model=llm" \
+  -F "extract_model=Acgpt" \
   -F "sample_files=@/path/to/invoice_sample.pdf" \
   -F 'fields=[{"name":"Invoice Code","description":"Invoice code description","prompt":"Please extract the invoice code"}]' \
   "https://docflow.textin.ai/api/app-api/sip/platform/v2/category/create"
@@ -101,7 +101,7 @@ data = {
     'workspace_id': workspace_id,
     'name': 'Invoice',
     'category_prompt': 'VAT invoice with fields such as invoice code, invoice number, etc.',
-    'extract_model': 'llm',
+    'extract_model': 'Acgpt',
     'fields': '[{"name":"Invoice Code","description":"Invoice code description","prompt":"Please extract the invoice code"}]'
 }
 
@@ -130,8 +130,8 @@ else:
 - `workspace_id` (required): Workspace ID
 - `name` (required): File category name, max length 50
 - `category_prompt` (optional): Prompt for classification, max length 500
-- `extract_model` (required): Extraction model, options: `llm`, `vlm`
-- `sample_files` (required): Sample file list, at least one sample file required; maximum 10 sample files per category
+- `extract_model` (required): Extraction model, options: `Auto`, `Acgpt`, `Acgpt-VL`, `DF-M1`
+- `sample_files` (required): Sample file list, at least one sample file required; maximum 20 sample files per category
 - `fields` (required): Field configuration list (JSON string), at least one field required, table fields can only be configured in the default table (table_id=-1)
 
 **Response Example:**
@@ -218,7 +218,7 @@ else:
         "id": "1234567890",
         "name": "Invoice",
         "category_prompt": "VAT invoice with fields such as invoice code, invoice number, etc.",
-        "extract_model": "llm",
+        "extract_model": "Acgpt",
         "enabled": 1
       }
     ]

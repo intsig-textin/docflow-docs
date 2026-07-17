@@ -1,0 +1,192 @@
+openapi: 3.0.0
+info:
+  title: DocFlow API
+  description: DocFlow REST API。ファイルアップロードとファイル処理結果の取得機能を提供します。
+  version: 2.8.4
+  contact:
+    name: TextIn
+    url: "https://www.textin.ai/contact?type=27&sub_type=1"
+servers:
+- url: https://docflow.textin.ai
+
+x-codeSamples: custom
+
+tags:
+  - name: ワークスペース管理
+    description: ワークスペース関連 API
+  - name: ファイルカテゴリ
+    description: ファイルカテゴリ関連 API
+  - name: ファイルカテゴリサンプル
+    description: ファイルカテゴリサンプル関連 API
+  - name: スマートレビュー
+    description: スマートレビュー関連 API
+  - name: 廃止済み
+    description: 廃止済み API
+
+paths:
+  # File Operations
+  /api/app-api/sip/platform/v2/file/upload:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1upload'
+  /api/app-api/sip/platform/v2/file/upload/sync:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1upload~1sync'
+  /api/app-api/sip/platform/v2/file/fetch:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1fetch'
+  /api/app-api/sip/platform/v2/file/update:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1update'
+  /api/app-api/sip/platform/v2/file/delete:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1delete'
+  /api/app-api/sip/platform/v2/file/extract_fields:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1extract_fields'
+  /api/app-api/sip/platform/v2/file/retry:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1retry'
+  /api/app-api/sip/platform/v2/file/amend_category:
+    $ref: './paths/files.yaml#/~1api~1app-api~1sip~1platform~1v2~1file~1amend_category'
+
+  # Authentication
+  /api/app-api/sip/platform/v2/auth/token:
+    $ref: './paths/auth.yaml#/~1api~1app-api~1sip~1platform~1v2~1auth~1token'
+
+  # Workspaces
+  /api/app-api/sip/platform/v2/workspace/create:
+    $ref: './paths/workspaces.yaml#/~1api~1app-api~1sip~1platform~1v2~1workspace~1create'
+  /api/app-api/sip/platform/v2/workspace/list:
+    $ref: './paths/workspaces.yaml#/~1api~1app-api~1sip~1platform~1v2~1workspace~1list'
+  /api/app-api/sip/platform/v2/workspace/get:
+    $ref: './paths/workspaces.yaml#/~1api~1app-api~1sip~1platform~1v2~1workspace~1get'
+  /api/app-api/sip/platform/v2/workspace/update:
+    $ref: './paths/workspaces.yaml#/~1api~1app-api~1sip~1platform~1v2~1workspace~1update'
+  /api/app-api/sip/platform/v2/workspace/delete:
+    $ref: './paths/workspaces.yaml#/~1api~1app-api~1sip~1platform~1v2~1workspace~1delete'
+
+  # Categories
+  /api/app-api/sip/platform/v2/category/create:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1create'
+  /api/app-api/sip/platform/v2/category/list:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1list'
+  /api/app-api/sip/platform/v2/category/update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1update'
+  /api/app-api/sip/platform/v2/category/delete:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1delete'
+
+  # Category Fields
+  /api/app-api/sip/platform/v2/category/fields/list:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1list'
+  /api/app-api/sip/platform/v2/category/fields/batch_add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1batch_add'
+  /api/app-api/sip/platform/v2/category/fields/batch_update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1batch_update'
+  /api/app-api/sip/platform/v2/category/fields/delete:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1delete'
+
+  # Category Tables
+  /api/app-api/sip/platform/v2/category/tables/list:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1list'
+  /api/app-api/sip/platform/v2/category/tables/batch_add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1batch_add'
+  /api/app-api/sip/platform/v2/category/tables/batch_update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1batch_update'
+  /api/app-api/sip/platform/v2/category/tables/delete:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1delete'
+
+  # Category Samples
+  /api/app-api/sip/platform/v2/category/sample/batch_upload:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1batch_upload'
+  /api/app-api/sip/platform/v2/category/sample/list:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1list'
+  /api/app-api/sip/platform/v2/category/sample/batch_download:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1batch_download'
+  /api/app-api/sip/platform/v2/category/sample/delete:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1delete'
+
+  # Review Rules
+  /api/app-api/sip/platform/v2/review/rule_repo/create:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_repo~1create'
+  /api/app-api/sip/platform/v2/review/rule_repo/delete:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_repo~1delete'
+  /api/app-api/sip/platform/v2/review/rule_repo/update:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_repo~1update'
+  /api/app-api/sip/platform/v2/review/rule_repo/list:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_repo~1list'
+  /api/app-api/sip/platform/v2/review/rule_repo/get:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_repo~1get'
+  /api/app-api/sip/platform/v2/review/rule_group/create:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_group~1create'
+  /api/app-api/sip/platform/v2/review/rule_group/delete:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_group~1delete'
+  /api/app-api/sip/platform/v2/review/rule_group/update:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule_group~1update'
+  /api/app-api/sip/platform/v2/review/rule/create:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule~1create'
+  /api/app-api/sip/platform/v2/review/rule/update:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule~1update'
+  /api/app-api/sip/platform/v2/review/rule/delete:
+    $ref: './paths/review-rules.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1rule~1delete'
+
+  # Review Tasks
+  /api/app-api/sip/platform/v2/review/task/submit:
+    $ref: './paths/review-tasks.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1task~1submit'
+  /api/app-api/sip/platform/v2/review/task/delete:
+    $ref: './paths/review-tasks.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1task~1delete'
+  /api/app-api/sip/platform/v2/review/task/result:
+    $ref: './paths/review-tasks.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1task~1result'
+  /api/app-api/sip/platform/v2/review/task/retry:
+    $ref: './paths/review-tasks.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1task~1retry'
+  /api/app-api/sip/platform/v2/review/task/rule/retry:
+    $ref: './paths/review-tasks.yaml#/~1api~1app-api~1sip~1platform~1v2~1review~1task~1rule~1retry'
+
+  # Deprecated
+  /api/app-api/sip/platform/v2/category/fields/add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1add'
+  /api/app-api/sip/platform/v2/category/fields/update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1fields~1update'
+  /api/app-api/sip/platform/v2/category/tables/add:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1add'
+  /api/app-api/sip/platform/v2/category/tables/update:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1tables~1update'
+  /api/app-api/sip/platform/v2/category/sample/upload:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1upload'
+  /api/app-api/sip/platform/v2/category/sample/download:
+    $ref: './paths/categories.yaml#/~1api~1app-api~1sip~1platform~1v2~1category~1sample~1download'
+
+components:
+  parameters:
+    WorkspaceId:
+      $ref: './components/parameters.yaml#/WorkspaceId'
+    Category:
+      $ref: './components/parameters.yaml#/Category'
+    BatchNumber:
+      $ref: './components/parameters.yaml#/BatchNumber'
+    AutoVerifyVat:
+      $ref: './components/parameters.yaml#/AutoVerifyVat'
+    SplitFlag:
+      $ref: './components/parameters.yaml#/SplitFlag'
+    CropFlag:
+      $ref: './components/parameters.yaml#/CropFlag'
+    TargetProcess:
+      $ref: './components/parameters.yaml#/TargetProcess'
+    ParserRemoveWatermark:
+      $ref: './components/parameters.yaml#/ParserRemoveWatermark'
+    ParserCropDewarp:
+      $ref: './components/parameters.yaml#/ParserCropDewarp'
+    ParserApplyMerge:
+      $ref: './components/parameters.yaml#/ParserApplyMerge'
+    ParserFormulaLevel:
+      $ref: './components/parameters.yaml#/ParserFormulaLevel'
+    ParserTableTextSplitMode:
+      $ref: './components/parameters.yaml#/ParserTableTextSplitMode'
+    WithTaskDetailUrl:
+      $ref: './components/parameters.yaml#/WithTaskDetailUrl'
+
+  requestBodies:
+    FileUploadRequestBody:
+      $ref: './components/request-bodies.yaml#/FileUploadRequestBody'
+
+  securitySchemes:
+    ApiId:
+      $ref: './components/security.yaml#/ApiId'
+    SecretCode:
+      $ref: './components/security.yaml#/SecretCode'
+
+security:
+  - ApiId: []
+    SecretCode: []

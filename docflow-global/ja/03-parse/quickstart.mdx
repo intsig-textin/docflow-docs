@@ -1,0 +1,108 @@
+---
+title: "クイックスタート"
+description: "API で文書解析機能をすばやく利用するための例"
+---
+
+
+<Tip>
+  Docflow は中核の文書解析サービスとして [xParse](https://www.textin.ai/market/detail/pdf_to_markdown) を使用しています。PDF、Word、一般的な画像形式の文書を、テキスト、表、見出し階層、数式、手書き文字、画像情報を含む構造化データへ高精度に変換し、後続の自動処理と分析に利用できます。
+
+  ナレッジベース構築や非構造化文書画像処理などの用途では、強力な文書解析機能によって多くの要件に対応できます。
+
+  Docflow の結果取得 API が返す文書解析結果は、xParse の結果を大きく簡略化したもので、ページ上のテキスト位置を可視化するための基本的なテキストブロックと位置情報のみを保持しています。
+</Tip>
+
+<Tip>
+  このページでは、[こちらのサンプル文書](https://dllf.intsig.net/download/2025/Solution/20250829/simple.pdf) を例に、文書解析結果の取得方法を説明します。
+</Tip>
+
+## 前提条件
+
+[文書アップロード](../01-upload/quickstart#01-単一ファイルをアップロード) の手順に従ってファイルをアップロードし、返却されたファイル ID を取得します。
+
+<Tip>
+  ファイル処理には時間がかかります。アップロード後、処理結果を取得できるようになるまで数秒待つ必要があります。
+</Tip>
+
+## 文書解析結果を取得
+
+文書解析結果はサイズが大きいため、デフォルトでは返却されません。\
+結果取得 API を呼び出す際に URL パラメータ `with_document=true` を追加すると、文書解析結果が返却されます。
+
+例:
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>&with_document=true"
+```
+
+
+```python Python expandable {13} icon=python lines
+import requests
+import json
+
+ti_app_id = "your_app_id"
+ti_secret_code = "your_app_secret"
+workspace_id = "your_workspace_id"
+file_id = "your_file_id"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/fetch"
+params = {
+    "workspace_id":workspace_id,
+    "with_document": "true",
+    "file_id":file_id
+    }
+resp = requests.get(url=f"{host}{url}",
+                    params=params,
+                    headers={"x-ti-app-id": ti_app_id,
+                             "x-ti-secret-code": ti_secret_code,
+                             })
+resp_json = json.loads(resp.text)
+
+for file in resp_json["result"]["files"]:
+  print(f"file {file["name"]} parse result: {file["document"]}")
+```
+
+</CodeGroup>
+
+## レスポンス JSON 構造の説明
+
+文書解析構造は `result.files[].document` に格納されます。以下は例（抜粋）です。
+
+```json expandable
+"document":{
+    "pages":[
+        {
+            "angle":0,
+            "width":1191,
+            "height":794,
+            "lines":[
+            {
+                "text":"电子发票（普通发票）",
+                "position":[ 389, 45, 767, 45, 767, 87, 389, 87 ],
+                "charPositions":[]
+            }
+            ]
+        }
+    ]
+}
+```
+
+各フィールドの説明は次のとおりです。
+
+- `document`: 文書解析結果オブジェクト
+  - `pages`: 文書各ページの解析結果配列
+    - `angle`: 文書ページの回転角度
+    - `width`: 文書ページの幅
+    - `height`: 文書ページの高さ
+    - `lines`: 文書内の各テキスト行の結果
+      - `text`: テキスト内容
+      - `position`: テキスト座標
+      - `charPositions`: テキスト内の各文字の座標
+
+`position` の意味については [座標系](./coordinate) を参照してください。

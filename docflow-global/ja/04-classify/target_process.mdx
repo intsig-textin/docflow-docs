@@ -1,0 +1,137 @@
+---
+title: "分類のみ"
+---
+
+Docflow はデフォルトで「解析→分類→抽出」の完全なワークフローを実行します。\
+分類結果だけが必要な場合は、アップロード API に `target_process=classify` パラメータを追加します。分類完了後にワークフローを終了し、抽出処理をスキップできます。
+
+## 分類のみのファイルアップロード
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl -X POST \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  -F "file=@/path/to/your/file.pdf" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/upload?workspace_id=<your-workspace-id>&target_process=classify"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import os
+
+ti_app_id = "<your-app-id>"
+ti_secret_code = "<your-secret-code>"
+workspace_id = "<your-workspace-id>"
+filepath = "/path/to/your/file.pdf"
+
+host = "https://docflow.textin.ai"
+url = "/api/app-api/sip/platform/v2/file/upload"
+
+mime_type = "application/pdf"
+if filepath.lower().endswith((".jpg", ".jpeg", ".png")):
+    mime_type = "image/jpeg"
+
+payload = MultipartEncoder(fields={
+    "file": (os.path.basename(filepath), open(filepath, "rb"), mime_type)
+})
+
+resp = requests.post(
+    url=f"{host}{url}",
+    params={
+        "workspace_id": workspace_id,
+        "target_process": "classify"
+    },
+    data=payload.to_string(),
+    headers={
+        "Content-Type": payload.content_type,
+        "x-ti-app-id": ti_app_id,
+        "x-ti-secret-code": ti_secret_code,
+    },
+    timeout=60,
+)
+
+print(resp.status_code, resp.text)
+```
+
+</CodeGroup>
+
+## 分類結果の確認
+
+`file/fetch` API を使用して分類結果を確認します。
+
+<CodeGroup>
+
+```bash curl icon=terminal wrap
+curl \
+  -H "x-ti-app-id: <your-app-id>" \
+  -H "x-ti-secret-code: <your-secret-code>" \
+  "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch?workspace_id=<your-workspace-id>&file_id=<your-file-id>"
+```
+
+
+```python Python expandable icon=python lines
+import requests
+
+resp = requests.get(
+    "https://docflow.textin.ai/api/app-api/sip/platform/v2/file/fetch",
+    params={
+        "workspace_id": "<your-workspace-id>",
+        "file_id": "<your-file-id>",
+    },
+    headers={"x-ti-app-id": "<your-app-id>", "x-ti-secret-code": "<your-secret-code>"},
+    timeout=60,
+)
+
+data = resp.json()
+for f in data.get("result", {}).get("files", []):
+    print(f"File ID: {f['id']}")
+    print(f"File name: {f.get('name')}")
+    print(f"Classification result: {f.get('category')}")
+    print(f"Recognition status: {f.get('recognition_status')}")
+```
+
+</CodeGroup>
+
+## 分類のみの recognition_status ステータス説明
+
+`target_process=classify` を使用して分類のみを行う場合、`recognition_status` フィールドは次のようにステータスが遷移します。
+
+### ステータス値の説明
+
+- `0` - 認識待ち：ファイルがアップロードされたばかりで、処理を待機中
+- `3` - 分類中：分類処理を実行中
+- `10` - 分類完了：**分類のみワークフローの最終状態**。分類が完了し、抽出は実行されないことを示します
+- `2` - 分類失敗：分類処理中にエラーが発生
+
+### 完全ワークフローとの違い
+
+**完全ワークフロー（デフォルト）** のステータス遷移：
+
+- `0` → `3` → `4` → `1`（認識待ち → 分類中 → 抽出中 → 認識成功）
+
+**分類のみワークフロー** のステータス遷移：
+
+- `0` → `3` → `10`（認識待ち → 分類中 → 分類完了）
+
+### 返却例
+
+```json expandable
+{
+  "code": 200,
+  "result": {
+    "files": [
+      {
+        "id": "202412190001",
+        "name": "invoice.pdf",
+        "category": "invoice",
+        "recognition_status": 10,
+        "data": null
+      }
+    ]
+  }
+}
+```

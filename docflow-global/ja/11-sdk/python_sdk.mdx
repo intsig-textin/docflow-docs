@@ -1,0 +1,677 @@
+# Python SDK
+
+> `docflow-sdk` Python SDK を使って、Docflow の文書ワークフロー管理機能をすばやく組み込めます。
+
+`docflow-sdk` は TextIn Docflow の公式 Python SDK です。ワークスペース管理、文書分類、スマートレビュー、型安全なレスポンスモデル、包括的なエラーハンドリングを提供します。
+
+* PyPI: [docflow-sdk](https://pypi.org/project/docflow-sdk/)
+* GitHub: [docflow-python-sdk](https://github.com/intsig-textin/docflow-python-sdk)
+
+## インストール
+
+<CodeGroup>
+  ```bash pip theme={null}
+  pip install docflow-sdk
+  ```
+
+  ```bash ソースからインストール theme={null}
+  git clone https://github.com/intsig-textin/docflow-python-sdk.git
+  cd docflow-python-sdk
+  pip install -e .
+  ```
+</CodeGroup>
+
+**システム要件:** Python >= 3.8
+
+## 認証と初期化
+
+SDK は複数の認証方法に対応しています。優先順位は、コンストラクタ引数 > 環境変数 > `.env` ファイルです。
+
+<CodeGroup>
+  ```python 環境変数（推奨） theme={null}
+  import os
+  os.environ["DOCFLOW_APP_ID"] = "your-app-id"
+  os.environ["DOCFLOW_SECRET_CODE"] = "your-secret-code"
+  os.environ["DOCFLOW_BASE_URL"] = "https://docflow.textin.ai/api"
+
+  from docflow import DocflowClient
+  client = DocflowClient.from_env()
+  ```
+
+  ```python 直接指定 theme={null}
+  from docflow import DocflowClient
+  client = DocflowClient(
+      app_id="your-app-id",
+      secret_code="your-secret-code",
+      base_url="https://docflow.textin.ai/api",
+  )
+  ```
+
+  ```python .env ファイル theme={null}
+  # dotenv をインストール: pip install python-dotenv
+  # .env ファイルの内容:
+  # DOCFLOW_APP_ID=your-app-id
+  # DOCFLOW_SECRET_CODE=your-secret-code
+  # DOCFLOW_BASE_URL=https://docflow.textin.ai/api
+
+  from dotenv import load_dotenv
+  from docflow import DocflowClient
+
+  load_dotenv()
+  client = DocflowClient.from_env()
+  ```
+</CodeGroup>
+
+<Tip>
+  認証情報をコードに直接書かないよう、環境変数での設定を推奨します。
+</Tip>
+
+## API 概要
+
+| リソース                      | 説明                  | 主なメソッド                                  |
+| ----------------------------- | --------------------- | -------------------------------------------- |
+| `client.workspace`            | ワークスペース管理    | `create()`, `list()`, `get()`, `update()`, `delete()`, `iter()` |
+| `client.category`             | 文書カテゴリ管理      | `create()`, `list()`, `get()`, `update()`, `delete()`, `iter()` |
+| `client.category.fields`      | カテゴリフィールド管理 | `batch_add()`, `list()`, `batch_update()`, `delete()` |
+| `client.category.tables`      | カテゴリテーブル管理  | `batch_add()`, `list()`, `batch_update()`, `delete()` |
+| `client.category.samples`     | カテゴリサンプル管理  | `batch_upload()`, `list()`, `download()`, `delete()` |
+| `client.file`                 | ファイル管理と認識    | `upload()`, `fetch()`, `download()`, `delete()` |
+| `client.review`               | スマートレビュー規則管理 | `create_repo()`, `create_group()`, `create_rule()`, `submit_task()` |
+
+## ワークスペース管理
+
+ワークスペースは Docflow の最上位の管理単位です。業務シナリオごとに文書処理フローを分離して管理できます。
+
+### ワークスペースを作成
+
+```python theme={null}
+from docflow import DocflowClient, AuthScope
+
+client = DocflowClient.from_env()
+
+workspace = client.workspace.create(
+    name="経費精算処理スペース",
+    auth_scope=AuthScope.PUBLIC,  # 公開権限
+    description="社内の経費精算書類を処理"
+)
+
+print(f"ワークスペース ID: {workspace.workspace_id}")
+```
+
+### ワークスペース一覧を取得
+
+```python theme={null}
+# ページングで取得
+workspaces = client.workspace.list(page=1, page_size=20)
+
+for ws in workspaces.workspaces:
+    print(f"{ws.workspace_id}: {ws.name}")
+
+# イテレータで自動ページング
+for workspace in client.workspace.iter():
+    print(f"{workspace.workspace_id}: {workspace.name}")
+```
+
+### メソッドチェーン（推奨）
+
+コンテキストをバインドすることで、同じパラメータの繰り返し指定を減らし、コードを簡潔にできます。
+
+```python theme={null}
+# ワークスペースをバインド
+ws = client.workspace("123")
+
+# ワークスペース詳細を取得
+detail = ws.get()
+
+# ワークスペースを更新
+ws.update(
+    name="新しいワークスペース名",
+    auth_scope=AuthScope.PRIVATE
+)
+
+# メソッドチェーン: カテゴリを操作
+cat = ws.category("456")
+cat.fields.batch_add(fields=[{"name": "請求書番号"}])
+cat.tables.batch_add(tables=[{"name": "商品明細テーブル"}])
+```
+
+## 文書カテゴリ管理
+
+カテゴリは、文書の構造化フィールドと抽出ルールを定義します。
+
+### カテゴリを作成（サンプルファイル付き）
+
+```python theme={null}
+from docflow import ExtractModel, FieldType
+
+# フィールド設定を定義
+fields = [
+    {
+        "name": "請求書番号",
+        "description": "請求書の一意な識別番号"
+    },
+    {
+        "name": "発行日",
+        "transform_settings": {
+            "type": FieldType.DATETIME.value,
+            "datetime_settings": {
+                "format": "yyyy-MM-dd"
+            }
+        }
+    },
+    {
+        "name": "請求書種別",
+        "transform_settings": {
+            "type": FieldType.ENUMERATE.value,
+            "enumerate_settings": {
+                "items": ["適格請求書", "通常請求書"]
+            }
+        }
+    }
+]
+
+# カテゴリを作成
+category = client.category.create(
+    workspace_id="123",
+    name="請求書",
+    extract_model=ExtractModel.Model_1,  # Model 1 を使用
+    sample_files=[
+        "/path/to/invoice_sample1.pdf",
+        "/path/to/invoice_sample2.pdf"
+    ],
+    fields=fields,
+    category_prompt="請求書。請求書情報と商品明細を含む"
+)
+
+print(f"カテゴリ ID: {category.category_id}")
+
+# カテゴリ作成後、テーブルを追加
+cat = client.workspace("123").category(category.category_id)
+tables = cat.tables.batch_add(tables=[{
+    "name": "商品明細テーブル",
+    "prompt": "商品名、仕様、数量、単価、金額を抽出"
+}])
+print(f"テーブル ID: {tables[0].table_id}")
+```
+
+### フィールド管理
+
+```python theme={null}
+# カテゴリコンテキストをバインド
+cat = client.workspace("123").category("456")
+
+# フィールドを一括追加
+result = cat.fields.batch_add(fields=[
+    {"name": "税率", "description": "税率の割合"}
+])
+
+# フィールド一覧を取得
+fields = cat.fields.list()
+for field in fields.fields:
+    print(f"{field.id}: {field.name}")
+
+# フィールドを一括更新
+cat.fields.batch_update(fields=[
+    {"field_id": "789", "name": "税率（%）", "required": True}
+])
+
+# フィールドを削除
+cat.fields.delete(field_ids=["789"])
+```
+
+### テーブル管理
+
+```python theme={null}
+# テーブルを一括追加（列フィールドも同時に作成）
+tables = cat.tables.batch_add(tables=[{
+    "name": "商品明細テーブル",
+    "prompt": "商品名、仕様、数量、単価、金額を抽出",
+    "fields": [
+        {"name": "商品名"},
+        {"name": "数量"},
+        {"name": "単価"}
+    ]
+}])
+
+# テーブル一覧を取得
+tables = cat.tables.list()
+for table in tables.tables:
+    print(f"{table.table_id}: {table.name}")
+```
+
+### サンプル管理
+
+```python theme={null}
+# サンプルファイルを一括アップロード
+result = cat.samples.batch_upload(files=[
+    "/path/to/invoice_sample1.pdf",
+    "/path/to/invoice_sample2.pdf"
+])
+
+# サンプル一覧を取得
+samples = cat.samples.list()
+
+# サンプルをダウンロード（ZIP）
+cat.samples.batch_download(
+    sample_ids=["789"],
+    save_path="/path/to/samples.zip"
+)
+
+# サンプルを削除
+cat.samples.delete(sample_ids=["789"])
+```
+
+## ファイル処理
+
+### ファイルをアップロードして認識
+
+```python theme={null}
+# ファイルをアップロード（自動的に認識を開始）
+response = client.file.upload(
+    workspace_id="123",
+    category="請求書",  # カテゴリ名
+    file_path="/path/to/invoice.pdf"
+)
+
+batch_number = response.batch_number
+print(f"バッチ番号: {batch_number}")
+```
+
+### 認識結果を取得
+
+```python theme={null}
+import time
+
+# 認識完了までポーリング
+max_wait = 60
+wait_interval = 3
+elapsed = 0
+
+while elapsed < max_wait:
+    result = client.file.fetch(
+        workspace_id="123",
+        batch_number=batch_number
+    )
+
+    if result.files and result.files[0].recognition_status == 1:
+        file_info = result.files[0]
+        print(f"認識完了: {file_info.name}")
+
+        # 抽出されたフィールドデータにアクセス
+        if file_info.data and 'fields' in file_info.data:
+            for field in file_info.data['fields']:
+                print(f"{field['name']}: {field['value']}")
+
+        # テーブルデータにアクセス
+        if file_info.data and 'items' in file_info.data:
+            for row in file_info.data['items']:
+                print(row)
+
+        break
+
+    time.sleep(wait_interval)
+    elapsed += wait_interval
+```
+
+## スマートレビュー
+
+Docflow は LLM ベースのスマートレビュー機能を提供します。単一文書の規則検証と、複数文書をまたいだクロスチェックに対応しています。
+
+### レビュー規則リポジトリを作成
+
+```python theme={null}
+# 1. 規則リポジトリを作成
+repo = client.review.create_repo(
+    workspace_id="123",
+    name="経費精算レビュー規則リポジトリ"
+)
+
+# 2. 規則グループを作成
+group = client.review.create_group(
+    workspace_id="123",
+    repo_id=repo.repo_id,
+    name="請求書コンプライアンスチェック"
+)
+
+# 3. レビュー規則を作成
+# フィールド ID のマッピングを取得
+fields_response = client.category.fields.list(
+    workspace_id="123",
+    category_id="456"
+)
+field_map = {f.name: f.id for f in fields_response.fields}
+
+# 規則を作成: 必須フィールドの入力チェック
+client.review.create_rule(
+    workspace_id="123",
+    repo_id=int(repo.repo_id),
+    group_id=group.group_id,
+    name="必須フィールド入力チェック",
+    prompt='「請求書番号」「発行日」「金額」がすべて入力されているか確認し、いずれかが空の場合はレビュー不合格にする',
+    category_ids=["456"],
+    risk_level=10,  # 高リスク
+    referenced_fields=[
+        {
+            "category_id": "456",
+            "category_name": "請求書",
+            "fields": [
+                {"field_id": field_map["請求書番号"], "field_name": "請求書番号"},
+                {"field_id": field_map["発行日"], "field_name": "発行日"},
+                {"field_id": field_map["金額"], "field_name": "金額"}
+            ],
+            "tables": []
+        }
+    ]
+)
+```
+
+### 複数文書のクロスレビュー
+
+```python theme={null}
+# 複数文書をまたぐ規則を作成: 請求金額と支払金額の一致を確認
+client.review.create_rule(
+    workspace_id="123",
+    repo_id=int(repo.repo_id),
+    group_id=group.group_id,
+    name="複数文書の金額照合",
+    prompt="請求書の金額と支払記録の取引金額が一致するか確認し、±0.1 の誤差を許容する",
+    category_ids=["456", "789"],  # 複数カテゴリ
+    risk_level=10,
+    referenced_fields=[
+        {
+            "category_id": "456",
+            "category_name": "請求書",
+            "fields": [
+                {"field_id": invoice_field_map["金額"], "field_name": "金額"}
+            ],
+            "tables": []
+        },
+        {
+            "category_id": "789",
+            "category_name": "支払記録",
+            "fields": [
+                {"field_id": payment_field_map["取引金額"], "field_name": "取引金額"}
+            ],
+            "tables": []
+        }
+    ]
+)
+```
+
+### レビュータスクを送信
+
+```python theme={null}
+# レビュータスクを送信
+review_task = client.review.submit_task(
+    workspace_id="123",
+    name="2024年3月 経費精算レビュー",
+    repo_id=repo.repo_id,
+    extract_task_ids=["task_001", "task_002", "task_003"]
+)
+
+task_id = review_task['task_id']
+print(f"レビュータスク ID: {task_id}")
+```
+
+### レビュー結果を取得
+
+```python theme={null}
+import time
+
+# レビュー完了までポーリング
+max_wait = 120
+wait_interval = 5
+elapsed = 0
+
+while elapsed < max_wait:
+    result = client.review.get_task_result(
+        workspace_id="123",
+        task_id=task_id
+    )
+
+    status = result.get('status')
+    # ステータス: 0=レビュー待ち, 1=合格, 2=失敗, 4=不合格, 7=認識失敗
+    if status in (1, 2, 4, 7):
+        print("レビュー完了")
+
+        # レビュー結果を出力
+        stats = result.get('statistics', {})
+        print(f"合格した規則数: {stats.get('pass_count', 0)}")
+        print(f"不合格の規則数: {stats.get('failure_count', 0)}")
+
+        # 詳細レビュー結果
+        for group in result.get('groups', []):
+            print(f"\n【{group['group_name']}】")
+            for task in group.get('review_tasks', []):
+                result_icon = "✓" if task['review_result'] == 0 else "✗"
+                print(f"  {result_icon} {task['rule_name']}")
+                print(f"    {task['reasoning']}")
+
+        break
+
+    time.sleep(wait_interval)
+    elapsed += wait_interval
+```
+
+## 列挙型
+
+SDK は完全な列挙型定義を提供しており、パラメータ指定ミスを防げます。
+
+```python theme={null}
+from docflow import (
+    ExtractModel,      # 抽出モデル種別
+    EnabledStatus,     # 有効状態（検索用）
+    EnabledFlag,       # 有効フラグ（更新用）
+    AuthScope,         # 権限スコープ
+    FieldType,         # フィールド種別
+    MismatchAction,    # 不一致時の処理方法
+    RecognitionStatus, # 認識ステータス
+)
+
+# ExtractModel - 抽出モデル
+ExtractModel.Model_1  # 高速で安定した抽出結果
+ExtractModel.Model_2  # 複雑な文書理解に適用
+ExtractModel.Model_3  # マルチモーダル、シンプルな抽出に適用
+
+# AuthScope - 権限スコープ
+AuthScope.PRIVATE  # 0 - 非公開権限
+AuthScope.PUBLIC   # 1 - 公開権限
+
+# EnabledStatus - 有効状態（検索用）
+EnabledStatus.ALL       # "all" - すべて
+EnabledStatus.DISABLED  # "0"   - 無効
+EnabledStatus.ENABLED   # "1"   - 有効
+
+# EnabledFlag - 有効フラグ（更新用）
+EnabledFlag.DISABLED  # 0 - 無効
+EnabledFlag.ENABLED   # 1 - 有効
+
+# FieldType - フィールド変換種別
+FieldType.DATETIME   # "datetime"   - 日時
+FieldType.ENUMERATE  # "enumerate"  - 列挙
+FieldType.REGEX      # "regex"      - 正規表現
+
+# RecognitionStatus - 認識ステータス
+RecognitionStatus.PENDING    # 0 - 認識待ち
+RecognitionStatus.SUCCESS    # 1 - 認識成功
+RecognitionStatus.FAILED     # 2 - 認識失敗
+```
+
+## 自動ページングイテレータ
+
+イテレータを使うと、手動でループを組まずにページングを自動処理できます。
+
+```python theme={null}
+# ワークスペースイテレータ
+for workspace in client.workspace.iter():
+    print(f"{workspace.workspace_id}: {workspace.name}")
+    if some_condition:
+        break  # いつでも中断可能
+
+# カテゴリイテレータ
+for category in client.category.iter(workspace_id="123"):
+    print(f"{category.category_id}: {category.name}")
+
+# 最大ページ数を制限
+for category in client.category.iter(workspace_id="123", max_pages=5):
+    print(category.name)
+
+# リストへ変換（すべてのデータを取得）
+all_workspaces = list(client.workspace.iter())
+```
+
+## エラーハンドリング
+
+SDK は細かなエラー分類を提供しており、例外の種類に応じて正確に処理できます。
+
+### エラー種別
+
+| エラークラス              | 説明                                    |
+| ------------------------- | --------------------------------------- |
+| `DocflowException`        | 基底エラークラス。すべての SDK エラーを捕捉 |
+| `ValidationError`         | パラメータ検証エラー                    |
+| `AuthenticationError`     | 認証エラー（app-id または secret-code の誤り） |
+| `PermissionDeniedError`   | 権限不足                                |
+| `ResourceNotFoundError`   | リソースが存在しない                    |
+| `APIError`                | API 呼び出しエラー（HTTP 4xx/5xx）      |
+| `NetworkError`            | ネットワーク接続エラー                  |
+
+### エラーハンドリング例
+
+```python theme={null}
+from docflow.exceptions import (
+    DocflowException,
+    AuthenticationError,
+    ValidationError,
+    ResourceNotFoundError,
+    APIError,
+)
+
+try:
+    workspace = client.workspace.get(workspace_id="123")
+except AuthenticationError as e:
+    print(f"認証に失敗しました: {e.message}")
+except ResourceNotFoundError as e:
+    print(f"ワークスペースが見つかりません: {e.message}")
+except ValidationError as e:
+    print(f"パラメータ検証に失敗しました: {e.message}")
+except APIError as e:
+    print(f"API エラー [HTTP {e.status_code}]: {e.message}")
+except DocflowException as e:
+    print(f"SDK エラー: {e.message}")
+```
+
+## 国際化（i18n）
+
+SDK は多言語のエラーメッセージに対応しています。
+
+```python theme={null}
+from docflow import DocflowClient, set_language
+
+# 英語を使用
+set_language('en_US')
+client = DocflowClient.from_env()
+
+# 中国語を使用（デフォルト）
+set_language('zh_CN')
+
+# 言語を動的に切り替え
+client.set_language('en_US')
+
+# 現在の言語を取得
+current_lang = client.get_language()  # 'en_US' または 'zh_CN'
+```
+
+## 高度な設定
+
+### タイムアウトとリトライ
+
+```python theme={null}
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    timeout=60,           # リクエストタイムアウト（秒）、デフォルト 30
+    max_retries=5,        # 最大リトライ回数、デフォルト 3
+    retry_backoff_factor=1.0,  # バックオフ係数、デフォルト 1.0
+)
+```
+
+### カスタムリトライ設定
+
+```python theme={null}
+# リトライ対象ステータスコードを指定
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    retry_status_codes=[429, 503],  # 429 と 503 のみリトライ
+)
+
+# リトライ対象メソッドを指定
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    retry_methods=["GET"],  # GET リクエストのみリトライ
+)
+
+# リトライを無効化
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    max_retries=0  # リトライを無効化
+)
+```
+
+### カスタム API アドレス
+
+```python theme={null}
+client = DocflowClient(
+    app_id="your-app-id",
+    secret_code="your-secret-code",
+    base_url="https://custom-api.example.com"
+)
+```
+
+### リソース管理
+
+コンテキストマネージャを使うと、接続を自動でクローズできます。
+
+```python theme={null}
+with DocflowClient.from_env() as client:
+    workspaces = client.workspace.list()
+    # 終了時に接続を自動でクローズ
+```
+
+## デバッグログ
+
+DEBUG レベルのログを有効にすると、リクエストの詳細を確認できます。
+
+```python theme={null}
+import logging
+logging.getLogger("docflow").setLevel(logging.DEBUG)
+```
+
+## 完全なサンプル
+
+完全な利用例は [examples ディレクトリ](https://github.com/intsig-textin/docflow-python-sdk/tree/master/examples) を参照してください。
+
+- **クイックスタート**: [quick_start.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/quick_start.py) - 経費精算シナリオのエンドツーエンドフロー
+- **完全なワークフロー**: [complete_workflow_example.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/complete_workflow_example.py) - 請求書処理の完全なワークフロー
+- **ファイル処理**: [file_examples.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/file_examples.py) - ファイルアップロード、認識、ダウンロードの例
+- **レビュー規則**: [review_examples.py](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/review_examples.py) - レビュー規則設定の例
+
+## よくある質問
+
+| 問題                      | 解決方法                                                    |
+| ------------------------- | ----------------------------------------------------------- |
+| `AuthenticationError`     | `DOCFLOW_APP_ID` と `DOCFLOW_SECRET_CODE` が正しいか確認してください |
+| `ResourceNotFoundError`   | ワークスペース ID / カテゴリ ID が存在し、アクセス権限があるか確認してください |
+| `ValidationError`         | パラメータ形式と値の範囲を確認してください（例: ワークスペース名は最大 50 文字） |
+| 認識結果が空              | カテゴリ設定（フィールド、テーブル、サンプルファイル）が正しいか確認し、認識完了後に結果を取得してください |
+| レビュータスクが失敗する  | 規則設定（`referenced_fields` の `field_id` が正しいこと）と `extract_task_ids` の有効性を確認してください |
+
+## 関連リンク
+
+* [GitHub リポジトリ](https://github.com/intsig-textin/docflow-python-sdk)
+* [PyPI ホームページ](https://pypi.org/project/docflow-sdk/)
+* [クイックスタートガイド](https://github.com/intsig-textin/docflow-python-sdk/blob/master/examples/QUICKSTART.md)
+* [完全な API ドキュメント](https://github.com/intsig-textin/docflow-python-sdk/blob/master/README.md)

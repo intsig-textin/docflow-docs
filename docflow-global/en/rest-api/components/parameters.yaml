@@ -26,6 +26,15 @@ BatchNumber:
     type: string
     example: 202412190001
 
+AutoVerifyVat:
+  name: auto_verify_vat
+  in: query
+  description: Whether to automatically verify VAT invoice
+  required: false
+  schema:
+    type: boolean
+    default: false
+
 SplitFlag:
   name: split_flag
   in: query
@@ -113,6 +122,30 @@ ParserDpi:
     enum:
       - 144
       - 216
+
+ParserParseMode:
+  name: parser_parse_mode
+  in: query
+  description: |
+    Parse mode
+    - `auto`: Automatic (default)
+    - `scan`: Scanned document mode
+    - `vlm`: VLM mode
+  required: false
+  schema:
+    type: string
+    enum:
+      - auto
+      - scan
+      - vlm
+
+ParserPdfPwd:
+  name: parser_pdf_pwd
+  in: query
+  description: PDF file password for decrypting encrypted PDF files
+  required: false
+  schema:
+    type: string
 
 WithTaskDetailUrl:
   name: with_task_detail_url

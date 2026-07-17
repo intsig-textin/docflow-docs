@@ -1,0 +1,4877 @@
+openapi: 3.0.0
+info:
+  title: DocFlow API
+  description: DocFlow REST API。ファイルアップロードとファイル処理結果の取得機能を提供します。
+  version: 2.8.4
+  contact:
+    name: TextIn
+    url: 'https://www.textin.ai/contact?type=27&sub_type=1'
+servers:
+  - url: 'https://docflow.textin.ai'
+x-codeSamples: custom
+tags:
+  - name: ワークスペース管理
+    description: ワークスペース関連 API
+  - name: ファイルカテゴリ
+    description: ファイルカテゴリ関連 API
+  - name: ファイルカテゴリサンプル
+    description: ファイルカテゴリサンプル関連 API
+  - name: スマートレビュー
+    description: スマートレビュー関連 API
+  - name: 廃止済み
+    description: 廃止済み API
+paths:
+  /api/app-api/sip/platform/v2/file/upload:
+    post:
+      summary: ファイルをアップロード
+      description: ''
+      operationId: uploadFile
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Category'
+        - $ref: '#/components/parameters/BatchNumber'
+        - $ref: '#/components/parameters/AutoVerifyVat'
+        - $ref: '#/components/parameters/SplitFlag'
+        - $ref: '#/components/parameters/CropFlag'
+        - $ref: '#/components/parameters/TargetProcess'
+        - $ref: '#/components/parameters/ParserRemoveWatermark'
+        - $ref: '#/components/parameters/ParserCropDewarp'
+        - $ref: '#/components/parameters/ParserApplyMerge'
+        - $ref: '#/components/parameters/ParserFormulaLevel'
+        - $ref: '#/components/parameters/ParserTableTextSplitMode'
+        - $ref: '#/components/parameters/ParserDpi'
+        - $ref: '#/components/parameters/ParserParseMode'
+        - $ref: '#/components/parameters/ParserPdfPwd'
+      requestBody:
+        $ref: '#/components/requestBodies/FileUploadRequestBody'
+      responses:
+        '200':
+          description: ファイルアップロードに成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          batch_number:
+                            type: string
+                            description: バッチ番号
+                            example: 202412190001
+                          files:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  description: ファイル ID
+                                  example: 202412190001
+                                task_id:
+                                  type: string
+                                  description: タスク ID
+                                  example: 1981692246135111700
+                                name:
+                                  type: string
+                                  description: ファイル名
+                                  example: invoice.pdf
+                                format:
+                                  type: string
+                                  description: ファイル形式
+                                  example: pdf
+                              required:
+                                - id
+                                - name
+                                - format
+                        required:
+                          - batch_number
+                          - files
+  /api/app-api/sip/platform/v2/file/upload/sync:
+    post:
+      summary: ファイルを同期アップロード
+      description: ファイルをアップロードし、処理完了を待ってから処理結果を直接返します
+      operationId: uploadFileSync
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Category'
+        - $ref: '#/components/parameters/BatchNumber'
+        - $ref: '#/components/parameters/AutoVerifyVat'
+        - $ref: '#/components/parameters/SplitFlag'
+        - $ref: '#/components/parameters/CropFlag'
+        - $ref: '#/components/parameters/TargetProcess'
+        - $ref: '#/components/parameters/ParserRemoveWatermark'
+        - $ref: '#/components/parameters/ParserCropDewarp'
+        - $ref: '#/components/parameters/ParserApplyMerge'
+        - $ref: '#/components/parameters/ParserFormulaLevel'
+        - $ref: '#/components/parameters/ParserTableTextSplitMode'
+        - $ref: '#/components/parameters/ParserDpi'
+        - $ref: '#/components/parameters/ParserParseMode'
+        - $ref: '#/components/parameters/ParserPdfPwd'
+        - $ref: '#/components/parameters/WithTaskDetailUrl'
+      requestBody:
+        $ref: '#/components/requestBodies/FileUploadRequestBody'
+      responses:
+        '200':
+          description: ファイルのアップロードと処理に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - $ref: '#/components/schemas/TaskProcessResult'
+  /api/app-api/sip/platform/v2/file/fetch:
+    get:
+      summary: ファイル処理結果一覧を取得
+      description: ''
+      operationId: getFiles
+      parameters:
+        - name: page
+          in: query
+          description: ページ番号。デフォルトは 1
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: 1 ページあたりの件数。デフォルトは 1000
+          required: false
+          schema:
+            type: integer
+            default: 1000
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+        - name: batch_number
+          in: query
+          description: バッチ番号
+          required: false
+          schema:
+            type: string
+        - name: file_id
+          in: query
+          description: ファイル ID
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: ファイルカテゴリ
+          required: false
+          schema:
+            type: string
+        - name: recognition_status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/RecognitionStatus'
+        - name: verification_status
+          in: query
+          description: 'ファイル検証ステータス 0: 検証待ち 2: 確認済み 3: 却下 4: 削除済み 5: 処理保留'
+          required: false
+          schema:
+            $ref: '#/components/schemas/VerificationStatus'
+        - name: start_time
+          in: query
+          description: '更新時刻で検索する開始時刻。RFC3339 形式（YYYY-MM-DDTHH:MM:SSZ）'
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: 2024-01-01T00:00:00.000Z
+        - name: end_time
+          in: query
+          description: '更新時刻で検索する終了時刻。RFC3339 形式（YYYY-MM-DDTHH:MM:SSZ）'
+          required: false
+          schema:
+            type: string
+            format: date-time
+            example: 2024-01-01T10:00:00.000Z
+        - name: with_document
+          in: query
+          description: 文書の完全なテキスト認識結果を返すかどうか
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: with_task_detail_url
+          in: query
+          description: タスク詳細ページ URL を返すかどうか
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: ファイル一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - $ref: '#/components/schemas/TaskProcessResult'
+  /api/app-api/sip/platform/v2/file/update:
+    post:
+      summary: ファイル処理結果を更新
+      description: ファイル処理結果を更新します。通常は手動確認や校正後に、修正済みのキー値ペアをアップロードして自動認識結果を上書きするために使用します。
+      operationId: updateFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  workspace_id:
+                    type: string
+                    description: ワークスペース ID
+                    example: 1234567890
+                  file_id:
+                    type: string
+                    description: ファイル ID
+                    example: 202412190001
+                  data:
+                    description: |
+                      フィールド全体を更新します。
+                      注意: 一部のフィールドのみを更新する場合でも、すべてのフィールドを含める必要があります。
+                      入力フィールドが元のフィールドより多い場合、追加分のフィールドが追加されます。
+                      入力フィールドが元のフィールドより少ない場合、不足しているフィールドは削除されます。
+                      入力フィールド値が元のフィールド値と異なる場合、フィールド値が更新されます。
+                      入力フィールドが元のフィールドと同一の場合、フィールドは保持されます。
+                    type: object
+                    properties:
+                      fields:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/KeyValue'
+                        example:
+                          - key: インボイスコード
+                            value: '3100231130'
+                            position:
+                              - page: 0
+                                vertices:
+                                  - 0
+                                  - 0
+                                  - 100
+                                  - 0
+                                  - 100
+                                  - 100
+                                  - 0
+                                  - 100
+                          - key: インボイス番号
+                            value: '28737000'
+                            position:
+                              - page: 0
+                                vertices:
+                                  - 0
+                                  - 0
+                                  - 100
+                                  - 0
+                                  - 100
+                                  - 100
+                                  - 0
+                                  - 100
+                      items:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/KeyValue'
+                        example:
+                          - - key: 商品・サービス名
+                              value: ＊Electronic Computer＊Microcomputer Host
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                            - key: 仕様モデル
+                              value: DMS-SC68
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                          - - key: 商品・サービス名
+                              value: ＊Mechanical Computer＊Supercomputer Host
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                            - key: 仕様モデル
+                              value: AN/FSQ-7
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                required:
+                  - workspace_id
+                  - file_id
+                  - data
+      responses:
+        '200':
+          description: ファイル処理結果の更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          files:
+                            description: 更新後のファイルリスト
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                workspace_id:
+                                  type: string
+                                  description: ワークスペース ID
+                                  example: 1234567890
+                                id:
+                                  type: string
+                                  description: ファイル ID
+                                  example: 202412190001
+  /api/app-api/sip/platform/v2/file/delete:
+    post:
+      summary: タスクを削除
+      description: 条件を指定してファイルを削除します。いずれかの条件に一致するファイルが削除されます。
+      operationId: deleteFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: 1234567890
+                batch_number:
+                  type: array
+                  items:
+                    type: string
+                  description: バッチ番号リスト
+                  example:
+                    - '202412190001'
+                    - '202412190002'
+                task_id:
+                  type: array
+                  items:
+                    type: string
+                  description: タスク ID リスト
+                  example:
+                    - '1978297791713619968'
+                    - '1978297791713619969'
+                file_id:
+                  type: array
+                  items:
+                    type: string
+                  description: ファイル ID リスト
+                  example:
+                    - '1978297792124661760'
+                    - '1978297792124661761'
+                start_time:
+                  type: integer
+                  description: '開始時刻（エポックタイムスタンプ、単位: 秒）'
+                  example: 1760523600
+                end_time:
+                  type: integer
+                  description: '終了時刻（エポックタイムスタンプ、単位: 秒）'
+                  example: 1760523600
+              required:
+                - workspace_id
+      responses:
+        '200':
+          description: タスクの削除に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          deleted_count:
+                            type: integer
+                            description: 削除されたファイル数
+                            example: 1
+  /api/app-api/sip/platform/v2/file/extract_fields:
+    post:
+      summary: 特定フィールドを抽出
+      description: >
+        抽出が完了したタスクに対して、追加フィールドを抽出するか、既存フィールドを個別に再抽出します。
+
+        すべてのフィールドの完全な抽出結果を返します。戻り構造は `/api/app-api/sip/platform/v2/file/fetch`
+        と同じです。
+      operationId: extractFields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: 1234567890
+                task_id:
+                  type: string
+                  description: タスク ID
+                  example: 1234567890
+                fields:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ExtractFieldReqVO'
+                tables:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: テーブル名
+                        example: Table1
+                      extract_model:
+                        type: string
+                        description: >
+                          テーブルレベルの抽出モデル。未指定の場合は Acgpt
+                          がデフォルトです。テーブル内のすべてのフィールドがこのモデルを使用します
+
+                          - Auto: 抽出モデルを自動でマッチング
+
+                          - Acgpt: 高速で安定した抽出結果
+
+                          - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+
+                          - DF-M1: 複雑な文書理解に適しています
+                        example: Acgpt
+                        enum:
+                          - Auto
+                          - Acgpt
+                          - Acgpt-VL
+                          - DF-M1
+                      fields:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ExtractFieldReqVO'
+              required:
+                - workspace_id
+                - task_id
+      responses:
+        '200':
+          description: フィールド抽出に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - $ref: '#/components/schemas/TaskProcessResult'
+  /api/app-api/sip/platform/v2/file/retry:
+    post:
+      summary: ファイル処理を再試行
+      description: ファイル処理を再試行します。
+      operationId: retryFile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: 1234567890
+                task_id:
+                  type: string
+                  description: タスク ID
+                  example: 1234567890
+                parser_params:
+                  $ref: '#/components/schemas/DocumentParserParam'
+              required:
+                - workspace_id
+                - task_id
+      responses:
+        '200':
+          description: ファイル処理の再試行に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/file/amend_category:
+    post:
+      summary: ファイルカテゴリを修正
+      description: |
+        - 通常タスクの場合、通常タスクのファイルカテゴリを修正します
+        - 文書分割タスクの場合、分割後ファイルのファイルタイプとページ番号を修正します
+        - 複数画像クロップタスクの場合、クロップ後ファイルのファイルタイプを修正します
+      operationId: amendCategory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: 1234567890
+                task_id:
+                  type: string
+                  description: タスク ID
+                  example: 1234567890
+                category:
+                  type: string
+                  description: |
+                    新しいファイルカテゴリ。
+                    タスクタイプが通常タスクの場合のみ対応しています。
+                  example: 電子インボイス（普通インボイス）
+                split_tasks:
+                  description: 文書分割タスクリスト
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      category:
+                        type: string
+                        description: サブタスクのファイルカテゴリ
+                        example: 電子インボイス（普通インボイス）
+                      pages:
+                        type: array
+                        items:
+                          type: integer
+                          description: サブファイルのページ番号。0 から開始します
+                        example:
+                          - 0
+                          - 1
+                crop_tasks:
+                  description: 複数画像クロップタスクリスト
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      crop_child_task_id:
+                        type: string
+                        description: 複数画像クロップのサブタスク ID
+                        example: 1234567890
+                      category:
+                        type: string
+                        description: サブタスクのファイルカテゴリ
+                        example: 電子インボイス（普通インボイス）
+              required:
+                - workspace_id
+                - task_id
+      responses:
+        '200':
+          description: ファイルカテゴリの更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/auth/token:
+    get:
+      summary: 短期有効トークンを生成
+      description: 短期有効トークンを生成します（iframe シナリオ用）
+      operationId: authToken
+      responses:
+        '200':
+          description: トークン情報の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - $ref: '#/components/schemas/TokenResult'
+  /api/app-api/sip/platform/v2/workspace/create:
+    post:
+      summary: ワークスペースを作成
+      description: 新しいワークスペースを作成します
+      operationId: createWorkspace
+      tags:
+        - ワークスペース管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: ワークスペース名
+                  example: My ワークスペース
+                  maxLength: 50
+                description:
+                  type: string
+                  description: ワークスペースの説明
+                  example: 請求書処理用のワークスペースです
+                  maxLength: 200
+                enterprise_id:
+                  type: integer
+                  format: int64
+                  description: エンタープライズ組織 ID
+                  example: 12345
+                auth_scope:
+                  type: integer
+                  description: '共同利用範囲 0: 自分のみ表示 1: エンタープライズメンバーに表示'
+                  example: 1
+                  enum:
+                    - 0
+                    - 1
+              required:
+                - name
+                - enterprise_id
+                - auth_scope
+      responses:
+        '200':
+          description: ワークスペースの作成に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          workspace_id:
+                            type: string
+                            description: ワークスペース ID
+                            example: '1234567890'
+  /api/app-api/sip/platform/v2/workspace/list:
+    get:
+      summary: ワークスペース一覧を取得
+      description: 現在のユーザーのワークスペース一覧を取得します
+      operationId: listWorkspaces
+      tags:
+        - ワークスペース管理
+      parameters:
+        - name: enterprise_id
+          in: query
+          description: エンタープライズ ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: ページ番号
+          required: false
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: ページサイズ
+          required: false
+          schema:
+            type: integer
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: ワークスペース一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: ワークスペース総数
+                            example: 100
+                          page:
+                            type: integer
+                            description: 現在のページ番号
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: ページサイズ
+                            example: 20
+                          workspaces:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Workspace'
+  /api/app-api/sip/platform/v2/workspace/get:
+    get:
+      summary: ワークスペース詳細を取得
+      description: ワークスペース ID を指定してワークスペースの詳細情報を取得します
+      operationId: getWorkspace
+      tags:
+        - ワークスペース管理
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+      responses:
+        '200':
+          description: ワークスペース詳細の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/Workspace'
+  /api/app-api/sip/platform/v2/workspace/update:
+    post:
+      summary: ワークスペースを更新
+      description: 指定したワークスペースの情報を更新します
+      operationId: updateWorkspace
+      tags:
+        - ワークスペース管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: ワークスペース名
+                  example: My ワークスペース
+                  maxLength: 50
+                description:
+                  type: string
+                  description: ワークスペースの説明
+                  example: 請求書処理用のワークスペースです
+                  maxLength: 500
+                auth_scope:
+                  type: integer
+                  description: '共同利用範囲 0: 自分のみ表示 1: エンタープライズメンバーに表示'
+                  example: 1
+                  enum:
+                    - 0
+                    - 1
+                callback_url:
+                  type: string
+                  description: コールバック URL
+                  example: 'https://example.com/callback'
+                callback_retry_time:
+                  type: integer
+                  description: コールバック再試行回数
+                  example: 3
+                  minimum: 1
+                  maximum: 3
+              required:
+                - workspace_id
+                - name
+                - auth_scope
+      responses:
+        '200':
+          description: ワークスペースの更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/workspace/delete:
+    post:
+      summary: ワークスペースを削除
+      description: 指定したワークスペースを削除します
+      operationId: deleteWorkspace
+      tags:
+        - ワークスペース管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: ワークスペース ID
+                    example: '1234567890'
+                  description: 削除するワークスペース ID のリスト
+              required:
+                - workspace_ids
+      responses:
+        '200':
+          description: ワークスペースの削除に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/create:
+    post:
+      summary: ファイルカテゴリを作成
+      description: |
+        指定したワークスペースに新しいファイルカテゴリを作成します。少なくとも 1 つのサンプルファイルと 1 つのフィールド設定が必要です。
+
+        一括作成に対応しています。`tables` パラメータを渡すことで、ネストされたフィールドを含むテーブルも同時に作成できます。
+      operationId: createCategory
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: ファイルカテゴリ名
+                  example: インボイス
+                  maxLength: 50
+                category_prompt:
+                  type: string
+                  description: 分類用プロンプト
+                  example: VAT インボイス。インボイスコード、インボイス番号などのフィールドを含みます。
+                  maxLength: 150
+                description:
+                  type: string
+                  description: ファイルカテゴリの説明
+                extract_model:
+                  type: string
+                  description: |
+                    抽出モデル
+                    - Auto: 抽出モデルを自動でマッチング
+                    - Acgpt: 高速で安定した抽出結果
+                    - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                    - DF-M1: 複雑な文書理解に適しています
+                  example: Acgpt
+                  enum:
+                    - Auto
+                    - Acgpt
+                    - Acgpt-VL
+                    - DF-M1
+                sample_files:
+                  type: array
+                  description: >-
+                    サンプルファイルリスト。少なくとも 1 つのサンプルファイルをアップロードする必要があります。1 つのカテゴリには最大
+                    20 個のサンプルファイルを設定できます
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                  maxItems: 10
+                fields:
+                  type: array
+                  description: フィールド設定リスト。少なくとも 1 つのフィールドを設定する必要があります
+                  items:
+                    $ref: '#/components/schemas/CategoryFieldConfig'
+                  minItems: 1
+                tables:
+                  type: array
+                  description: 任意。テーブル設定リスト（一括作成）。ネストされたフィールドに対応しています
+                  items:
+                    $ref: '#/components/schemas/CategoryTableConfig'
+                with_detail:
+                  type: boolean
+                  description: >
+                    完全な詳細を返すかどうか。true
+                    の場合、レスポンスにカテゴリの完全な情報（フィールド、テーブル、サンプルを含む）が含まれます。
+
+                    未設定または false の場合、category_id のみを返します。
+              required:
+                - workspace_id
+                - name
+                - extract_model
+                - sample_files
+                - fields
+      responses:
+        '200':
+          description: ファイルカテゴリの作成に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          category_id:
+                            type: string
+                            description: ファイルカテゴリ ID
+                            example: '1234567890'
+                          name:
+                            type: string
+                            description: ファイルカテゴリ名（with_detail=true の場合に返却）
+                          description:
+                            type: string
+                            description: ファイルカテゴリの説明（with_detail=true の場合に返却）
+                          category_prompt:
+                            type: string
+                            description: 分類プロンプト（with_detail=true の場合に返却）
+                          extract_model:
+                            type: string
+                            description: 抽出モデル（with_detail=true の場合に返却）
+                          enabled:
+                            type: integer
+                            description: 有効化ステータス（with_detail=true の場合に返却）
+                          fields:
+                            type: array
+                            description: フィールドリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+                          tables:
+                            type: array
+                            description: テーブルリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '#/components/schemas/CategoryTable'
+                          samples:
+                            type: array
+                            description: サンプルリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '#/components/schemas/CategorySample'
+                        required:
+                          - category_id
+  /api/app-api/sip/platform/v2/category/list:
+    get:
+      summary: ワークスペースのファイルカテゴリ一覧を取得
+      tags:
+        - ファイルカテゴリ
+      description: ワークスペースのファイルカテゴリ一覧を取得します
+      operationId: listCategories
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: page
+          in: query
+          description: ページ番号
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: ページサイズ
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: enabled
+          in: query
+          description: |
+            有効化ステータス
+            - all: All
+            - 1: 有効
+            - 0: 無効
+            - 2: 下書き
+          required: false
+          schema:
+            type: string
+            default: '1'
+            enum:
+              - all
+              - '1'
+              - '0'
+              - '2'
+      responses:
+        '200':
+          description: ワークスペースのファイルカテゴリリストを正常に取得しました
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: ファイルカテゴリ総数
+                            example: 100
+                          page:
+                            type: integer
+                            description: 現在のページ番号
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: ページサイズ
+                            example: 20
+                          categories:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Category'
+  /api/app-api/sip/platform/v2/category/update:
+    post:
+      summary: ファイルカテゴリを更新
+      description: |
+        指定したファイルカテゴリ情報を更新します。
+
+        注意: extract_model を設定すると、このカテゴリ配下のすべてのフィールドとテーブルの抽出モデルが連鎖的に上書きされます。
+      operationId: updateCategory
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: ファイルカテゴリ名
+                  example: インボイス
+                  maxLength: 50
+                category_prompt:
+                  type: string
+                  description: 分類用プロンプト
+                  example: VAT インボイス。インボイスコード、インボイス番号などのフィールドを含みます。
+                  maxLength: 150
+                enabled:
+                  $ref: '#/components/schemas/EnabledStatus'
+                extract_model:
+                  type: string
+                  description: |
+                    抽出モデル, cascades to all fields and tables when set
+                    - Auto: 抽出モデルを自動でマッチング
+                    - Acgpt: 高速で安定した抽出結果
+                    - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                    - DF-M1: 複雑な文書理解に適しています
+                  example: Acgpt
+                  enum:
+                    - Auto
+                    - Acgpt
+                    - Acgpt-VL
+                    - DF-M1
+                with_detail:
+                  type: boolean
+                  description: |
+                    完全な詳細を返すかどうか。true の場合、子レベルのフィールド/テーブルを除くカテゴリ自身の情報を返します。
+                    未設定または false の場合、code/msg のみを返します。
+              required:
+                - workspace_id
+                - category_id
+      responses:
+        '200':
+          description: ファイルカテゴリの更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        description: with_detail=true の場合はカテゴリ自身の情報、それ以外は null
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: カテゴリ ID
+                          name:
+                            type: string
+                            description: カテゴリ名
+                          description:
+                            type: string
+                            description: カテゴリ説明
+                          category_prompt:
+                            type: string
+                            description: 分類プロンプト
+                          extract_model:
+                            type: string
+                            description: 抽出モデル
+                          enabled:
+                            type: integer
+                            description: 有効化ステータス
+  /api/app-api/sip/platform/v2/category/delete:
+    post:
+      summary: ファイルカテゴリを削除
+      description: 指定したファイルカテゴリを削除します
+      operationId: deleteCategory
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: 削除するファイルカテゴリ ID のリスト
+                  example:
+                    - '1234567890'
+                    - 0987654321
+              required:
+                - workspace_id
+                - category_ids
+      responses:
+        '200':
+          description: ファイルカテゴリの削除に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/fields/list:
+    get:
+      summary: ファイルカテゴリのフィールド一覧を取得
+      description: ファイルカテゴリのフィールド一覧を取得します。通常フィールドとテーブル（テーブルフィールドを含む）を含みます
+      operationId: listCategoryFields
+      tags:
+        - ファイルカテゴリ
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: category_id
+          in: query
+          description: ファイルカテゴリ ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+      responses:
+        '200':
+          description: ファイルカテゴリフィールド一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          fields:
+                            type: array
+                            description: 通常フィールドリスト
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+                          tables:
+                            type: array
+                            description: テーブルリスト（テーブルフィールドを含む）
+                            items:
+                              $ref: '#/components/schemas/CategoryTable'
+  /api/app-api/sip/platform/v2/category/fields/batch_add:
+    post:
+      summary: ファイルカテゴリのフィールドを追加
+      description: >-
+        指定したファイルカテゴリ配下に複数のフィールドを追加します。全件成功または全件失敗のセマンティクスを採用しており、いずれかのフィールドが検証に失敗するとバッチ全体が失敗します。
+      operationId: batchAddCategoryFields
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                table_id:
+                  type: string
+                  description: |
+                    テーブル ID
+                    - 未指定または空の場合: 通常フィールドを作成します
+                    - テーブル ID を指定した場合: 指定したテーブル配下にテーブルフィールドを作成します
+                fields:
+                  type: array
+                  description: 追加するフィールドのリスト
+                  items:
+                    $ref: '#/components/schemas/CategoryFieldConfig'
+                  minItems: 1
+                with_detail:
+                  type: boolean
+                  description: 各フィールドの完全な詳細を返すかどうか
+              required:
+                - workspace_id
+                - category_id
+                - fields
+      responses:
+        '200':
+          description: フィールドの追加に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        description: 作成結果リスト。リクエストと同じ順序です
+                        items:
+                          type: object
+                          properties:
+                            field_id:
+                              type: string
+                              description: フィールド ID
+                            name:
+                              type: string
+                              description: フィールド名（with_detail=true の場合に返却）
+                            description:
+                              type: string
+                            prompt:
+                              type: string
+                            use_prompt:
+                              type: boolean
+                            alias:
+                              type: array
+                              items:
+                                type: string
+                            identity:
+                              type: string
+                            multi_value:
+                              type: boolean
+                            duplicate_value_distinct:
+                              type: boolean
+                            transform_settings:
+                              $ref: '#/components/schemas/TransformSettings'
+                            extract_model:
+                              type: string
+                            enabled:
+                              type: integer
+                          required:
+                            - field_id
+  /api/app-api/sip/platform/v2/category/fields/batch_update:
+    post:
+      summary: ファイルカテゴリのフィールドを更新
+      description: 指定したファイルカテゴリ配下の複数フィールドを更新します。全件成功または全件失敗のセマンティクスを採用しています。
+      operationId: batchUpdateCategoryFields
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                fields:
+                  type: array
+                  description: 更新するフィールドのリスト
+                  items:
+                    $ref: '#/components/schemas/CategoryFieldUpdateItem'
+                  minItems: 1
+                with_detail:
+                  type: boolean
+                  description: 更新後の各フィールドの完全な詳細を返すかどうか
+              required:
+                - workspace_id
+                - category_id
+                - fields
+      responses:
+        '200':
+          description: フィールドの更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        description: with_detail=true の場合は更新後のフィールドリスト、それ以外は null
+                        items:
+                          type: object
+                          properties:
+                            field_id:
+                              type: string
+                            name:
+                              type: string
+                            description:
+                              type: string
+                            prompt:
+                              type: string
+                            use_prompt:
+                              type: boolean
+                            alias:
+                              type: array
+                              items:
+                                type: string
+                            identity:
+                              type: string
+                            multi_value:
+                              type: boolean
+                            duplicate_value_distinct:
+                              type: boolean
+                            transform_settings:
+                              $ref: '#/components/schemas/TransformSettings'
+                            extract_model:
+                              type: string
+                            enabled:
+                              type: integer
+  /api/app-api/sip/platform/v2/category/fields/delete:
+    post:
+      summary: ファイルカテゴリのフィールドを削除
+      description: 指定したファイルカテゴリフィールドを削除します。通常フィールドとテーブルフィールドの一括削除に対応しています
+      operationId: deleteCategoryFields
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                field_ids:
+                  type: array
+                  description: 削除するフィールド ID のリスト
+                  items:
+                    type: string
+                  example:
+                    - '1234567890'
+                    - 0987654321
+                table_id:
+                  type: string
+                  description: >
+                    テーブル ID
+
+                    - 未指定の場合: 通常フィールド（result.fields 内のフィールド）を削除します
+
+                    - テーブル ID を指定した場合:
+                    指定したテーブル配下のテーブルフィールド（result.tables[].fields 内のフィールド）を削除します
+                  example: '1234567890'
+              required:
+                - workspace_id
+                - category_id
+                - field_ids
+      responses:
+        '200':
+          description: ファイルカテゴリフィールドの削除に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/tables/list:
+    get:
+      summary: ファイルカテゴリのテーブル一覧を取得
+      description: 指定したファイルカテゴリに設定されているすべてのテーブルを取得します
+      operationId: listCategoryTables
+      tags:
+        - ファイルカテゴリ
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: category_id
+          in: query
+          description: ファイルカテゴリ ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+      responses:
+        '200':
+          description: ファイルカテゴリテーブル一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          tables:
+                            type: array
+                            description: テーブルリスト
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  description: テーブル ID
+                                  example: '1234567890'
+                                name:
+                                  type: string
+                                  description: テーブル名
+                                  example: Table 1
+                                prompt:
+                                  type: string
+                                  description: テーブルの意味抽出プロンプト
+                                  example: 各行から品目名、数量、金額を抽出します
+                                collect_from_multi_table:
+                                  type: boolean
+                                  description: 複数テーブルを結合
+                                  example: true
+                                extract_model:
+                                  type: string
+                                  description: テーブルレベルの抽出モデル（Auto/Acgpt/Acgpt-VL/DF-M1）
+                                  example: Acgpt
+  /api/app-api/sip/platform/v2/category/tables/batch_add:
+    post:
+      summary: ファイルカテゴリのテーブルを追加
+      description: >-
+        指定したファイルカテゴリ配下に複数のテーブルを追加します（ネストされたフィールドに対応）。全件成功または全件失敗のセマンティクスを採用しています。
+      operationId: batchAddCategoryTables
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                tables:
+                  type: array
+                  description: 追加するテーブルのリスト
+                  items:
+                    $ref: '#/components/schemas/CategoryTableConfig'
+                  minItems: 1
+                with_detail:
+                  type: boolean
+                  description: 各テーブルの完全な詳細（フィールドリストを含む）を返すかどうか
+              required:
+                - workspace_id
+                - category_id
+                - tables
+      responses:
+        '200':
+          description: テーブルの追加に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        description: 作成結果リスト。リクエストと同じ順序です
+                        items:
+                          type: object
+                          properties:
+                            table_id:
+                              type: string
+                              description: テーブル ID
+                            name:
+                              type: string
+                              description: テーブル名（with_detail=true の場合に返却）
+                            description:
+                              type: string
+                            prompt:
+                              type: string
+                            collect_from_multi_table:
+                              type: boolean
+                            extract_model:
+                              type: string
+                            fields:
+                              type: array
+                              description: テーブルフィールドリスト（with_detail=true の場合に返却）
+                              items:
+                                $ref: '#/components/schemas/CategoryField'
+                          required:
+                            - table_id
+  /api/app-api/sip/platform/v2/category/tables/batch_update:
+    post:
+      summary: ファイルカテゴリのテーブルを更新
+      description: 指定したファイルカテゴリ配下の複数テーブルを更新します。全件成功または全件失敗のセマンティクスを採用しています。
+      operationId: batchUpdateCategoryTables
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                tables:
+                  type: array
+                  description: 更新するテーブルのリスト
+                  items:
+                    $ref: '#/components/schemas/CategoryTableUpdateItem'
+                  minItems: 1
+              required:
+                - workspace_id
+                - category_id
+                - tables
+      responses:
+        '200':
+          description: テーブルの更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/tables/delete:
+    post:
+      summary: ファイルカテゴリのテーブルを削除
+      description: 指定したファイルカテゴリテーブルを削除します。一括削除に対応しています
+      operationId: deleteCategoryTables
+      tags:
+        - ファイルカテゴリ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                table_ids:
+                  type: array
+                  description: 削除するテーブル ID のリスト
+                  items:
+                    type: string
+                  example:
+                    - '1234567890'
+                    - 0987654321
+              required:
+                - workspace_id
+                - category_id
+                - table_ids
+      responses:
+        '200':
+          description: ファイルカテゴリテーブルの削除に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/batch_upload:
+    post:
+      summary: カテゴリサンプルをアップロード
+      description: 指定したファイルカテゴリに複数のサンプルファイルをアップロードします。最大 20 ファイルまで対応します
+      operationId: batchUploadCategorySample
+      tags:
+        - ファイルカテゴリサンプル
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                files:
+                  type: array
+                  description: サンプルファイルリスト。最大 20 ファイル
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                  maxItems: 10
+                with_detail:
+                  type: boolean
+                  description: true の場合、レスポンスにこのカテゴリの完全なサンプルリストを返します
+              required:
+                - workspace_id
+                - category_id
+                - files
+      responses:
+        '200':
+          description: サンプルの一括アップロードに成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          samples:
+                            type: array
+                            description: このカテゴリの完全なサンプルリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '#/components/schemas/CategorySample'
+  /api/app-api/sip/platform/v2/category/sample/list:
+    get:
+      summary: カテゴリサンプル一覧を取得
+      description: 指定したファイルカテゴリのサンプル一覧を取得します
+      operationId: listCategorySamples
+      tags:
+        - ファイルカテゴリサンプル
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: category_id
+          in: query
+          description: ファイルカテゴリ ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: page
+          in: query
+          description: ページ番号
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          description: ページサイズ
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: カテゴリサンプル一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: サンプル総数
+                            example: 10
+                          page:
+                            type: integer
+                            description: 現在のページ番号
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: ページサイズ
+                            example: 20
+                          samples:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CategorySample'
+  /api/app-api/sip/platform/v2/category/sample/batch_download:
+    post:
+      summary: カテゴリサンプルをダウンロード（ZIP）
+      description: >-
+        指定したカテゴリの複数サンプルファイルを ZIP ファイルにまとめてダウンロードします。sample_ids
+        を指定しない場合は、すべてのサンプルをダウンロードします。
+      operationId: batchDownloadCategorySample
+      tags:
+        - ファイルカテゴリサンプル
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                sample_ids:
+                  type: array
+                  description: ダウンロードするサンプル ID のリスト。指定しない場合、このカテゴリのすべてのサンプルをダウンロードします。
+                  items:
+                    type: string
+                  example:
+                    - '1234567890'
+                    - 0987654321
+              required:
+                - workspace_id
+                - category_id
+      responses:
+        '200':
+          description: サンプル ZIP ファイルのダウンロードに成功
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+  /api/app-api/sip/platform/v2/category/sample/delete:
+    post:
+      summary: カテゴリサンプルを削除
+      description: 指定したカテゴリサンプルを削除します
+      operationId: deleteCategorySample
+      tags:
+        - ファイルカテゴリサンプル
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                sample_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: 削除するサンプル ID のリスト
+                  example:
+                    - '1234567890'
+                    - 0987654321
+              required:
+                - workspace_id
+                - category_id
+                - sample_ids
+      responses:
+        '200':
+          description: カテゴリサンプルの削除に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule_repo/create:
+    post:
+      summary: レビュー規則リポジトリを作成
+      description: レビュー規則リポジトリを作成します
+      operationId: createReviewRuleRepo
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: リポジトリ名
+                  example: レビュー規則リポジトリ 1
+                  maxLength: 30
+              required:
+                - workspace_id
+                - name
+      responses:
+        '200':
+          description: レビュー規則リポジトリの作成に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          repo_id:
+                            type: integer
+                            description: レビュー規則リポジトリ ID
+                            example: '31415926'
+  /api/app-api/sip/platform/v2/review/rule_repo/delete:
+    post:
+      summary: レビュー規則リポジトリを削除
+      description: レビュー規則リポジトリを削除します
+      operationId: deleteReviewRuleRepo
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                repo_ids:
+                  type: array
+                  items:
+                    type: integer
+                    description: レビュー規則リポジトリ ID
+                    example: '31415926'
+              required:
+                - workspace_id
+                - repo_ids
+      responses:
+        '200':
+          description: レビュー規則リポジトリの削除に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule_repo/update:
+    post:
+      summary: レビュー規則リポジトリを更新
+      description: レビュー規則リポジトリを更新します
+      operationId: updateReviewRuleRepo
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                repo_id:
+                  type: integer
+                  description: レビュー規則リポジトリ ID
+                  example: '31415926'
+                name:
+                  type: string
+                  description: リポジトリ名
+                  example: レビュー規則リポジトリ 1
+                  maxLength: 30
+              required:
+                - workspace_id
+                - repo_id
+      responses:
+        '200':
+          description: レビュー規則リポジトリの更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule_repo/list:
+    get:
+      summary: レビュー規則リポジトリ一覧を取得
+      description: レビュー規則リポジトリ一覧を取得します。リポジトリ配下の規則グループと規則情報を含みます
+      operationId: listReviewRuleRepo
+      tags:
+        - スマートレビュー
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: page
+          in: query
+          description: ページ番号
+          required: false
+          schema:
+            type: integer
+            example: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: ページサイズ
+          required: false
+          schema:
+            type: integer
+            example: 10
+            default: 10
+      responses:
+        '200':
+          description: レビュー規則リポジトリ一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          repos:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ReviewRuleRepo'
+                          total:
+                            type: integer
+                            description: 総件数
+                            example: 100
+                          page:
+                            type: integer
+                            description: ページ番号
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: ページサイズ
+                            example: 10
+  /api/app-api/sip/platform/v2/review/rule_repo/get:
+    get:
+      summary: レビュー規則リポジトリを取得
+      description: レビュー規則リポジトリを取得します
+      operationId: getReviewRuleRepo
+      tags:
+        - スマートレビュー
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: repo_id
+          in: query
+          description: レビュー規則リポジトリ ID
+          required: true
+          schema:
+            type: string
+            example: '31415926'
+      responses:
+        '200':
+          description: レビュー規則リポジトリの取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        $ref: '#/components/schemas/ReviewRuleRepo'
+  /api/app-api/sip/platform/v2/review/rule_group/create:
+    post:
+      summary: レビュー規則グループを作成
+      description: レビュー規則グループを作成します
+      operationId: createReviewRuleGroup
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                repo_id:
+                  type: integer
+                  description: レビュー規則リポジトリ ID
+                  example: '31415926'
+                name:
+                  type: string
+                  description: グループ名
+                  example: レビュー規則グループ 1
+                  maxLength: 30
+              required:
+                - workspace_id
+                - repo_id
+                - name
+      responses:
+        '200':
+          description: レビュー規則グループの作成に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          group_id:
+                            type: string
+                            description: レビュー規則グループ ID
+                            example: '31415926'
+  /api/app-api/sip/platform/v2/review/rule_group/delete:
+    post:
+      summary: レビュー規則グループを削除
+      description: レビュー規則グループを削除します
+      operationId: deleteReviewRuleGroup
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                group_id:
+                  type: string
+                  description: レビュー規則グループ ID
+                  example: '31415926'
+              required:
+                - workspace_id
+                - group_id
+      responses:
+        '200':
+          description: レビュー規則グループの削除に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule_group/update:
+    post:
+      summary: レビュー規則グループを更新
+      description: レビュー規則グループを更新します
+      operationId: updateReviewRuleGroup
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                group_id:
+                  type: string
+                  description: レビュー規則グループ ID
+                  example: '31415926'
+                name:
+                  type: string
+                  description: グループ名
+                  example: レビュー規則グループ 1
+                  maxLength: 30
+              required:
+                - workspace_id
+                - group_id
+      responses:
+        '200':
+          description: レビュー規則グループの更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule/create:
+    post:
+      summary: レビュー規則を作成
+      description: レビュー規則を作成します
+      operationId: createReviewRule
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ReviewRuleProperties'
+                - type: object
+                  properties:
+                    workspace_id:
+                      type: string
+                      description: ワークスペース ID
+                      example: '1234567890'
+                    repo_id:
+                      type: integer
+                      description: レビュー規則リポジトリ ID
+                      example: '31415926'
+                  required:
+                    - workspace_id
+                    - repo_id
+      responses:
+        '200':
+          description: レビュー規則の作成に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          rule_id:
+                            type: string
+                            description: レビュー規則 ID
+                            example: '31415926'
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule/update:
+    post:
+      summary: レビュー規則を更新
+      description: レビュー規則を更新します
+      operationId: updateReviewRule
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    workspace_id:
+                      type: string
+                      description: ワークスペース ID
+                      example: '1234567890'
+                    rule_id:
+                      type: string
+                      description: レビュー規則 ID
+                      example: '31415926'
+                - $ref: '#/components/schemas/ReviewRuleProperties'
+      responses:
+        '200':
+          description: レビュー規則の更新に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/rule/delete:
+    post:
+      summary: レビュー規則を削除
+      description: レビュー規則を削除します
+      operationId: deleteReviewRule
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                rule_id:
+                  type: string
+                  description: レビュー規則 ID
+                  example: '31415926'
+              required:
+                - workspace_id
+                - rule_id
+      responses:
+        '200':
+          description: レビュー規則の削除に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/task/submit:
+    post:
+      summary: レビュータスクを送信
+      description: レビュータスクを送信します
+      operationId: submitReviewTask
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: タスク名
+                  example: レビュータスク 1
+                  maxLength: 100
+                repo_id:
+                  type: string
+                  description: レビュー規則リポジトリ ID
+                  example: '31415926'
+                extract_task_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: 抽出タスク ID
+                    example: '1234567890'
+                batch_number:
+                  type: string
+                  description: バッチ番号
+                  example: '1234567890'
+                model:
+                  type: string
+                  description: >
+                    レビュータスクモデル（任意）。指定可能な値：`deepseek-v4-pro`、`qwen3.6-plus`、`qwen3.7-max`、`ORM-O1`。省略した場合は、ルールリポジトリのデフォルトレビューモデルが使用されます。
+
+
+                    2026-07-08 以降、以下の旧モデルは廃止されました。対応する代替モデルを使用してください：
+
+
+                    | 旧モデル | 代替モデル |
+
+                    | --- | --- |
+
+                    | `deepseek-r1` | `deepseek-v4-pro` |
+
+                    | `qwq-32b` | `qwen3.6-plus` |
+
+                    | `qwen3-max` | `qwen3.7-max` |
+                  example: deepseek-v4-pro
+              required:
+                - workspace_id
+                - name
+                - repo_id
+      responses:
+        '200':
+          description: レビュータスクの送信に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          task_id:
+                            type: string
+                            description: レビュータスク ID
+                            example: '31415926'
+                          model:
+                            type: string
+                            description: >-
+                              このタスクで実際に使用されたレビューモデルの表示名。廃止済みのデフォルトモデルがプラットフォームルールにより代替された場合は、代替後のモデル表示名を返します。
+                            example: deepseek-v4-pro
+  /api/app-api/sip/platform/v2/review/task/delete:
+    post:
+      summary: レビュータスクを削除
+      description: レビュータスクを削除します
+      operationId: deleteReviewTask
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                task_ids:
+                  type: array
+                  items:
+                    type: string
+                    description: レビュータスク ID
+                    example: '31415926'
+              required:
+                - workspace_id
+                - task_ids
+      responses:
+        '200':
+          description: レビュータスクの削除に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/task/result:
+    post:
+      summary: レビュータスク結果を取得
+      description: レビュータスク結果を取得します
+      operationId: getReviewTaskResult
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                task_id:
+                  type: string
+                  description: レビュータスク ID
+                  example: '31415926'
+                with_task_detail_url:
+                  type: boolean
+                  description: レビュータスク詳細ページ URL を返すかどうか
+                  example: false
+              required:
+                - workspace_id
+                - task_id
+      responses:
+        '200':
+          description: レビュータスク結果の取得に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          task_id:
+                            type: string
+                            description: レビュータスク ID
+                            example: '31415926'
+                          task_name:
+                            type: string
+                            description: タスク名
+                            example: レビュータスク 1
+                          task_detail_url:
+                            type: string
+                            description: レビュータスク詳細ページ URL
+                          status:
+                            $ref: '#/components/schemas/ReviewTaskStatus'
+                          rule_repo:
+                            type: object
+                            properties:
+                              repo_id:
+                                type: string
+                                description: レビュー規則リポジトリ ID
+                                example: '31415926'
+                              name:
+                                type: string
+                                description: レビュー規則リポジトリ名
+                                example: レビュー規則リポジトリ 1
+                          extract_task_ids:
+                            type: array
+                            items:
+                              type: string
+                              description: 抽出タスク ID
+                              example: '1234567890'
+                          statistics:
+                            type: object
+                            properties:
+                              pass_count:
+                                type: integer
+                                description: 合格件数
+                                example: 100
+                              failure_count:
+                                type: integer
+                                description: 不合格件数
+                                example: 100
+                              error_count:
+                                type: integer
+                                description: タスク実行エラー件数
+                                example: 100
+                              not_triggered_count:
+                                type: integer
+                                description: 未トリガー件数
+                                example: 100
+                          groups:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                group_id:
+                                  type: string
+                                  description: レビュー規則グループ ID
+                                  example: '31415926'
+                                group_name:
+                                  type: string
+                                  description: レビュー規則グループ名
+                                  example: レビュー規則グループ 1
+                                review_tasks:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      rule_task_id:
+                                        type: string
+                                        description: レビューサブタスク ID
+                                        example: '31415926'
+                                      rule_id:
+                                        type: string
+                                        description: レビュー規則 ID
+                                        example: '31415926'
+                                      rule_name:
+                                        type: string
+                                        description: レビュー規則名
+                                        example: レビュー規則 1
+                                      risk_level:
+                                        $ref: '#/components/schemas/RiskLevel'
+                                      prompt:
+                                        type: string
+                                        description: レビュー規則プロンプト
+                                        example: レビュー規則プロンプト
+                                      review_result:
+                                        $ref: '#/components/schemas/ReviewTaskStatus'
+                                      reasoning:
+                                        type: string
+                                        description: レビュー判定理由
+                                        example: レビュー判定理由
+                                      anchors:
+                                        type: array
+                                        description: >-
+                                          レビュー判定理由の位置アンカー情報。元テキスト内のレビュー判定理由の位置を特定するために使用します
+                                        items:
+                                          type: object
+                                          properties:
+                                            start_pos:
+                                              type: integer
+                                              description: '`reasoning` 内の開始文字位置'
+                                            end_pos:
+                                              type: integer
+                                              description: '`reasoning` 内の終了文字位置'
+                                            text:
+                                              type: string
+                                              description: 元テキストの内容
+                                            vertices:
+                                              type: array
+                                              items:
+                                                type: integer
+                                                description: 元テキストの外接四角形座標
+                                                example:
+                                                  - 0
+                                                  - 0
+                                                  - 100
+                                                  - 0
+                                                  - 100
+                                                  - 100
+                                                  - 0
+                                                  - 100
+                                            file_id:
+                                              type: string
+                                              description: ファイル ID
+                                              example: '1234567890'
+                                            extract_task_id:
+                                              type: string
+                                              description: 抽出タスク ID
+                                              example: '1234567890'
+                                            page:
+                                              type: integer
+                                              description: ファイル内のページ番号
+                                              example: 1
+                                            source:
+                                              type: string
+                                              description: |
+                                                位置アンカーのソース
+                                                - "ocr": 認識結果
+                                                - "extract_field": 関連フィールド
+                                              example: ocr
+                                              enum:
+                                                - ocr
+                                                - extract_field
+                                            file_category:
+                                              type: string
+                                              description: ファイルカテゴリ
+                                              example: インボイス
+                                            field_name:
+                                              type: string
+                                              description: 関連フィールド名
+                                              example: インボイスコード
+                                      audit_result:
+                                        type: integer
+                                        description: |
+                                          手動レビュー結果
+                                          - 0: 手動レビュー不合格
+                                          - 1: 手動レビュー合格
+                                        example: 1
+                                        enum:
+                                          - 0
+                                          - 1
+                                      audit_message:
+                                        type: string
+                                        description: 手動レビューコメント
+                                        example: 手動レビューコメント
+                          model:
+                            type: string
+                            description: >-
+                              レビュータスクモデルの表示名。履歴タスクでは `deepseek-r1（廃止済み）`
+                              のように、元のモデルと廃止済みマークが返る場合があります。
+                            example: deepseek-v4-pro
+  /api/app-api/sip/platform/v2/review/task/retry:
+    post:
+      summary: レビュータスクを再試行
+      description: レビュータスクを再試行します
+      operationId: retryReviewTask
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                task_id:
+                  type: string
+                  description: レビュータスク ID
+                  example: '31415926'
+              required:
+                - workspace_id
+                - task_id
+      responses:
+        '200':
+          description: レビュータスクの再試行に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/review/task/rule/retry:
+    post:
+      summary: レビュータスク内の特定規則を再試行
+      description: レビュータスク内の特定規則を再試行します。
+      operationId: retryReviewTaskRule
+      tags:
+        - スマートレビュー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                task_id:
+                  type: string
+                  description: レビュータスク ID
+                  example: '31415926'
+                rule_id:
+                  type: string
+                  description: レビュー規則 ID
+                  example: '31415926'
+              required:
+                - workspace_id
+                - task_id
+                - rule_id
+      responses:
+        '200':
+          description: レビュータスク内の特定規則の再試行に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/fields/add:
+    post:
+      summary: 単一ファイルカテゴリフィールドを追加
+      description: >
+        指定したファイルカテゴリ配下に新しいフィールドを追加します。通常フィールドとテーブルフィールドの両方に対応しています
+
+
+        > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに
+        [ファイルカテゴリのフィールドを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E8%BF%BD%E5%8A%A0)
+        を使用してください。
+      operationId: addCategoryField
+      tags:
+        - 廃止済み
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CategoryFieldConfig'
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                table_id:
+                  type: string
+                  description: >
+                    テーブル ID
+
+                    - 未指定または空の場合: 通常フィールドを作成し、結果は result.fields に表示されます
+
+                    - テーブル ID を指定した場合: 指定したテーブル配下にテーブルフィールドを作成し、結果は
+                    result.tables[].fields に表示されます
+                  example: '1234567890'
+                extract_model:
+                  type: string
+                  description: >
+                    任意。フィールドレベルの抽出モデル。通常フィールド（テーブルフィールド以外）のみ対応し、未指定の場合は分類レベルの設定に従います（分類レベルが
+                    mixed または null の場合は Auto がデフォルト）
+
+                    - Auto: 抽出モデルを自動でマッチング
+
+                    - Acgpt: 高速で安定した抽出結果
+
+                    - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+
+                    - DF-M1: 複雑な文書理解に適しています
+                  example: Acgpt
+                  enum:
+                    - Auto
+                    - Acgpt
+                    - Acgpt-VL
+                    - DF-M1
+                with_detail:
+                  type: boolean
+                  description: |
+                    完全な詳細を返すかどうか。true の場合、レスポンスにフィールドの完全な情報が含まれます。
+                    未設定または false の場合、field_id のみを返します。
+              required:
+                - workspace_id
+                - category_id
+                - name
+      responses:
+        '200':
+          description: ファイルカテゴリフィールドの追加に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          field_id:
+                            type: string
+                            description: 新規作成されたフィールド ID
+                            example: '1234567890'
+                          name:
+                            type: string
+                            description: フィールド名（with_detail=true の場合に返却）
+                          description:
+                            type: string
+                            description: フィールドの説明（with_detail=true の場合に返却）
+                          prompt:
+                            type: string
+                            description: 意味抽出プロンプト（with_detail=true の場合に返却）
+                          use_prompt:
+                            type: boolean
+                            description: 意味抽出プロンプトを使用するかどうか（with_detail=true の場合に返却）
+                          alias:
+                            type: array
+                            items:
+                              type: string
+                            description: フィールド別名（with_detail=true の場合に返却）
+                          identity:
+                            type: string
+                            description: エクスポート時のフィールド名（with_detail=true の場合に返却）
+                          multi_value:
+                            type: boolean
+                            description: 複数値抽出を有効にするかどうか（with_detail=true の場合に返却）
+                          duplicate_value_distinct:
+                            type: boolean
+                            description: 重複値除去を有効にするかどうか（with_detail=true の場合に返却）
+                          transform_settings:
+                            $ref: '#/components/schemas/TransformSettings'
+                          extract_model:
+                            type: string
+                            description: フィールド抽出モデル（with_detail=true の場合に返却）
+                          enabled:
+                            type: integer
+                            description: 有効化ステータス（with_detail=true の場合に返却）
+                        required:
+                          - field_id
+  /api/app-api/sip/platform/v2/category/fields/update:
+    post:
+      summary: 単一ファイルカテゴリフィールドを更新
+      description: >
+        指定したファイルカテゴリフィールドを更新します。通常フィールドとテーブルフィールドの両方に対応しています
+
+
+        > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに
+        [ファイルカテゴリのフィールドを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89%E3%82%92%E6%9B%B4%E6%96%B0)
+        を使用してください。
+      operationId: updateCategoryField
+      tags:
+        - 廃止済み
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CategoryFieldUpdateItem'
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                table_id:
+                  type: string
+                  description: |
+                    テーブル ID
+                    - 通常フィールドでは不要です
+                    - テーブルフィールドでは必須です（フィールドが属するテーブル ID を指定してください）
+                  example: '1234567890'
+                with_detail:
+                  type: boolean
+                  description: |
+                    完全な詳細を返すかどうか。true の場合、更新後フィールドの完全な情報を返します。
+                    未設定または false の場合、code/msg のみを返します。
+              required:
+                - workspace_id
+                - category_id
+                - field_id
+      responses:
+        '200':
+          description: ファイルカテゴリフィールドの更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/tables/add:
+    post:
+      summary: 単一ファイルカテゴリテーブルを追加
+      description: >
+        指定したファイルカテゴリ配下に新しいテーブルを追加します
+
+
+        > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに
+        [ファイルカテゴリのテーブルを追加](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E8%BF%BD%E5%8A%A0)
+        を使用してください。
+      operationId: addCategoryTable
+      tags:
+        - 廃止済み
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: テーブル名
+                  example: Table 1
+                  maxLength: 50
+                prompt:
+                  type: string
+                  description: テーブルの意味抽出プロンプト
+                  example: 各行から品目名、数量、金額を抽出します
+                  maxLength: 200
+                collect_from_multi_table:
+                  type: boolean
+                  description: 複数テーブルを結合
+                  example: true
+                extract_model:
+                  type: string
+                  description: |
+                    テーブルレベルの抽出モデル
+                    - Auto: 抽出モデルを自動でマッチング
+                    - Acgpt: 高速で安定した抽出結果
+                    - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                    - DF-M1: 複雑な文書理解に適しています
+                  example: Acgpt
+                  enum:
+                    - Auto
+                    - Acgpt
+                    - Acgpt-VL
+                    - DF-M1
+                with_detail:
+                  type: boolean
+                  description: |
+                    完全な詳細を返すかどうか。true の場合、レスポンスにテーブルの完全な情報（フィールドリストを含む）が含まれます。
+                    未設定または false の場合、table_id のみを返します。
+              required:
+                - workspace_id
+                - category_id
+                - name
+      responses:
+        '200':
+          description: ファイルカテゴリテーブルの追加に成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          table_id:
+                            type: string
+                            description: 新規テーブル ID
+                            example: '1234567890'
+                          name:
+                            type: string
+                            description: テーブル名（with_detail=true の場合に返却）
+                          description:
+                            type: string
+                            description: テーブルの説明（with_detail=true の場合に返却）
+                          prompt:
+                            type: string
+                            description: テーブルの意味抽出プロンプト（with_detail=true の場合に返却）
+                          collect_from_multi_table:
+                            type: boolean
+                            description: 複数テーブルを結合（with_detail=true の場合に返却）
+                          extract_model:
+                            type: string
+                            description: テーブルレベルの抽出モデル（with_detail=true の場合に返却）
+                          fields:
+                            type: array
+                            description: テーブルフィールドリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '#/components/schemas/CategoryField'
+                        required:
+                          - table_id
+  /api/app-api/sip/platform/v2/category/tables/update:
+    post:
+      summary: 単一ファイルカテゴリテーブルを更新
+      description: >
+        指定したファイルカテゴリテーブルの情報を更新します
+
+
+        > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに
+        [ファイルカテゴリのテーブルを更新](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%81%AE%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%82%92%E6%9B%B4%E6%96%B0)
+        を使用してください。
+      operationId: updateCategoryTable
+      tags:
+        - 廃止済み
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                table_id:
+                  type: string
+                  description: テーブル ID
+                  example: '1234567890'
+                name:
+                  type: string
+                  description: テーブル名
+                  example: Table 1
+                  maxLength: 50
+                prompt:
+                  type: string
+                  description: テーブルの意味抽出プロンプト
+                  example: 各行から品目名、数量、金額を抽出します
+                  maxLength: 200
+                collect_from_multi_table:
+                  type: boolean
+                  description: 複数テーブルを結合。Acgpt-VL は複数テーブルの結合に対応していません
+                  example: true
+                extract_model:
+                  type: string
+                  description: |
+                    テーブルレベルの抽出モデル
+                    - Auto: 抽出モデルを自動でマッチング
+                    - Acgpt: 高速で安定した抽出結果
+                    - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+                    - DF-M1: 複雑な文書理解に適しています
+                  example: Acgpt
+                  enum:
+                    - Auto
+                    - Acgpt
+                    - Acgpt-VL
+                    - DF-M1
+                with_detail:
+                  type: boolean
+                  description: 完全な詳細を返すかどうか
+              required:
+                - workspace_id
+                - category_id
+                - table_id
+                - collect_from_multi_table
+      responses:
+        '200':
+          description: ファイルカテゴリテーブルの更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeMessage'
+  /api/app-api/sip/platform/v2/category/sample/upload:
+    post:
+      summary: 単一カテゴリサンプルをアップロード
+      description: >
+        指定したファイルカテゴリにサンプルファイルをアップロードします
+
+
+        > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに
+        [カテゴリサンプルをアップロード](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%82%A2%E3%83%83%E3%83%97%E3%83%AD%E3%83%BC%E3%83%89)
+        を使用してください。
+      operationId: uploadCategorySample
+      tags:
+        - 廃止済み
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                workspace_id:
+                  type: string
+                  description: ワークスペース ID
+                  example: '1234567890'
+                category_id:
+                  type: string
+                  description: ファイルカテゴリ ID
+                  example: '1234567890'
+                file:
+                  type: string
+                  format: binary
+                  description: サンプルファイル
+                with_detail:
+                  type: boolean
+                  description: |
+                    完全な詳細を返すかどうか。true の場合、レスポンスにこのカテゴリの完全なサンプルリストも返します。
+                    未設定または false の場合、sample_id のみを返します。
+              required:
+                - workspace_id
+                - category_id
+                - file
+      responses:
+        '200':
+          description: カテゴリサンプルのアップロードに成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/CodeMessage'
+                  - type: object
+                    properties:
+                      result:
+                        type: object
+                        properties:
+                          sample_id:
+                            type: string
+                            description: サンプル ID
+                            example: '1234567890'
+                          samples:
+                            type: array
+                            description: このカテゴリの完全なサンプルリスト（with_detail=true の場合に返却）
+                            items:
+                              $ref: '#/components/schemas/CategorySample'
+                        required:
+                          - sample_id
+  /api/app-api/sip/platform/v2/category/sample/download:
+    get:
+      summary: 単一カテゴリサンプルをダウンロード
+      description: >
+        指定したカテゴリサンプルファイルをダウンロードします
+
+
+        > ⚠️ このエンドポイントは現在も利用できますが、今後メンテナンスされません。代わりに
+        [カテゴリサンプルをダウンロード（ZIP）](/api-reference/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB/%E3%82%AB%E3%83%86%E3%82%B4%E3%83%AA%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%EF%BC%88ZIP%EF%BC%89)
+        を使用してください。
+      operationId: downloadCategorySample
+      tags:
+        - 廃止済み
+      parameters:
+        - name: workspace_id
+          in: query
+          description: ワークスペース ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: category_id
+          in: query
+          description: ファイルカテゴリ ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+        - name: sample_id
+          in: query
+          description: サンプル ID
+          required: true
+          schema:
+            type: string
+            example: '1234567890'
+      responses:
+        '200':
+          description: サンプルファイルのダウンロードに成功
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+components:
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: query
+      description: ワークスペース ID
+      required: true
+      schema:
+        type: string
+        example: 1234567890
+    Category:
+      name: category
+      in: query
+      description: ファイルカテゴリ
+      required: false
+      schema:
+        type: string
+        example: invoice
+    BatchNumber:
+      name: batch_number
+      in: query
+      description: >
+        バッチ番号。同じバッチ番号で複数回アップロードできます。後からそのバッチ番号を使って、同一バッチ内の複数ファイルの処理結果を取得できます。値が空の場合、システムが最大
+        20 文字の文字列を自動生成します。
+      required: false
+      schema:
+        type: string
+        example: 202412190001
+    AutoVerifyVat:
+      name: auto_verify_vat
+      in: query
+      description: VAT インボイスを自動検証するかどうか
+      required: false
+      schema:
+        type: boolean
+        default: false
+    SplitFlag:
+      name: split_flag
+      in: query
+      description: ファイル分割を実行するかどうか
+      required: false
+      schema:
+        type: boolean
+        default: false
+    CropFlag:
+      name: crop_flag
+      in: query
+      description: 複数画像クロップを実行するかどうか
+      required: false
+      schema:
+        type: boolean
+        default: false
+    TargetProcess:
+      name: target_process
+      in: query
+      description: |
+        対象処理タイプ。指定可能な値: - classify: 分類 - extract: 抽出
+      required: false
+      schema:
+        type: string
+        enum:
+          - classify
+          - extract
+        example: classify
+    ParserRemoveWatermark:
+      name: parser_remove_watermark
+      in: query
+      description: '透かし除去（0: いいえ、1: はい）'
+      required: false
+      schema:
+        type: integer
+        default: 0
+    ParserCropDewarp:
+      name: parser_crop_dewarp
+      in: query
+      description: 'クロップと歪み補正（0: いいえ、1: はい）'
+      required: false
+      schema:
+        type: integer
+        default: 0
+    ParserApplyMerge:
+      name: parser_apply_merge
+      in: query
+      description: 'ページをまたぐ段落とテーブルを結合（0: いいえ、1: はい）'
+      required: false
+      schema:
+        type: integer
+        default: 1
+    ParserFormulaLevel:
+      name: parser_formula_level
+      in: query
+      description: '数式認識レベル（0: 表示数式とインライン数式を認識、1: 表示数式のみ認識、2: 数式を認識しない）'
+      required: false
+      schema:
+        type: integer
+        default: 0
+    ParserTableTextSplitMode:
+      name: parser_table_text_split_mode
+      in: query
+      description: 'テーブル罫線と交差するテキストブロックを分割（0: いいえ、1: はい）'
+      required: false
+      schema:
+        type: integer
+        default: 0
+    WithTaskDetailUrl:
+      name: with_task_detail_url
+      in: query
+      description: タスク詳細ページ URL を返すかどうか
+      required: false
+      schema:
+        type: boolean
+        default: false
+    ParserDpi:
+      name: parser_dpi
+      in: query
+      description: 'ファイル解像度（144: デフォルト、216: 高精度）'
+      required: false
+      schema:
+        type: integer
+        default: 144
+        enum:
+          - 144
+          - 216
+    ParserParseMode:
+      name: parser_parse_mode
+      in: query
+      description: |
+        解析モード
+        - `auto`: 自動（デフォルト）
+        - `scan`: スキャン文書モード
+        - `vlm`: VLM モード
+      required: false
+      schema:
+        type: string
+        enum:
+          - auto
+          - scan
+          - vlm
+    ParserPdfPwd:
+      name: parser_pdf_pwd
+      in: query
+      description: 暗号化 PDF ファイルを復号するための PDF パスワード
+      required: false
+      schema:
+        type: string
+  requestBodies:
+    FileUploadRequestBody:
+      description: ファイルアップロードのリクエストボディ
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+        application/json:
+          schema:
+            type: object
+            properties:
+              urls:
+                description: |
+                  ファイル URL リスト
+                  1 回のアップロードで最大 10 個のファイル URL に対応し、各ファイルは最大 100MB です
+                type: array
+                items:
+                  type: string
+                  description: ファイル URL
+                  example: 'https://example.com/file.pdf'
+                  pattern: '^https?://.*$'
+                maxItems: 10
+            required:
+              - urls
+  securitySchemes:
+    ApiId:
+      type: apiKey
+      in: header
+      name: x-ti-app-id
+    SecretCode:
+      type: apiKey
+      in: header
+      name: x-ti-secret-code
+  schemas:
+    CodeMessage:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: ステータスコード
+          example: 200
+        msg:
+          type: string
+          description: ステータス説明
+      required:
+        - code
+        - msg
+    TaskType:
+      type: integer
+      description: >
+        タスクタイプ
+
+        - 0: **ファイル分割サブタスク**:
+        「ファイル分割」スイッチを有効にしたファイルタスクが正常に実行されると、そのファイルバッチタスク内のファイル分割操作で生成されたサブタスクは分割サブタスクとなり、ファイルカテゴリ配下の実際のファイルセット数に応じて分割されます
+
+        - 1: **通常タスク**: 「ファイル分割」および「複数画像クロップ」スイッチが有効でないファイルタスク
+
+        - 2: **親タスク**:
+        「ファイル分割」または「複数画像クロップ」スイッチを有効にしたファイルタスクの実行後、そのファイルバッチタスク内の各ファイルは親タスクになります
+
+        - 3: **クロップサブタスク**:
+        「複数画像クロップ」スイッチを有効にしたファイルタスクが正常に実行されると、そのファイルバッチタスク内の複数画像クロップ操作で生成されたサブタスクはクロップサブタスクとなり、ファイルカテゴリ配下の実際のクロップ結果数に応じて分割されます
+      example: 1
+    RecognitionStatus:
+      type: integer
+      description: |
+        ファイル認識ステータス:
+        - 0: 認識待ち
+        - 1: 認識成功
+        - 2: 認識失敗
+        - 3: 分類中
+        - 4: 抽出中
+        - 5: 準備中
+        - 6: ファイル分割中
+        - 7: 画像クロップ中
+        - 10: 分類完了（アップロードインターフェースの target_process が classify の場合のみ使用可能）
+        - 20: 解析中
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 10
+        - 20
+    VerificationStatus:
+      type: integer
+      description: 'ファイル検証ステータス 0: 検証待ち 2: 確認済み 3: 却下 4: 削除済み 5: 処理保留'
+      enum:
+        - 0
+        - 2
+        - 3
+        - 4
+        - 5
+    PagesInfo:
+      type: array
+      description: >
+        ファイルの各ページをレンダリングするためのデータ。data.fields の page および position
+        フィールドと組み合わせることで、ページ上のフィールド位置を正確に描画できます。
+      items:
+        type: object
+        properties:
+          page:
+            type: integer
+            description: ページ番号。0 から開始
+            example: 1
+          angle:
+            type: integer
+            description: 回転角度
+            enum:
+              - 0
+              - 90
+              - 180
+              - 270
+          width:
+            type: integer
+            description: 補正後のページ幅
+            example: 1024
+          height:
+            type: integer
+            description: 補正後のページ高さ
+            example: 1024
+          dpi:
+            type: integer
+            description: PDF を画像に変換する際の解像度。PDF 以外のファイルでは、この値は 0 です。
+            example: 144
+    KeyValuePosition:
+      description: フィールド値の位置。フィールド値はページや行をまたぐ場合があるため、配列として表示されます。
+      type: array
+      items:
+        type: object
+        properties:
+          page:
+            type: integer
+            description: フィールドが存在するページ。pages 配列のインデックスです
+          vertices:
+            type: array
+            description: >-
+              フィールド値の外接四角形座標。画像の左上を原点とし、配列値は [左上 x, 左上 y, 右上 x, 右上 y, 右下 x, 右下
+              y, 左下 x, 左下 y] です
+            items:
+              type: integer
+            minItems: 8
+            maxItems: 8
+    FieldRespKeyValue:
+      type: object
+      properties:
+        key:
+          type: string
+          description: フィールド名
+        identifier:
+          type: string
+          description: 識別子（エクスポート時のフィールド名由来）
+        value:
+          type: string
+          description: フィールド値
+        position:
+          $ref: '#/components/schemas/KeyValuePosition'
+        confidence:
+          type: number
+          format: float
+          description: 信頼度スコア。範囲は 0〜1
+          example: 0.95
+        extractModel:
+          type: string
+          description: 実際にヒットしたモデル（Acgpt / Acgpt-VL / DF-M1）
+        configModel:
+          type: string
+          description: 設定モデル（Auto / Acgpt / Acgpt-VL / DF-M1）；既存データで未設定の場合は null
+    KeyValue:
+      type: object
+      properties:
+        key:
+          type: string
+          description: フィールド名
+        value:
+          type: string
+          description: フィールド値
+        position:
+          $ref: '#/components/schemas/KeyValuePosition'
+    TextInLines:
+      type: object
+      properties:
+        angle:
+          type: string
+          description: 角度
+          example: 0
+        pos:
+          type: array
+          description: 座標
+          items:
+            type: integer
+            description: 座標
+            example: 1
+        page:
+          type: integer
+          description: ページ番号
+          example: 1
+        text:
+          type: string
+          description: テキスト
+          example: テキスト内容
+        char_pos:
+          type: array
+          description: 文字座標
+          items:
+            type: array
+            description: 文字座標
+            items:
+              type: integer
+              description: 文字座標
+              example: 1
+      description: フィールド座標
+    CommonFieldDetailRespVO:
+      type: object
+      properties:
+        key:
+          type: string
+          description: フィールドキー
+        identifier:
+          type: string
+          description: 識別子（エクスポート時のフィールド名由来）
+        value:
+          type: string
+          description: フィールド値
+        textInLines:
+          deprecated: true
+          type: array
+          description: |
+            **廃止済み**。代わりに position フィールドを使用してください
+            フィールド座標
+          items:
+            $ref: '#/components/schemas/TextInLines'
+        position:
+          $ref: '#/components/schemas/KeyValuePosition'
+        index:
+          type: integer
+          description: インデックス
+        confidence:
+          type: number
+          format: float
+          description: 信頼度スコア。範囲は 0〜1
+          example: 0.95
+    StampValue:
+      type: object
+      properties:
+        angel:
+          type: integer
+          description: 角度
+        page:
+          type: integer
+          description: ページ番号
+        text:
+          type: string
+          description: 印影テキスト内容
+        type:
+          type: string
+          description: 印影タイプ
+        color:
+          type: string
+          description: 印影色
+        shape:
+          type: string
+          description: 印影形状
+        position:
+          type: array
+          description: 位置情報
+          items:
+            type: integer
+            example: 1
+    HandWritingValue:
+      type: object
+      properties:
+        angel:
+          type: integer
+          description: 角度
+        page:
+          type: integer
+          description: ページ番号
+        text:
+          type: string
+          description: 手書きテキスト内容
+        position:
+          $ref: '#/components/schemas/KeyValuePosition'
+    Document:
+      type: object
+      properties:
+        pages:
+          type: array
+          items:
+            type: object
+            properties:
+              angle:
+                type: integer
+                description: ページ回転角度
+              width:
+                type: integer
+                description: ページ幅
+              height:
+                type: integer
+                description: ページ高さ
+              lines:
+                description: ページテキスト行配列
+                type: array
+                items:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: 行テキスト
+                    position:
+                      type: array
+                      items:
+                        type: integer
+                      minItems: 8
+                      maxItems: 8
+                    charPositions:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: integer
+                        minItems: 8
+                        maxItems: 8
+    TaskCropResult:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: 元ファイルのページインデックス。0 は元ファイルの最初のページを表します
+        image角度:
+          type: string
+          description: クロップ画像の角度情報
+    SubFileDetailInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ファイル ID
+          example: 202412190001
+        task_id:
+          type: string
+          description: タスク ID
+          example: 202412190001
+        task_detail_url:
+          type: string
+          description: ファイルサブタスク詳細ページ URL
+        task_type:
+          $ref: '#/components/schemas/TaskType'
+        parent_task_id:
+          type: string
+          description: 親タスク ID（0 でない場合に有効）
+          example: 202412190001
+        batch_number:
+          type: string
+          description: バッチ番号
+          example: 202412190001
+        name:
+          type: string
+          description: ファイル名
+          example: invoice.pdf
+        format:
+          type: string
+          description: ファイル形式
+        recognition_status:
+          $ref: '#/components/schemas/RecognitionStatus'
+        verification_status:
+          $ref: '#/components/schemas/VerificationStatus'
+        category:
+          type: string
+          description: ファイルカテゴリ
+          example: invoice
+        pages:
+          $ref: '#/components/schemas/PagesInfo'
+        data:
+          type: object
+          description: 処理結果
+          properties:
+            fields:
+              description: フィールドリスト
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldRespKeyValue'
+              example:
+                - key: インボイスコード
+                  identifier: インボイスコード識別子
+                  value: '3100231130'
+                  position:
+                    - page: 0
+                      vertices:
+                        - 0
+                        - 0
+                        - 100
+                        - 0
+                        - 100
+                        - 100
+                        - 0
+                        - 100
+                - key: インボイス番号
+                  identifier: インボイス番号識別子
+                  value: '28737000'
+                  position:
+                    - page: 0
+                      vertices:
+                        - 0
+                        - 0
+                        - 100
+                        - 0
+                        - 100
+                        - 100
+                        - 0
+                        - 100
+            items:
+              description: テーブルデータリスト
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KeyValue'
+              example:
+                - - key: 商品・サービス名
+                    value: ＊Electronic Computer＊Microcomputer Host
+                    position:
+                      - page: 0
+                        vertices:
+                          - 0
+                          - 0
+                          - 100
+                          - 0
+                          - 100
+                          - 100
+                          - 0
+                          - 100
+                  - key: 仕様モデル
+                    value: DMS-SC68
+                    position:
+                      - page: 0
+                        vertices:
+                          - 0
+                          - 0
+                          - 100
+                          - 0
+                          - 100
+                          - 100
+                          - 0
+                          - 100
+                - - key: 商品・サービス名
+                    value: ＊Mechanical Computer＊Supercomputer Host
+                    position:
+                      - page: 0
+                        vertices:
+                          - 0
+                          - 0
+                          - 100
+                          - 0
+                          - 100
+                          - 100
+                          - 0
+                          - 100
+                  - key: 仕様モデル
+                    value: AN/FSQ-7
+                    position:
+                      - page: 0
+                        vertices:
+                          - 0
+                          - 0
+                          - 100
+                          - 0
+                          - 100
+                          - 100
+                          - 0
+                          - 100
+            tables:
+              description: 完全なテーブルデータリスト（システムテーブルと手動設定テーブルを含む）
+              type: array
+              items:
+                type: object
+                properties:
+                  tableName:
+                    description: テーブル名
+                    type: string
+                    example: table1
+                  tableType:
+                    description: |
+                      テーブルタイプ。0: システム設定、1: 手動追加。
+                    type: string
+                    example: 0
+                  extractModel:
+                    description: テーブル単位の実際にヒットしたモデル（Acgpt / Acgpt-VL / DF-M1）
+                    type: string
+                  configModel:
+                    description: >-
+                      テーブル単位の設定モデル（Auto / Acgpt / Acgpt-VL /
+                      DF-M1）；既存データで未設定の場合は null
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/CommonFieldDetailRespVO'
+            stamps:
+              description: 印影情報
+              type: array
+              items:
+                $ref: '#/components/schemas/StampValue'
+              example:
+                - angel: 0
+                  page: 0
+                  text: 全国統一インボイス監督印
+                  type: Other
+                  color: Red
+                  shape: Oval Seal
+                  position:
+                    - 0
+                    - 0
+                    - 100
+                    - 0
+                    - 100
+                    - 100
+                    - 0
+                    - 100
+                - angel: 0
+                  page: 0
+                  text: 税務局印
+                  type: Other
+                  color: Red
+                  shape: Oval Seal
+                  position:
+                    - 0
+                    - 0
+                    - 100
+                    - 0
+                    - 100
+                    - 100
+                    - 0
+                    - 100
+            handwritings:
+              description: 手書き情報
+              type: array
+              items:
+                $ref: '#/components/schemas/HandWritingValue'
+              example:
+                - angel: 0
+                  page: 0
+                  text: 3月1日
+                  position:
+                    - page: 0
+                      vertices:
+                        - 0
+                        - 0
+                        - 100
+                        - 0
+                        - 100
+                        - 100
+                        - 0
+                        - 100
+                - angel: 0
+                  page: 0
+                  text: 山田太郎
+                  position:
+                    - page: 0
+                      vertices:
+                        - 0
+                        - 0
+                        - 100
+                        - 0
+                        - 100
+                        - 100
+                        - 0
+                        - 100
+            invoiceVerifyResult:
+              description: インボイス検証結果
+              type: object
+              properties:
+                invoiceVerifyStatus:
+                  type: integer
+                  description: |
+                    インボイス検証に成功したかどうか（0: いいえ、1: はい、null: 未検証）
+                  example: 0
+                invoiceVerifyErrorCode:
+                  type: integer
+                  description: インボイス検証エラーコード
+                  example: 0
+                invoiceVerifyCanRetry:
+                  type: integer
+                  description: |
+                    インボイス検証を再試行/開始できるかどうか（0: いいえ、1: はい）
+                  example: 0
+                invoiceVerifyFailMsg:
+                  type: string
+                  description: インボイス検証失敗理由
+                  example: 1日の上限を超過しました
+        document:
+          $ref: '#/components/schemas/Document'
+        from_parent_position_list:
+          type: array
+          description: 元ファイル内のクロップ結果の座標位置
+          items:
+            type: integer
+            description: 位置情報
+            example: 1
+        crop_info:
+          $ref: '#/components/schemas/TaskCropResult'
+    DocumentParserParam:
+      type: object
+      properties:
+        formula_level:
+          type: integer
+          description: '数式認識レベル（0: 表示数式とインライン数式を認識、1: 表示数式のみ認識、2: 数式を認識しない）'
+          example: 0
+        apply_merge:
+          type: integer
+          description: 'ページをまたぐ段落とテーブルを結合（0: いいえ、1: はい）'
+          example: 1
+        table_text_split_mode:
+          type: integer
+          description: 'テーブル罫線と交差するテキストブロックを分割（0: いいえ、1: はい）'
+          example: 0
+        crop_dewarp:
+          type: integer
+          description: 'クロップと歪み補正（0: いいえ、1: はい）'
+          example: 0
+        remove_watermark:
+          type: integer
+          description: '透かし除去（0: いいえ、1: はい）'
+          example: 0
+        dpi:
+          type: integer
+          description: 'ファイル解像度（144: デフォルト、216: 高精度）'
+          example: 144
+          enum:
+            - 144
+            - 216
+        parse_mode:
+          type: string
+          description: |
+            解析モード
+            - `auto`: 自動（デフォルト）
+            - `scan`: スキャン文書モード
+            - `vlm`: VLM モード
+          example: auto
+          enum:
+            - auto
+            - scan
+            - vlm
+        pdf_pwd:
+          type: string
+          description: 暗号化 PDF ファイルを復号するための PDF パスワード
+    TaskProcessResult:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: ファイル総数
+              example: 100
+            page:
+              type: integer
+              description: 現在のページ番号
+              example: 1
+            page_size:
+              type: integer
+              description: 1 ページあたりの件数
+              example: 20
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ファイル ID
+                    example: 202412190001
+                  task_id:
+                    type: string
+                    description: タスク ID
+                    example: 202412190001
+                  task_detail_url:
+                    type: string
+                    description: タスク詳細ページ URL
+                  task_type:
+                    $ref: '#/components/schemas/TaskType'
+                  batch_number:
+                    type: string
+                    description: バッチ番号
+                    example: 202412190001
+                  name:
+                    type: string
+                    description: ファイル名
+                    example: invoice.pdf
+                  format:
+                    type: string
+                    description: ファイル形式
+                  recognition_status:
+                    $ref: '#/components/schemas/RecognitionStatus'
+                  failure_causes:
+                    type: string
+                    description: |
+                      タスク失敗理由。
+                      recognition_status が 2 の場合、このフィールドが返されます。
+                  verification_status:
+                    $ref: '#/components/schemas/VerificationStatus'
+                  category:
+                    type: string
+                    description: ファイルカテゴリ
+                    example: invoice
+                  pages:
+                    $ref: '#/components/schemas/PagesInfo'
+                  data:
+                    type: object
+                    description: 処理結果
+                    properties:
+                      fields:
+                        description: フィールドリスト
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FieldRespKeyValue'
+                        example:
+                          - key: インボイスコード
+                            identifier: インボイスコード識別子
+                            value: '3100231130'
+                            position:
+                              - page: 0
+                                vertices:
+                                  - 0
+                                  - 0
+                                  - 100
+                                  - 0
+                                  - 100
+                                  - 100
+                                  - 0
+                                  - 100
+                          - key: インボイス番号
+                            value: '28737000'
+                            identifier: インボイス番号識別子
+                            position:
+                              - page: 0
+                                vertices:
+                                  - 0
+                                  - 0
+                                  - 100
+                                  - 0
+                                  - 100
+                                  - 100
+                                  - 0
+                                  - 100
+                      items:
+                        description: テーブルデータリスト
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/KeyValue'
+                        example:
+                          - - key: 商品・サービス名
+                              value: ＊Electronic Computer＊Microcomputer Host
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                            - key: 仕様モデル
+                              value: DMS-SC68
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                          - - key: 商品・サービス名
+                              value: ＊Mechanical Computer＊Supercomputer Host
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                            - key: 仕様モデル
+                              value: AN/FSQ-7
+                              position:
+                                - page: 0
+                                  vertices:
+                                    - 0
+                                    - 0
+                                    - 100
+                                    - 0
+                                    - 100
+                                    - 100
+                                    - 0
+                                    - 100
+                      tables:
+                        description: 完全なテーブルデータリスト（システムテーブルと手動設定テーブルを含む）
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tableName:
+                              description: テーブル名
+                              type: string
+                              example: table1
+                            tableType:
+                              description: |
+                                テーブルタイプ。0: システム設定、1: 手動追加。
+                              type: string
+                              example: 0
+                            extractModel:
+                              description: テーブル単位の実際にヒットしたモデル（Acgpt / Acgpt-VL / DF-M1）
+                              type: string
+                            configModel:
+                              description: >-
+                                テーブル単位の設定モデル（Auto / Acgpt / Acgpt-VL /
+                                DF-M1）；既存データで未設定の場合は null
+                              type: string
+                            items:
+                              type: array
+                              items:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/CommonFieldDetailRespVO'
+                      stamps:
+                        description: 印影情報
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StampValue'
+                        example:
+                          - angel: 0
+                            page: 0
+                            text: 全国統一インボイス監督印
+                            type: Other
+                            color: Red
+                            shape: Oval Seal
+                            position:
+                              - 0
+                              - 0
+                              - 100
+                              - 0
+                              - 100
+                              - 100
+                              - 0
+                              - 100
+                          - angel: 0
+                            page: 0
+                            text: 税務局印
+                            type: Other
+                            color: Red
+                            shape: Oval Seal
+                            position:
+                              - 0
+                              - 0
+                              - 100
+                              - 0
+                              - 100
+                              - 100
+                              - 0
+                              - 100
+                      handwritings:
+                        description: 手書き情報
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HandWritingValue'
+                        example:
+                          - angel: 0
+                            page: 0
+                            text: 3月1日
+                            position:
+                              - page: 0
+                                vertices:
+                                  - 0
+                                  - 0
+                                  - 100
+                                  - 0
+                                  - 100
+                                  - 100
+                                  - 0
+                                  - 100
+                          - angel: 0
+                            page: 0
+                            text: 山田太郎
+                            position:
+                              - page: 0
+                                vertices:
+                                  - 0
+                                  - 0
+                                  - 100
+                                  - 0
+                                  - 100
+                                  - 100
+                                  - 0
+                                  - 100
+                      invoiceVerifyResult:
+                        description: インボイス検証結果
+                        type: object
+                        properties:
+                          invoiceVerifyStatus:
+                            type: integer
+                            description: |
+                              インボイス検証に成功したかどうか（0: いいえ、1: はい、null: 未検証）
+                            example: 0
+                          invoiceVerifyErrorCode:
+                            type: integer
+                            description: インボイス検証エラーコード
+                            example: 0
+                          invoiceVerifyCanRetry:
+                            type: integer
+                            description: |
+                              インボイス検証を再試行/開始できるかどうか（0: いいえ、1: はい）
+                            example: 0
+                          invoiceVerifyFailMsg:
+                            type: string
+                            description: インボイス検証失敗理由
+                            example: 1日の上限を超過しました
+                  document:
+                    $ref: '#/components/schemas/Document'
+                  child_files:
+                    description: サブタスク情報
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubFileDetailInfo'
+                  duration_ms:
+                    type: integer
+                    description: |
+                      タスク処理時間。単位: ミリ秒
+                      タスク開始から完了（成功または失敗）までの時間です。キュー待ち時間は含みません。
+                    example: 10000
+                  total_page_num:
+                    type: integer
+                    description: 現在のファイルの総ページ数
+                    example: 10
+                  parser_params:
+                    description: ファイル解析パラメータ設定
+                    allOf:
+                      - $ref: '#/components/schemas/DocumentParserParam'
+                required:
+                  - id
+                  - name
+                  - format
+                  - recognition_status
+                  - verification_status
+                  - category
+    ExtractFieldReqVO:
+      type: object
+      properties:
+        key:
+          type: string
+          description: フィールド名
+          example: インボイスコード
+        prompt:
+          type: string
+          description: フィールドプロンプト
+          example: 年の部分のみを保持します
+        extract_model:
+          type: string
+          description: |
+            フィールド単位の抽出モデル。未指定の場合は Acgpt がデフォルトです
+            - Auto: 抽出モデルを自動でマッチング
+            - Acgpt: 高速で安定した抽出結果
+            - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+            - DF-M1: 複雑な文書理解に適しています
+            注: テーブルフィールドでは抽出モデルはテーブル単位の extract_model によって決まり、このフィールドは無視されます
+          example: Acgpt
+          enum:
+            - Auto
+            - Acgpt
+            - Acgpt-VL
+            - DF-M1
+    TokenResult:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            token:
+              type: string
+              description: iframe シナリオで使用する有効なトークン
+              example: abcd
+            expiry:
+              type: integer
+              description: '有効期限（エポックタイムスタンプ形式、単位: 秒）'
+              example: 1700000000
+    Workspace:
+      type: object
+      description: ワークスペース
+      properties:
+        workspace_id:
+          type: string
+          description: ワークスペース ID（システム生成）
+          example: '1234567890'
+        name:
+          type: string
+          description: ワークスペース名
+          example: My ワークスペース
+        description:
+          type: string
+          description: ワークスペースの説明
+          example: 請求書処理用のワークスペースです
+        auth_scope:
+          type: integer
+          description: '共同利用範囲 0: 自分のみ表示 1: エンタープライズメンバーに表示'
+          example: 1
+          enum:
+            - 0
+            - 1
+        manage_account_id:
+          type: string
+          description: ワークスペース管理者 ID
+          example: admin_123456
+        manage_account_name:
+          type: string
+          description: ワークスペース管理者名
+          example: 山田太郎
+        callback_url:
+          type: string
+          description: コールバック URL
+          example: 'https://example.com/callback'
+        callback_retry_time:
+          type: integer
+          description: コールバック再試行回数
+          example: 3
+      required:
+        - workspace_id
+        - name
+    TransformSettings:
+      type: object
+      description: フィールド出力変換設定。抽出結果を出力前に整形します。
+      properties:
+        type:
+          type: string
+          description: |
+            変換タイプ。適用する変換ルールを決定します:
+            - `datetime`: 抽出結果を指定した日付形式に正規化します
+            - `enumerate`: 抽出結果を事前設定された列挙値のいずれかに制限します
+            - `regex`: 正規表現で抽出結果をマッチングして置換します
+          enum:
+            - datetime
+            - enumerate
+            - regex
+        datetime_settings:
+          type: object
+          description: 日時フォーマット設定。type=datetime の場合は必須です。
+          properties:
+            format:
+              type: string
+              description: 対象の日付形式。抽出結果はこの形式に正規化されます。
+              example: yyyy-MM-dd
+        enumerate_settings:
+          type: object
+          description: 列挙制約設定。type=enumerate の場合は必須です。
+          properties:
+            items:
+              type: array
+              description: 許可される列挙値。抽出結果がこのリストに含まれない場合は mismatch_action が適用されます。
+              items:
+                type: string
+              example:
+                - VAT 専用インボイス
+                - VAT 一般インボイス
+                - 電子インボイス
+        regex_settings:
+          type: object
+          description: 正規表現変換設定。type=regex の場合は必須です。
+          properties:
+            match:
+              type: string
+              description: 抽出結果をマッチングまたはキャプチャする正規表現パターン
+              example: '^(\d{4})-(\d{2})-(\d{2})$'
+            replace:
+              type: string
+              description: 置換式。$1、$2 などのキャプチャグループ参照をサポートします
+              example: $1/$2/$3
+        mismatch_action:
+          type: object
+          description: 変換ルールに一致しない抽出結果の処理方法（すべてのタイプに適用、任意）。
+          properties:
+            mode:
+              type: string
+              description: |
+                処理モード:
+                - `default`: 指定したデフォルト値を出力します（default_value が必要）
+                - `warning`: 元の抽出結果を保持し、手動レビュー用の警告を付けます
+              enum:
+                - default
+                - warning
+            default_value:
+              type: string
+              description: mode=default の場合の出力値
+              example: N/A
+    CategoryFieldConfig:
+      type: object
+      properties:
+        name:
+          type: string
+          description: フィールド名
+          example: インボイスコード
+        description:
+          type: string
+          description: フィールドの説明
+          example: インボイスコードの説明
+        prompt:
+          type: string
+          description: 意味抽出プロンプト
+        use_prompt:
+          type: boolean
+          description: 意味抽出プロンプトを使用するかどうか
+        alias:
+          type: array
+          description: 'フィールド別名。更新時: 省略=変更なし、空配列 []=別名をクリア、空でない配列=上書き'
+          items:
+            type: string
+          example:
+            - インボイス No.
+            - 請求書番号
+        identity:
+          type: string
+          description: 'エクスポート時のフィールド名。更新時: 省略=変更なし、空文字列 ""=クリア、空でない値=上書き'
+          example: invoice_number
+        multi_value:
+          type: boolean
+          description: 複数値抽出を有効にするかどうか
+        duplicate_value_distinct:
+          type: boolean
+          description: multi_value が true の場合のみ有効な重複値除去を行うかどうか
+        transform_settings:
+          $ref: '#/components/schemas/TransformSettings'
+    CategoryTableConfig:
+      type: object
+      description: 一括作成用のテーブル設定（ネストされたフィールドを含む）
+      properties:
+        name:
+          type: string
+          description: テーブル名
+          example: 明細テーブル
+          maxLength: 50
+        prompt:
+          type: string
+          description: テーブルの意味抽出プロンプト
+          maxLength: 200
+        collect_from_multi_table:
+          type: boolean
+          description: 複数テーブルを結合
+        extract_model:
+          type: string
+          description: テーブルレベルの抽出モデル
+          enum:
+            - Auto
+            - Acgpt
+            - Acgpt-VL
+            - DF-M1
+        fields:
+          type: array
+          description: テーブル内のネストされたフィールドリスト
+          items:
+            $ref: '#/components/schemas/CategoryFieldConfig'
+      required:
+        - name
+    EnabledStatus:
+      type: integer
+      description: |
+        有効化ステータス
+        - 0: 無効
+        - 1: 有効
+        - 2: 下書き
+      enum:
+        - 0
+        - 1
+        - 2
+    CategoryField:
+      allOf:
+        - $ref: '#/components/schemas/CategoryFieldConfig'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: フィールド ID
+              example: '1234567890'
+            enabled:
+              $ref: '#/components/schemas/EnabledStatus'
+            extract_model:
+              type: string
+              description: >
+                フィールド抽出モデル
+
+                - Auto: 抽出モデルを自動でマッチング
+
+                - Acgpt: 高速で安定した抽出結果
+
+                - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+
+                - DF-M1: 複雑な文書理解に適しています
+
+                -
+                テーブルフィールドではテーブルモデルを継承し、通常フィールドではフィールド単位の設定を使用します。既存データはカテゴリ設定から推定されます
+              example: Acgpt
+    CategoryTable:
+      type: object
+      properties:
+        id:
+          type: string
+          description: テーブル ID
+          example: '1234567890'
+        name:
+          type: string
+          description: テーブル名
+          example: Table 1
+        description:
+          type: string
+          description: テーブルの説明
+          example: テーブルの説明
+        prompt:
+          type: string
+          description: テーブルの意味抽出プロンプト
+          example: 各行から品目名、数量、金額を抽出します
+        collect_from_multi_table:
+          type: boolean
+          description: 複数テーブルを結合
+          example: true
+        extract_model:
+          type: string
+          description: テーブルレベルの抽出モデル（Auto/Acgpt/Acgpt-VL/DF-M1）
+          example: Acgpt
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryField'
+    CategorySample:
+      type: object
+      description: ファイルカテゴリサンプル
+      properties:
+        sample_id:
+          type: string
+          description: サンプル ID
+          example: '1234567890'
+        file_name:
+          type: string
+          description: ファイル名
+          example: invoice_sample.pdf
+      required:
+        - sample_id
+        - file_name
+    Category:
+      type: object
+      description: ファイルカテゴリ
+      properties:
+        id:
+          type: string
+          description: ファイルカテゴリ ID
+          example: '1234567890'
+        name:
+          type: string
+          description: ファイルカテゴリ名
+          example: インボイス
+        description:
+          type: string
+          description: ファイルカテゴリの説明
+          example: VAT インボイスタイプ
+        category_prompt:
+          type: string
+          description: 分類用プロンプト
+          example: VAT インボイス。インボイスコード、インボイス番号などのフィールドを含みます。
+        extract_model:
+          type: string
+          description: |
+            抽出モデル
+            - Auto: 抽出モデルを自動でマッチング
+            - Acgpt: 高速で安定した抽出結果
+            - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+            - DF-M1: 複雑な文書理解に適しています
+            - mixed: レスポンスでのみ使用され、このカテゴリ内のフィールド/テーブルで異なるモデルが使用されていることを示します
+          example: Acgpt
+          enum:
+            - Auto
+            - Acgpt
+            - Acgpt-VL
+            - DF-M1
+            - mixed
+        enabled:
+          $ref: '#/components/schemas/EnabledStatus'
+      required:
+        - id
+        - name
+    CategoryFieldUpdateItem:
+      type: object
+      description: フィールド更新項目（multi_value/duplicate_value_distinct はこのエンドポイントでは変更できません）
+      properties:
+        field_id:
+          type: string
+          description: フィールド ID
+          example: '1234567890'
+        name:
+          type: string
+          description: フィールド名
+        description:
+          type: string
+          description: フィールドの説明
+        prompt:
+          type: string
+          description: 意味抽出プロンプト
+        use_prompt:
+          type: boolean
+          description: 意味抽出プロンプトを使用するかどうか
+        alias:
+          type: array
+          description: 'フィールド別名。省略=変更なし、空配列 []=クリア、空でない配列=上書き'
+          items:
+            type: string
+          example:
+            - インボイス No.
+            - 請求書番号
+        identity:
+          type: string
+          description: エクスポート時のフィールド名。省略=変更なし、空文字列 ""=クリア、空でない値=上書き
+          example: invoice_number
+        multi_value:
+          type: boolean
+          description: 複数値抽出を有効にするかどうか。省略=変更なし
+        duplicate_value_distinct:
+          type: boolean
+          description: 値を重複排除するかどうか。multi_value が true の場合のみ有効です。省略=変更なし
+        transform_settings:
+          $ref: '#/components/schemas/TransformSettings'
+        extract_model:
+          type: string
+          description: |
+            フィールド単位の抽出モデル。通常フィールドのみ個別に設定でき、テーブルフィールドは設定できません。
+            省略すると既存設定を保持します。
+            - Auto: 抽出モデルを自動でマッチング
+            - Acgpt: 高速で安定した抽出結果
+            - Acgpt-VL: VLM。シンプルな抽出に適しています（≤10 ページ）
+            - DF-M1: 複雑な文書理解に適しています
+          example: Acgpt
+          enum:
+            - Auto
+            - Acgpt
+            - Acgpt-VL
+            - DF-M1
+      required:
+        - field_id
+    CategoryTableUpdateItem:
+      type: object
+      properties:
+        table_id:
+          type: string
+          description: テーブル ID
+          example: '1234567890'
+        name:
+          type: string
+          description: テーブル名
+          maxLength: 50
+        prompt:
+          type: string
+          description: テーブルの意味抽出プロンプト
+          maxLength: 200
+        extract_model:
+          type: string
+          description: テーブルレベルの抽出モデル
+          enum:
+            - Auto
+            - Acgpt
+            - Acgpt-VL
+            - DF-M1
+        collect_from_multi_table:
+          type: boolean
+          description: 複数テーブルを結合
+      required:
+        - table_id
+    RiskLevel:
+      type: integer
+      description: |
+        リスクレベル
+        - 10: 高リスク
+        - 20: 中リスク
+        - 30: 低リスク
+      enum:
+        - 10
+        - 20
+        - 30
+    ReviewRuleField:
+      type: object
+      properties:
+        field_id:
+          type: string
+          description: フィールド ID
+          example: '1234567890'
+        field_name:
+          type: string
+          description: フィールド名
+          example: インボイスコード
+    ReviewRuleReferencedField:
+      type: object
+      properties:
+        category_id:
+          type: string
+          description: カテゴリ ID
+          example: '1234567890'
+        category_name:
+          type: string
+          description: カテゴリ名
+          example: インボイス
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewRuleField'
+        tables:
+          type: array
+          items:
+            type: object
+            properties:
+              table_id:
+                type: string
+                description: テーブル ID
+                example: '1234567890'
+              table_name:
+                type: string
+                description: テーブル名
+                example: インボイステーブル
+              fields:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewRuleField'
+    ReviewRule:
+      type: object
+      properties:
+        rule_id:
+          type: string
+          description: 規則 ID
+          example: '31415926'
+        name:
+          type: string
+          description: 規則名
+          example: レビュー規則 1
+        prompt:
+          type: string
+          description: 規則プロンプト
+          example: レビュー規則プロンプト
+        category_ids:
+          type: array
+          items:
+            type: string
+            description: カテゴリ ID
+            example: '1234567890'
+        risk_level:
+          $ref: '#/components/schemas/RiskLevel'
+        referenced_fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewRuleReferencedField'
+    ReviewRuleGroup:
+      type: object
+      properties:
+        group_id:
+          type: string
+          description: 規則グループ ID
+          example: '31415926'
+        name:
+          type: string
+          description: 規則グループ名
+          example: レビュー規則グループ 1
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewRule'
+    ReviewRuleRepo:
+      type: object
+      properties:
+        repo_id:
+          type: string
+          description: レビュー規則リポジトリ ID
+          example: '31415926'
+        name:
+          type: string
+          description: レビュー規則リポジトリ名
+          example: レビュー規則リポジトリ 1
+        groups:
+          description: 規則リポジトリ配下の規則グループリスト
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewRuleGroup'
+        category_ids:
+          type: array
+          items:
+            type: string
+            description: カテゴリ ID
+            example: '1234567890'
+    ReviewRuleProperties:
+      type: object
+      properties:
+        group_id:
+          type: string
+          description: レビュー規則グループ ID
+          example: '31415926'
+        name:
+          type: string
+          description: 規則名
+          example: レビュー規則 1
+        prompt:
+          type: string
+          description: 規則プロンプト
+          example: レビュー規則プロンプト
+        category_ids:
+          type: array
+          items:
+            type: string
+            description: カテゴリ ID
+            example: '1234567890'
+        risk_level:
+          $ref: '#/components/schemas/RiskLevel'
+        referenced_fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewRuleReferencedField'
+    ReviewTaskStatus:
+      type: integer
+      description: |
+        タスクステータス
+        - 0: 保留中
+        - 1: 承認済み
+        - 2: レビュー失敗
+        - 3: レビュー中
+        - 4: 却下
+        - 5: 認識中
+        - 6: キュー待ち
+        - 7: 認識失敗
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+security:
+  - ApiId: []
+    SecretCode: []
