@@ -145,7 +145,6 @@
                   "docflow-global/en/100-faq/get_enterprise_id",
                   "docflow-global/en/100-faq/setup_category",
                   "docflow-global/en/100-faq/chinese_category_param",
-                  "docflow-global/en/100-faq/product_charge",
                   "docflow-global/en/100-faq/openapi_download"
                 ]
               }
@@ -314,7 +313,6 @@
                   "docflow-global/ja/100-faq/get_enterprise_id",
                   "docflow-global/ja/100-faq/setup_category",
                   "docflow-global/ja/100-faq/chinese_category_param",
-                  "docflow-global/ja/100-faq/product_charge",
                   "docflow-global/ja/100-faq/openapi_download"
                 ]
               }
