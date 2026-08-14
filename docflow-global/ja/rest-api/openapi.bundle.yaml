@@ -160,6 +160,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: task_id
+          in: query
+          description: タスク ID。
+          required: false
+          schema:
+            type: string
         - name: category
           in: query
           description: ファイルカテゴリ
@@ -615,7 +621,7 @@ paths:
   /api/app-api/sip/platform/v2/auth/token:
     get:
       summary: 短期有効トークンを生成
-      description: 短期有効トークンを生成します（iframe シナリオ用）
+      description: 短期有効トークンを生成します（iframe シナリオ用）。トークンの有効期間は1日です。
       operationId: authToken
       responses:
         '200':

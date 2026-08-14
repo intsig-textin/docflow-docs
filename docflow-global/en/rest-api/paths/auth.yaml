@@ -1,7 +1,7 @@
 /api/app-api/sip/platform/v2/auth/token:
   get:
     summary: Generate a short-lived token
-    description: Generate a short-lived token (for iframe scenarios)
+    description: Generate a short-lived token (for iframe scenarios). The token is valid for 1 day.
     operationId: authToken
     responses:
       '200':
